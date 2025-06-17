@@ -16,6 +16,7 @@ def upper_confidence_bound(mean: jnp.array, std: jnp.array, kappa=0.05) -> jnp.a
 def run_online_adaptation(
                       repertoire: MapElitesRepertoire,
                       env, policy_network, key,
+                      damage_joint_idx, damage_joint_action,
                       max_iters=20, performance_threshold=0.9, lengthscale=0.4, noise=1e-3):
 
 
@@ -38,7 +39,7 @@ def run_online_adaptation(
     D = gpx.Dataset()
     tested_indices = []
     real_fitnesses = []
-    # tested_goals = []
+    tested_goals = []
     means_adjusted = fitnesses    # mu_0 = P(x)
 
     # Define the GP model
@@ -55,7 +56,8 @@ def run_online_adaptation(
         if iter_num != 0:
             likelihood = gpx.likelihoods.Gaussian(num_datapoints=D.n, obs_stddev=noise)
             posterior = prior * likelihood
-            latent_dist = posterior.predict(test_inputs=next_idx, train_data=D)
+
+            latent_dist = posterior.predict(test_inputs=repertoire.centroids, train_data=D)
             predictive_dist = posterior.likelihood(latent_dist)
 
             means_residual = predictive_dist.mean()
@@ -64,18 +66,18 @@ def run_online_adaptation(
             means_adjusted = fitnesses + means_residual
             next_idx = acquisition_fn(means_adjusted, variances)
 
-        # next_goal = goals[next_idx]
+        next_goal = repertoire.centroids[next_idx]
         tested_indices.append(next_idx)
-        # tested_goals.append(next_goal)
+        tested_goals.append(next_goal)
 
         # evaluate on the real robot
         params = jax.tree.map(lambda x: x[next_idx], repertoire.genotypes)
-        rollout = run_single_rollout(env, policy_network, params, key)          # rollout = {'rewards': jnp.array, 'state': jnp.array}
+        rollout = run_single_rollout(env, policy_network, params, key, damage_joint_idx, damage_joint_action)          # rollout = {'rewards': jnp.array, 'state': jnp.array}
         real_fitness = rollout['rewards'].sum()
 
         obs_dataset = gpx.Dataset(
-            X=jnp.expand_dims(next_idx, axis=0),
-            y=jnp.expand_dims(real_fitness - fitnesses[next_idx], axis=[0, 1])
+            X=jnp.expand_dims(next_goal, axis=0),
+            y=jnp.expand_dims(real_fitness - fitnesses[next_idx], axis=[0, 1]),
         )
         D = D + obs_dataset if iter_num != 0 else obs_dataset   # add observation to the dataset
 
@@ -84,6 +86,7 @@ def run_online_adaptation(
 
         if max_tested_fitness >= stop_cond:
             # print(f"Early stopping: fitness {max_tested_fitness:.3f} >= threshold {stop_cond:.3f}")
+            print(f"Adaptation ends in {iter_num} iteration(s).")
             break
 
-    # return np.array(tested_indices), np.array(real_fitnesses)
+    return np.array(tested_indices), np.array(real_fitnesses), np.array(tested_goals)
