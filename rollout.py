@@ -1,3 +1,5 @@
+import os
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -5,8 +7,9 @@ import numpy as np
 from brax.v1.io import html
 
 def run_single_rollout(env, policy_network, params, key, 
-                       damage_joint_idx=None, damage_joint_action=0,
-                       save_animation=True):
+                       damage_joint_idx=None | list, 
+                       damage_joint_action=None | list,
+                       output_dir=None | str):
 
     jit_env_reset = jax.jit(env.reset)
     jit_env_step = jax.jit(env.step)
@@ -23,13 +26,13 @@ def run_single_rollout(env, policy_network, params, key,
         states.append(state)
         action = jit_inference_fn(params, state.obs)
         if damage_joint_idx is not None:
-            action = action.at[damage_joint_idx].set(damage_joint_action)
+            action = action.at[jnp.array(damage_joint_idx)].set(damage_joint_action)
         actions.append(action)
         state = jit_env_step(state, action)     # get next state
         rewards.append(state.reward)
 
-    if (save_animation):
-        with open("./outputs/brax_rollout.html", "w") as f:
+    if (output_dir is not None):
+        with open(output_dir, "w") as f:
             f.write(html.render(env.sys, [s.qp for s in states[:500]]))
             print("Animation generated.")
 
@@ -38,9 +41,3 @@ def run_single_rollout(env, policy_network, params, key,
         'states': np.array(states),
         'actions': np.array(actions)
         }
-
-# def collect_rollouts(rollout):
-#     rollouts = {}
-#     for i in 
-#         rollouts[i] = rollout
-#     return rollouts

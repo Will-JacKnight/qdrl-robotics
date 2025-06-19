@@ -1,7 +1,7 @@
 import pickle
 
 
-def load_repertoire():
+def load_pkls():
     with open("repertoire.pkl", "rb") as f:
         repertoire = pickle.load(f)
 

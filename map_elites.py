@@ -20,10 +20,7 @@ from utils.plot_results import plot_map_elites_results, plot_multidimensional_ma
 from rollout import run_single_rollout
 from utils.util import save_pkls
 
-
-def run_map_elites(env_name, episode_length, batch_size, num_iterations, grid_shape,
-                   min_descriptor, max_descriptor, policy_hidden_layer_sizes,
-                   iso_sigma, line_sigma, log_period, key):
+def init_env_and_policy(env_name, episode_length, policy_hidden_layer_sizes):
     # Init environment
     env = environments.create(env_name, episode_length=episode_length)
 
@@ -34,7 +31,11 @@ def run_map_elites(env_name, episode_length, batch_size, num_iterations, grid_sh
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
     )
+    return env, policy_network
 
+def run_map_elites(env, policy_network, batch_size, num_iterations, grid_shape,
+                   min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, key):
+    
     # Init population of controllers
     key, subkey = jax.random.split(key)
     keys = jax.random.split(subkey, num=batch_size)
@@ -155,7 +156,7 @@ def run_map_elites(env_name, episode_length, batch_size, num_iterations, grid_sh
         # current_metrics = jax.tree.map(lambda x: jnp.array([x]) if x.shape == () else x, current_metrics)
         metrics = jax.tree.map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
-    return env, repertoire, metrics, policy_network
+    return repertoire, metrics
 
 
     
@@ -166,8 +167,6 @@ if __name__ == "__main__":
     batch_size = 1024                # training batch for parallelisation
     num_iterations = 250
     grid_shape = (10, 10, 10, 10)
-    # min_param = 0.0
-    # max_param = 1.0
     min_descriptor = 0.0
     max_descriptor = 1.0
     policy_hidden_layer_sizes = (32, 32)
@@ -181,11 +180,12 @@ if __name__ == "__main__":
     damage_joint_idx = None
     damage_joint_action = 0 # value between [-1,1]
 
+    env, policy_network = init_env_and_policy(env_name, episode_length, policy_hidden_layer_sizes)
+
     key = jax.random.key(seed)
     key, subkey = jax.random.split(key)
-    env, repertoire, metrics, policy_network = run_map_elites(env_name, episode_length, batch_size, num_iterations, grid_shape,
-                   min_descriptor, max_descriptor, policy_hidden_layer_sizes,
-                   iso_sigma, line_sigma, log_period, subkey)
+    repertoire, metrics = run_map_elites(env, policy_network, batch_size, num_iterations, grid_shape,
+                   min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
     
     ## plot coverage results
     env_steps = metrics["iteration"]

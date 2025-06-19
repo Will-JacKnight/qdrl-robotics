@@ -182,23 +182,23 @@ def plot_map_elites_results(
     mpl.rcParams.update(params)
 
     # Visualize the training evolution and final repertoire
-    fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(40, 10))
+    fig, axes = plt.subplots(nrows=1, ncols=4, figsize=(40, 10))
 
     # env_steps = jnp.arange(num_iterations) * episode_length * batch_size
 
-    axes[0].plot(env_steps, metrics["coverage"])
+    axes[0].plot(num_iterations, metrics["coverage"])
     axes[0].set_xlabel("Number of Iterations")
     axes[0].set_ylabel("Coverage in %")
     axes[0].set_title("Coverage evolution during training")
     axes[0].set_aspect(0.95 / axes[0].get_data_ratio(), adjustable="box")
 
-    axes[1].plot(env_steps, metrics["max_fitness"])
+    axes[1].plot(num_iterations, metrics["max_fitness"])
     axes[1].set_xlabel("Number of Iterations")
     axes[1].set_ylabel("Maximum fitness")
     axes[1].set_title("Maximum fitness evolution during training")
     axes[1].set_aspect(0.95 / axes[1].get_data_ratio(), adjustable="box")
 
-    axes[2].plot(env_steps, metrics["qd_score"])
+    axes[2].plot(num_iterations, metrics["qd_score"])
     axes[2].set_xlabel("Number of Iterations")
     axes[2].set_ylabel("QD Score")
     axes[2].set_title("QD Score evolution during training")
@@ -213,13 +213,13 @@ def plot_map_elites_results(
     #     ax=axes[3],
     # )
 
-    # _, axes = plot_multidimensional_map_elites_grid(
-    # repertoire=repertoire,
-    # minval=min_bd,
-    # maxval=max_bd,
-    # grid_shape=grid_shape,
-    # ax=axes[3],
-    # )
+    _, axes = plot_multidimensional_map_elites_grid(
+    repertoire=repertoire,
+    minval=min_bd,
+    maxval=max_bd,
+    grid_shape=grid_shape,
+    ax=axes[3],
+    )
 
     return fig, axes
 
@@ -586,8 +586,11 @@ def plot_multidimensional_map_elites_grid(
     # convert the descriptors to integer coordinates, depending on the resolution.
     resolutions_array = jnp.array(grid_shape)
     descriptors_integers = jnp.asarray(
-        jnp.floor(
-            resolutions_array * (non_empty_descriptors - minval) / (maxval - minval)
+        jnp.clip(
+            jnp.floor(
+                resolutions_array * (non_empty_descriptors - minval) / (maxval - minval)
+            ),
+            max=resolutions_array - 1,
         ),
         dtype=jnp.int32,
     )
@@ -736,8 +739,8 @@ def plot_multidimensional_map_elites_grid(
     if len(major_ticks_x) // number_label_ticks > 0:
         ax.set_xticklabels(
             _get_positions_labels(
-                _minval=minval[0],
-                _maxval=maxval[0],
+                _minval=minval,
+                _maxval=maxval,
                 _number_ticks=len(major_ticks_x),
                 _step_labels_ticks=len(major_ticks_x) // number_label_ticks,
             )
@@ -745,8 +748,8 @@ def plot_multidimensional_map_elites_grid(
     if len(major_ticks_y) // number_label_ticks > 0:
         ax.set_yticklabels(
             _get_positions_labels(
-                _minval=minval[1],
-                _maxval=maxval[1],
+                _minval=minval,
+                _maxval=maxval,
                 _number_ticks=len(major_ticks_y),
                 _step_labels_ticks=len(major_ticks_y) // number_label_ticks,
             )
