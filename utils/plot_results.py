@@ -9,6 +9,7 @@ from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection
 from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
+from matplotlib.ticker import ScalarFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.spatial import Voronoi
 
@@ -182,7 +183,8 @@ def plot_map_elites_results(
     mpl.rcParams.update(params)
 
     # Visualize the training evolution and final repertoire
-    fig, axes = plt.subplots(nrows=1, ncols=4, figsize=(40, 10))
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(40, 10))
+    axes = axes.flatten()
 
     # env_steps = jnp.arange(num_iterations) * episode_length * batch_size
 
@@ -212,14 +214,24 @@ def plot_map_elites_results(
     #     repertoire_descriptors=repertoire.descriptors,
     #     ax=axes[3],
     # )
-
-    _, axes = plot_multidimensional_map_elites_grid(
-    repertoire=repertoire,
-    minval=min_bd,
-    maxval=max_bd,
-    grid_shape=grid_shape,
-    ax=axes[3],
+    _, axes[3] = plot_multidimensional_map_elites_grid(
+        repertoire=repertoire,
+        minval=min_bd,
+        maxval=max_bd,
+        grid_shape=grid_shape,
+        ax=axes[3],
     )
+
+    # change ticks from scientific to numeral
+    # for ax in axes:
+        # ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        # ax.yaxis.get_major_formatter().set_scientific(False)
+        # ax.yaxis.get_major_formatter().set_useOffset(False)
+
+        # ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+        # ax.xaxis.get_major_formatter().set_scientific(False)
+        # ax.xaxis.get_major_formatter().set_useOffset(False)
+    plt.subplots_adjust(hspace=0.4)
 
     return fig, axes
 
