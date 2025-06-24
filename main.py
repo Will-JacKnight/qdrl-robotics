@@ -1,21 +1,13 @@
 import argparse
+
 import jax
 import jax.numpy as jnp
-import gpjax
-import matplotlib.pyplot as plt
-import pathlib
-import json
 
-from qdax import environments
-from qdax.core.neuroevolution.networks.networks import MLP
-
-from map_creation import run_map_elites, init_env_and_policy
 from adaptation import run_online_adaptation
+from map_elites import run_map_elites
 from rollout import run_single_rollout
-
-from utils.util import save_pkls, load_pkls
 from utils.plot_results import plot_map_elites_results
-
+from utils.util import load_pkls, save_pkls
 
 
 def main(
@@ -27,6 +19,7 @@ def main(
          policy_hidden_layer_sizes,
          damage_joint_idx, 
          damage_joint_action,
+         output_path="./outputs",
          env_name='ant_uni',
          min_descriptor=0.0, 
          max_descriptor=1.0, 
@@ -35,24 +28,20 @@ def main(
          log_period=10
          ):
     
-    # init brax environment
-    env, policy_network = init_env_and_policy(env_name, episode_length, policy_hidden_layer_sizes)
 
     key = jax.random.key(seed)
     key, subkey = jax.random.split(key)
 
-    # repertoire, metrics = run_map_elites(env, policy_network, batch_size, num_iterations, grid_shape,
-    #                min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
+    repertoire, metrics, env, policy_network = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, grid_shape,
+                   min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
     
-    # save_pkls(repertoire=repertoire, metrics=metrics)
-    repertoire, metrics = load_pkls()
+    # save_pkls(output_path,repertoire=repertoire, metrics=metrics)
+    breakpoint()
+    # repertoire, metrics = load_pkls(output_path)
 
     # plot map-elites results
-    # env_steps = metrics["iteration"]
-    fig, axes = plot_map_elites_results(num_iterations=jnp.arange(1, num_iterations+1), metrics=metrics, repertoire=repertoire, 
-                                        min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape)
-    plt.show(block=False)
-
+    plot_map_elites_results(num_iterations=jnp.arange(1, num_iterations+1), metrics=metrics, repertoire=repertoire, 
+                            min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape)
     breakpoint()
     
     best_fitness = jnp.max(repertoire.fitnesses)
@@ -87,7 +76,7 @@ def main(
 
 def main_arg():
     parser = argparse.ArgumentParser(description="ITE Adaptation")
-    parser.add_argument("--output_path", type=str, default="./outputs", help="relative output path to project root (default)")
+    # parser.add_argument("--output_path", type=str, default="./outputs", help="relative output path to project root (default)")
     parser.add_argument("--episode_length", type=int, default=1000, help="Maximum rollout length (default: 1000)")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for seed generation")
     parser.add_argument("--batch_size", type=int, default=1024, help="Training batch size (default: 1024)")
@@ -102,8 +91,8 @@ def main_arg():
         raise ValueError("Number of damage joint actions need to match the number of damage joint indices.")
 
     # save the args to config.json
-    with open(pathlib.Path(args.output_path) / "config.json") as f:
-        json.dump(vars(args), f, indent=2)
+    # with open(pathlib.Path(args.output_path) / "config.json") as f:             ############fix
+    #     json.dump(vars(args), f, indent=2)
     
     main(
          args.episode_length, 
@@ -117,20 +106,50 @@ def main_arg():
         )
 
 def main_local():
-    env_name = 'ant_uni'            # reward = forward reward (proportional to forward velocity) + healthy reward - control cost - contact cost 
-    episode_length = 1000            # maximal rollout length
+
     seed = 42
-    batch_size = 1024               # training batch for parallelisation
-    num_iterations = 250                # 250, 500, 1000
-    grid_shape = (10, 10, 10, 10)
+
+    output_path = "./outputs"
+    log_period = 10
+
+    env_name = 'ant_uni'            # reward = forward reward (proportional to forward velocity) + healthy reward - control cost - contact cost 
+    episode_length = 1000            # maximal rollout length: 1000
     min_descriptor = 0.0
     max_descriptor = 1.0
+
+    batch_size = 1024               # training batch for parallelisation: 1024
+    num_iterations = 10                # 250, 500, 1000
+    
+    # Archive
     policy_hidden_layer_sizes = (32, 32)
-    iso_sigma = 0.005
-    line_sigma = 0.05
+    grid_shape = (10, 10, 10, 10)
     # num_init_cvt_samples = 50000
     # num_centroids = 1024
-    log_period = 10
+
+    # GA emitter
+    iso_sigma = 0.005
+    line_sigma = 0.05
+
+    # DCRL-ME
+    ga_batch_size = 128
+    dcrl_batch_size = 64
+    ai_batch_size = 64
+    lengthscale = 0.1
+
+    # DCRL emitter
+    critic_hidden_layer_size = (256, 256)
+    num_critic_training_steps = 3000
+    num_pg_training_steps = 150
+    replay_buffer_size = 1_000_000
+    discount = 0.99
+    reward_scaling = 1.0
+    critic_learning_rate = 3e-4
+    actor_learning_rate = 3e-4
+    policy_learning_rate = 5e-3
+    noise_clip = 0.5
+    policy_noise = 0.2
+    soft_tau_update = 0.005
+    policy_delay = 2
 
     # damage settings: to achieve better results, compensatory behavior should be discovered in map
     damage_joint_idx = [5, 7]    # value between [0,7]
@@ -145,6 +164,7 @@ def main_local():
          policy_hidden_layer_sizes,
          damage_joint_idx, 
          damage_joint_action,
+         output_path,
          env_name,
          min_descriptor, 
          max_descriptor, 

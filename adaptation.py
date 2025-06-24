@@ -1,13 +1,15 @@
-import jax
-import jax.numpy as jnp
-import numpy as np
-import matplotlib.pyplot as plt
-import gpjax as gpx
-from tqdm import trange
 from typing import Dict
 
-from rollout import run_single_rollout
+import gpjax as gpx
+import jax
+import jax.numpy as jnp
+import matplotlib.pyplot as plt
+import numpy as np
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
+from tqdm import trange
+
+from rollout import run_single_rollout
+
 
 def upper_confidence_bound(mean: jnp.array, std: jnp.array, kappa=0.05) -> jnp.array:
     return jnp.argmax(mean + kappa * std)

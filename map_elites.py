@@ -1,26 +1,29 @@
-import jax
 import functools
 import time
+
+import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
-from tqdm import trange
-
-from qdax.core.map_elites import MAPElites
-from qdax.core.containers.mapelites_repertoire import compute_euclidean_centroids
 from qdax import environments
-from qdax.tasks.brax_envs import scoring_function_brax_envs as scoring_function
-from qdax.core.neuroevolution.buffers.buffer import QDTransition
-from qdax.core.neuroevolution.networks.networks import MLP
+from qdax.core.containers.mapelites_repertoire import \
+    compute_euclidean_centroids
 from qdax.core.emitters.mutation_operators import isoline_variation
 from qdax.core.emitters.standard_emitters import MixingEmitter
+from qdax.core.map_elites import MAPElites
+from qdax.core.neuroevolution.buffers.buffer import QDTransition
+from qdax.core.neuroevolution.networks.networks import MLP
+from qdax.tasks.brax_envs import scoring_function_brax_envs as scoring_function
 from qdax.utils.metrics import default_qd_metrics
-# from qdax.utils.plotting import plot_map_elites_results, plot_multidimensional_map_elites_grid
-from utils.plot_results import plot_map_elites_results, plot_multidimensional_map_elites_grid
+from tqdm import trange
 
 from rollout import run_single_rollout
+# from qdax.utils.plotting import plot_map_elites_results, plot_multidimensional_map_elites_grid
+from utils.plot_results import plot_map_elites_results
 from utils.util import save_pkls
 
-def init_env_and_policy(env_name, episode_length, policy_hidden_layer_sizes):
+
+def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, grid_shape,
+                   min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, key):
     # Init environment
     env = environments.create(env_name, episode_length=episode_length)
 
@@ -31,11 +34,7 @@ def init_env_and_policy(env_name, episode_length, policy_hidden_layer_sizes):
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
     )
-    return env, policy_network
 
-def run_map_elites(env, policy_network, batch_size, num_iterations, grid_shape,
-                   min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, key):
-    
     # Init population of controllers
     key, subkey = jax.random.split(key)
     keys = jax.random.split(subkey, num=batch_size)
@@ -47,7 +46,6 @@ def run_map_elites(env, policy_network, batch_size, num_iterations, grid_shape,
     keys = jnp.repeat(jnp.expand_dims(subkey, axis=0), repeats=batch_size, axis=0)
     reset_fn = jax.jit(jax.vmap(env.reset))
     init_states = reset_fn(keys)
-
 
     def play_step_fn(env_state, policy_params, key,):
 
@@ -68,7 +66,6 @@ def run_map_elites(env, policy_network, batch_size, num_iterations, grid_shape,
         )
 
         return next_state, policy_params, key, transition
-
     # Define the scoring function
     descriptor_extraction_fn = environments.behavior_descriptor_extractor[env_name]
     scoring_fn = functools.partial(
@@ -92,8 +89,6 @@ def run_map_elites(env, policy_network, batch_size, num_iterations, grid_shape,
         isoline_variation,
         iso_sigma=iso_sigma,         # isotropic Gaussian noise: mutation-like (explore the vicinity of existing elites)
         line_sigma=line_sigma,         # directional Gaussian noise: line-based, crossover-like (explore the vector connecting 2 elite solutions)
-        # minval=min_param,
-        # maxval=max_param,
     )
     mixing_emitter = MixingEmitter(
         mutation_fn=None,
@@ -116,24 +111,12 @@ def run_map_elites(env, policy_network, batch_size, num_iterations, grid_shape,
         maxval=max_descriptor,
     )
 
-
     # Initializes repertoire and emitter state
     key, subkey = jax.random.split(key)
     repertoire, emitter_state, key = map_elites.init(init_variables, centroids, subkey)
 
-
     # Initialize metrics
     metrics = {key: jnp.array([]) for key in ["iteration", "qd_score", "coverage", "max_fitness", "time"]}
-
-    # # Set up init metrics
-    # init_metrics = jax.tree.map(lambda x: jnp.array([x]) if x.shape == () else x, init_metrics)
-    # metrics["iteration"] = jnp.array([0], dtype=jnp.int32)
-    # metrics["time"] = jnp.array([0.0])  # No time recorded for initialization
-
-    # metrics = jax.tree.map(lambda metric, init_metric: jnp.concatenate([metric, init_metric], axis=0), metrics, init_metrics)
-
-    # # Jit the update function for faster iterations
-    # update_fn = jax.jit(map_elites.update)
 
     map_elites_scan_update = map_elites.scan_update
 
@@ -156,64 +139,4 @@ def run_map_elites(env, policy_network, batch_size, num_iterations, grid_shape,
         # current_metrics = jax.tree.map(lambda x: jnp.array([x]) if x.shape == () else x, current_metrics)
         metrics = jax.tree.map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
-    return repertoire, metrics
-
-
-    
-if __name__ == "__main__":
-    env_name = 'ant_uni'
-    episode_length = 500            # maximal rollout length
-    seed = 42
-    batch_size = 1024                # training batch for parallelisation
-    num_iterations = 250
-    grid_shape = (10, 10, 10, 10)
-    min_descriptor = 0.0
-    max_descriptor = 1.0
-    policy_hidden_layer_sizes = (32, 32)
-    iso_sigma = 0.005
-    line_sigma = 0.05
-    # num_init_cvt_samples = 50000
-    # num_centroids = 1024
-    log_period = 10
-
-    # damage settings
-    damage_joint_idx = None
-    damage_joint_action = 0 # value between [-1,1]
-
-    env, policy_network = init_env_and_policy(env_name, episode_length, policy_hidden_layer_sizes)
-
-    key = jax.random.key(seed)
-    key, subkey = jax.random.split(key)
-    repertoire, metrics = run_map_elites(env, policy_network, batch_size, num_iterations, grid_shape,
-                   min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
-    
-    ## plot coverage results
-    env_steps = metrics["iteration"]
-    fig, axes = plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
-                                        min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape)
-    # fig, axes = plot_multidimensional_map_elites_grid(repertoire=repertoire, minval=min_descriptor, maxval=max_descriptor, grid_shape=grid_shape)
-    plt.show()
-
-    best_idx = jnp.argmax(repertoire.fitnesses)
-    best_fitness = jnp.max(repertoire.fitnesses)
-    best_descriptor = repertoire.descriptors[best_idx]
-    print(
-        f"Best fitness in the repertoire: {best_fitness:.2f}\n",
-        f"Descriptor of the best individual in the repertoire: {best_descriptor}\n",
-        f"Index in the repertoire of this individual: {best_idx}\n"
-    )
-
-    # select the parameters of the best individual
-    my_params = jax.tree.map(
-        lambda x: x[best_idx],
-        repertoire.genotypes
-    )
-
-    # single rollout with best niche
-    key, subkey = jax.random.split(key)
-    rollout = run_single_rollout(env, policy_network, my_params, subkey,
-                                 damage_joint_idx=damage_joint_idx, damage_joint_action=damage_joint_action)
-    print(len(rollout['rewards']))
-    print(rollout['rewards'])
-
-    save_pkls(repertoire=repertoire, metrics=metrics)
+    return repertoire, metrics, env, policy_network

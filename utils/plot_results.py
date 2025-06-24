@@ -232,8 +232,8 @@ def plot_map_elites_results(
         # ax.xaxis.get_major_formatter().set_scientific(False)
         # ax.xaxis.get_major_formatter().set_useOffset(False)
     plt.subplots_adjust(hspace=0.4)
-
-    return fig, axes
+    plt.show(block=False)
+    # return fig, axes
 
 
 def multiline(

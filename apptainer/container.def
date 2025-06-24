@@ -33,7 +33,7 @@ From: ubuntu:22.04
 	apt update && apt install -y git curl wget ffmpeg build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
 
 	# Clone repository to /workdir/
-	git clone https://{{ github_user }}:{{ github_token }}@github.com/maxencefaldor/xland.git /workdir/
+	git clone https://{{ github_user }}:{{ github_token }}@github.com/Will-JacKnight/qdrl-robotics.git /workdir/
 
 	# Install pyenv
 	export PYENV_ROOT="/workdir/.pyenv"
@@ -44,8 +44,8 @@ From: ubuntu:22.04
 	rm -rf /workdir/.pyenv/.git/
 
 	# Install Python
-	pyenv install 3.12
-	pyenv global 3.12
+	pyenv install 3.10
+	pyenv global 3.10
 
 	# Create a virtual environment
 	python -m venv /workdir/.venv
