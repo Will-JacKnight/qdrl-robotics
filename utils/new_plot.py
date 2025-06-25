@@ -293,7 +293,7 @@ def plot_map_elites_results(
     plt.show(block=False)
 
     if output_dir is not None:
-        plt.savefig(output_dir + "fig.png")
+        plt.savefig(output_dir + "/fig.png")
 
     # return fig, axes
 

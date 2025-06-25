@@ -63,7 +63,7 @@ def main(
                                             policy_delay, log_period, subkey)
 
 
-    # save_pkls(output_path,repertoire=repertoire, metrics=metrics)
+    save_pkls(output_path, repertoire=repertoire, metrics=metrics)
     # repertoire, metrics = load_pkls(output_path)
     breakpoint()
     # plot map-elites results
@@ -83,19 +83,19 @@ def main(
         f"Index of best fitness niche: {best_idx}\n"
     )
 
-    # key, subkey = jax.random.split(key)
-    # rollout = run_single_rollout(env, policy_network, params, subkey, 
-    #                              None, None,
-    #                              "./outputs/pre_adaptation_without_damage.html")
+    key, subkey = jax.random.split(key)
+    rollout = run_single_rollout(env, policy_network, params, subkey, 
+                                 None, None,
+                                 output_path + "/pre_adaptation_without_damage.html")
     # breakpoint()
     key, subkey = jax.random.split(key)
     rollout = run_single_rollout(env, policy_network, params, subkey, 
                                  damage_joint_idx, damage_joint_action, 
-                                 "./outputs/pre_adaptation_with_damage.html")
+                                 output_path + "/pre_adaptation_with_damage.html")
     # breakpoint()
 
     key, subkey = jax.random.split(key)
-    tested_indices, real_fitness, tested_goals = run_online_adaptation(repertoire, env, policy_network, subkey, 
+    tested_indices, real_fitness, tested_goals = run_online_adaptation(repertoire, env, policy_network, subkey, output_path,
                                                                        damage_joint_idx, damage_joint_action,)  #####
     print("********adaptation completes********")
 
@@ -136,7 +136,7 @@ def main_local():
 
     seed = 42
 
-    output_path = "./outputs"
+    output_path = "./outputs/dcrl"
     log_period = 10
 
     env_name = 'ant_uni'            # reward = forward reward (proportional to forward velocity) + healthy reward - control cost - contact cost 
@@ -145,11 +145,11 @@ def main_local():
     max_descriptor = 1.0
 
     batch_size = 1024               # training batch for parallelisation: 1024
-    num_iterations = 10                # 250, 500, 1000
+    num_iterations = 1000                # 250, 500, 1000
     
     # Archive
-    policy_hidden_layer_sizes = (32, 32)
-    grid_shape = (5, 5, 5, 5)       # (10, 10, 10, 10)
+    policy_hidden_layer_sizes = (64, 64)
+    grid_shape = (10, 10, 10, 10)       # (10, 10, 10, 10)
     # num_init_cvt_samples = 50000
     # num_centroids = 1024
 
