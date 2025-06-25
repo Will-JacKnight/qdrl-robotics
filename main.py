@@ -5,9 +5,11 @@ import jax.numpy as jnp
 
 from adaptation import run_online_adaptation
 from map_elites import run_map_elites
+from dcrl import run_dcrl_map_elites
 from rollout import run_single_rollout
-from utils.plot_results import plot_map_elites_results
+# from utils.plot_results import plot_map_elites_results
 from utils.util import load_pkls, save_pkls
+from utils.new_plot import plot_map_elites_results
 
 
 def main(
@@ -19,31 +21,56 @@ def main(
          policy_hidden_layer_sizes,
          damage_joint_idx, 
          damage_joint_action,
+         ga_batch_size,
+         dcrl_batch_size,
+         ai_batch_size,
+         lengthscale,
+         critic_hidden_layer_size,
+         num_critic_training_steps,
+         num_pg_training_steps,
+         replay_buffer_size,
+         discount,
+         reward_scaling,
+         critic_learning_rate,
+         actor_learning_rate,
+         policy_learning_rate,
+         noise_clip,
+         policy_noise,
+         soft_tau_update,
+         policy_delay,
          output_path="./outputs",
          env_name='ant_uni',
          min_descriptor=0.0, 
          max_descriptor=1.0, 
          iso_sigma=0.005, 
          line_sigma=0.05, 
-         log_period=10
+         log_period=10,
          ):
     
 
     key = jax.random.key(seed)
     key, subkey = jax.random.split(key)
 
-    repertoire, metrics, env, policy_network = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, grid_shape,
-                   min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
+    # map creation
+    # repertoire, metrics, env, policy_network = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
+                                            # grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
     
-    # save_pkls(output_path,repertoire=repertoire, metrics=metrics)
-    breakpoint()
-    # repertoire, metrics = load_pkls(output_path)
+    repertoire, metrics, env, policy_network = run_dcrl_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
+                                            grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
+                                            dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
+                                            num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
+                                            actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
+                                            policy_delay, log_period, subkey)
 
-    # plot map-elites results
-    plot_map_elites_results(num_iterations=jnp.arange(1, num_iterations+1), metrics=metrics, repertoire=repertoire, 
-                            min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape)
+
+    # save_pkls(output_path,repertoire=repertoire, metrics=metrics)
+    # repertoire, metrics = load_pkls(output_path)
     breakpoint()
-    
+    # plot map-elites results
+    env_steps = metrics["iteration"] * episode_length * batch_size
+    plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
+                            min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
+    breakpoint()
     best_fitness = jnp.max(repertoire.fitnesses)
     best_idx = jnp.argmax(repertoire.fitnesses)
     best_descriptor = repertoire.descriptors[best_idx]
@@ -65,8 +92,8 @@ def main(
     rollout = run_single_rollout(env, policy_network, params, subkey, 
                                  damage_joint_idx, damage_joint_action, 
                                  "./outputs/pre_adaptation_with_damage.html")
-    
-    breakpoint()
+    # breakpoint()
+
     key, subkey = jax.random.split(key)
     tested_indices, real_fitness, tested_goals = run_online_adaptation(repertoire, env, policy_network, subkey, 
                                                                        damage_joint_idx, damage_joint_action,)  #####
@@ -122,7 +149,7 @@ def main_local():
     
     # Archive
     policy_hidden_layer_sizes = (32, 32)
-    grid_shape = (10, 10, 10, 10)
+    grid_shape = (5, 5, 5, 5)       # (10, 10, 10, 10)
     # num_init_cvt_samples = 50000
     # num_centroids = 1024
 
@@ -140,7 +167,7 @@ def main_local():
     critic_hidden_layer_size = (256, 256)
     num_critic_training_steps = 3000
     num_pg_training_steps = 150
-    replay_buffer_size = 1_000_000
+    replay_buffer_size = 1_024_000
     discount = 0.99
     reward_scaling = 1.0
     critic_learning_rate = 3e-4
@@ -152,8 +179,8 @@ def main_local():
     policy_delay = 2
 
     # damage settings: to achieve better results, compensatory behavior should be discovered in map
-    damage_joint_idx = [5, 7]    # value between [0,7]
-    damage_joint_action = [0, 0] # value between [-1,1]
+    damage_joint_idx = [0, 1]    # value between [0,7]
+    damage_joint_action = [0, 0.9] # value between [-1,1]
 
     main(   
          episode_length, 
@@ -164,13 +191,30 @@ def main_local():
          policy_hidden_layer_sizes,
          damage_joint_idx, 
          damage_joint_action,
+         ga_batch_size,
+         dcrl_batch_size,
+         ai_batch_size,
+         lengthscale,
+         critic_hidden_layer_size,
+         num_critic_training_steps,
+         num_pg_training_steps,
+         replay_buffer_size,
+         discount,
+         reward_scaling,
+         critic_learning_rate,
+         actor_learning_rate,
+         policy_learning_rate,
+         noise_clip,
+         policy_noise,
+         soft_tau_update,
+         policy_delay,
          output_path,
          env_name,
          min_descriptor, 
          max_descriptor, 
          iso_sigma, 
          line_sigma, 
-         log_period
+         log_period,
          )
 
 

@@ -1,8 +1,10 @@
-qdax==0.3.1
-gpjax==0.9.5
-brax==0.12.3
+# qdax==0.3.1
+# gpjax==0.9.5
+# brax==0.12.3
 
-# the following is too new to work
+
 # gpjax==0.11.1
 # matplotlib==3.10.3
-# qdax==0.5.0
+
+qdax==0.5.0
+brax==0.12.3

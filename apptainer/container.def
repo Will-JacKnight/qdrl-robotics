@@ -5,7 +5,7 @@ From: ubuntu:22.04
 	Apptainer definition file example to be used with `build_container.sh`, `shell_container.sh` and `hpc.sh`.
 
 %labels
-	Author m.faldor22@imperial.ac.uk
+	Author jw1524@ic.ac.uk
 
 %environment
 	export TZ=Europe/London

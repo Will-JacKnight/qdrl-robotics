@@ -3,23 +3,16 @@ import time
 
 import jax
 import jax.numpy as jnp
-import matplotlib.pyplot as plt
-from qdax import environments
-from qdax.core.containers.mapelites_repertoire import \
-    compute_euclidean_centroids
+import qdax.tasks.brax.v1 as environments
+from qdax.core.containers.mapelites_repertoire import compute_euclidean_centroids
 from qdax.core.emitters.mutation_operators import isoline_variation
 from qdax.core.emitters.standard_emitters import MixingEmitter
 from qdax.core.map_elites import MAPElites
 from qdax.core.neuroevolution.buffers.buffer import QDTransition
 from qdax.core.neuroevolution.networks.networks import MLP
-from qdax.tasks.brax_envs import scoring_function_brax_envs as scoring_function
+from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs as scoring_function
 from qdax.utils.metrics import default_qd_metrics
 from tqdm import trange
-
-from rollout import run_single_rollout
-# from qdax.utils.plotting import plot_map_elites_results, plot_multidimensional_map_elites_grid
-from utils.plot_results import plot_map_elites_results
-from utils.util import save_pkls
 
 
 def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, grid_shape,
@@ -34,18 +27,13 @@ def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_si
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
     )
+    reset_fn = jax.jit(env.reset)
 
     # Init population of controllers
     key, subkey = jax.random.split(key)
     keys = jax.random.split(subkey, num=batch_size)
     fake_batch = jnp.zeros(shape=(batch_size, env.observation_size))
     init_variables = jax.vmap(policy_network.init)(keys, fake_batch)
-
-    # Init environment state
-    key, subkey = jax.random.split(key)
-    keys = jnp.repeat(jnp.expand_dims(subkey, axis=0), repeats=batch_size, axis=0)
-    reset_fn = jax.jit(jax.vmap(env.reset))
-    init_states = reset_fn(keys)
 
     def play_step_fn(env_state, policy_params, key,):
 
@@ -67,13 +55,13 @@ def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_si
 
         return next_state, policy_params, key, transition
     # Define the scoring function
-    descriptor_extraction_fn = environments.behavior_descriptor_extractor[env_name]
+    descriptor_extraction_fn = environments.descriptor_extractor[env_name]
     scoring_fn = functools.partial(
         scoring_function,
-        init_states=init_states,
         episode_length=episode_length,
+        play_reset_fn=reset_fn,
         play_step_fn=play_step_fn,
-        behavior_descriptor_extractor=descriptor_extraction_fn,
+        descriptor_extractor=descriptor_extraction_fn,
     )
 
     reward_offset = environments.reward_offset[env_name]
@@ -113,15 +101,24 @@ def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_si
 
     # Initializes repertoire and emitter state
     key, subkey = jax.random.split(key)
-    repertoire, emitter_state, key = map_elites.init(init_variables, centroids, subkey)
+    repertoire, emitter_state, init_metrics = map_elites.init(init_variables, centroids, subkey)
 
     # Initialize metrics
-    metrics = {key: jnp.array([]) for key in ["iteration", "qd_score", "coverage", "max_fitness", "time"]}
+    metrics = {metric_key: jnp.array([]) for metric_key in ["iteration", "qd_score", "coverage", "max_fitness", "time"]}
+
+    # Set up init metrics
+    init_metrics = jax.tree.map(lambda x: jnp.array([x]) if x.shape == () else x, init_metrics)
+    init_metrics["iteration"] = jnp.array([0], dtype=jnp.int32)
+    init_metrics["time"] = jnp.array([0.0])  # No time recorded for initialization
+
+    # Convert init_metrics to match the metrics dictionary structure
+    metrics = jax.tree.map(lambda metric, init_metric: jnp.concatenate([metric, init_metric], axis=0), metrics, init_metrics)
+
 
     map_elites_scan_update = map_elites.scan_update
-
+    num_loops = num_iterations // log_period
     # Run MAP-Elites loop
-    for i in trange(num_iterations // log_period, desc="MAP Creation"):
+    for i in trange(num_loops, desc="MAP Creation"):
         start_time = time.time()
         key, subkey = jax.random.split(key)
         (repertoire, emitter_state, key), current_metrics = jax.lax.scan(
@@ -139,4 +136,4 @@ def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_si
         # current_metrics = jax.tree.map(lambda x: jnp.array([x]) if x.shape == () else x, current_metrics)
         metrics = jax.tree.map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
-    return repertoire, metrics, env, policy_network
+    return repertoire, metrics
