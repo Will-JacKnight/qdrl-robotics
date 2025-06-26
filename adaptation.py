@@ -104,7 +104,7 @@ def run_online_adaptation(
             
             real_fitness = rollout['rewards'].sum()
             print(f"real fitness: {real_fitness}")
-            breakpoint()
+            # breakpoint()
 
             break
     

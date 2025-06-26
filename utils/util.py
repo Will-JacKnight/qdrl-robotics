@@ -1,3 +1,4 @@
+import os
 import pickle
 
 
@@ -11,8 +12,8 @@ def load_pkls(output_path: str):
 
 
 def save_pkls(output_path: str, repertoire, metrics) -> None:
-    # create of new folder in outputs with parameter as name
-    # include brax rendering, repetoire, metrics, plot
+    # Create directory if it doesn't exist
+    os.makedirs(output_path, exist_ok=True) 
 
     with open(output_path + "/repertoire.pkl", "wb") as f:
         pickle.dump(repertoire, f)

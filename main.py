@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime
 
 import jax
 import jax.numpy as jnp
@@ -65,12 +66,12 @@ def main(
 
     save_pkls(output_path, repertoire=repertoire, metrics=metrics)
     # repertoire, metrics = load_pkls(output_path)
-    breakpoint()
+    # breakpoint()
     # plot map-elites results
     env_steps = metrics["iteration"] * episode_length * batch_size
     plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
                             min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
-    breakpoint()
+    # breakpoint()
     best_fitness = jnp.max(repertoire.fitnesses)
     best_idx = jnp.argmax(repertoire.fitnesses)
     best_descriptor = repertoire.descriptors[best_idx]
@@ -136,7 +137,8 @@ def main_local():
 
     seed = 42
 
-    output_path = "./outputs/dcrl"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_path = f"./outputs/dcrl_{timestamp}"
     log_period = 10
 
     env_name = 'ant_uni'            # reward = forward reward (proportional to forward velocity) + healthy reward - control cost - contact cost 
@@ -145,10 +147,10 @@ def main_local():
     max_descriptor = 1.0
 
     batch_size = 1024               # training batch for parallelisation: 1024
-    num_iterations = 1000                # 250, 500, 1000
+    num_iterations = 10                # 250, 500, 1000
     
     # Archive
-    policy_hidden_layer_sizes = (64, 64)
+    policy_hidden_layer_sizes = (32, 32)
     grid_shape = (10, 10, 10, 10)       # (10, 10, 10, 10)
     # num_init_cvt_samples = 50000
     # num_centroids = 1024

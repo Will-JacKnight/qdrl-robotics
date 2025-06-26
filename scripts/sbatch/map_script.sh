@@ -8,5 +8,8 @@ export PATH=/vol/bitbucket/${USER}/qdrl-robotics/qdax050/bin/:$PATH     # points
 # source ~/.bashrc
 source activate
 source /vol/cuda/12.0.0/setup.sh
+# . /vol/cuda/12.0.0/setup.sh
 
-python ./main.py
+# python ./main.py
+python -c "import jax.numpy as jnp; x = jnp.array([1.0, 2.0, 3.0]); print(x.device)"
+echo "%%%%%%%%%%%%%%%Running Complete%%%%%%%%%%%%%%%"

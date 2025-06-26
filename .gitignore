@@ -4,3 +4,5 @@
 .idea
 **/*.pkl
 /qdax050
+
+*.out
