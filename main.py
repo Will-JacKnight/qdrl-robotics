@@ -119,7 +119,8 @@ def get_args():
         config_args = json.load(f)
 
     parser.set_defaults(**config_args)
-    
+
+    parser.add_argument("--output_path", type=str, help="relative output path for results")
     parser.add_argument("--algo_type", type=str, help="choose from: mapelites || dcrl")
     parser.add_argument("--episode_length", type=int, help="Maximum rollout length")
     parser.add_argument("--batch_size", type=int, help="Training batch size")
@@ -132,6 +133,8 @@ def get_args():
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     args.output_path = args.output_path + f"/{args.algo_type}_{timestamp}"
+    print(f"algo type: {args.algo_type}")
+    print(f"starting time: {timestamp}")
 
     args.grid_shape = tuple(args.grid_shape)
     args.policy_hidden_layer_sizes = tuple(args.policy_hidden_layer_sizes)
