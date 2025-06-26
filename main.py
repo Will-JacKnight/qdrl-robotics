@@ -133,105 +133,20 @@ def get_args():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     args.output_path = args.output_path + f"/{args.algo_type}_{timestamp}"
 
+    args.grid_shape = tuple(args.grid_shape)
+    args.policy_hidden_layer_sizes = tuple(args.policy_hidden_layer_sizes)
+    args.critic_hidden_layer_size = tuple(args.critic_hidden_layer_size)
+
     if len(args.damage_joint_idx) != len(args.damage_joint_action):
         raise ValueError("Number of damage joint actions need to match the number of damage joint indices.")    
 
     if "--algo_type" not in sys.argv:
         raise ValueError("You must specify --algo_type explicitly from the command line.")
-
+    
     return args
 
 
-def main_local():
-
-    seed = 42
-    log_period = 10
-
-    output_path = "./outputs"
-    env_name = 'ant_uni'            # reward = forward reward (proportional to forward velocity) + healthy reward - control cost - contact cost 
-    episode_length = 1000            # maximal rollout length: 1000
-    min_descriptor = 0.0
-    max_descriptor = 1.0
-
-    batch_size = 1024               # training batch for parallelisation: 1024
-    num_iterations = 10                # 250, 500, 1000
-    
-    # Archive
-    policy_hidden_layer_sizes = (32, 32)
-    grid_shape = (10, 10, 10, 10)       # (10, 10, 10, 10)
-    # num_init_cvt_samples = 50000
-    # num_centroids = 1024
-
-    # GA emitter
-    iso_sigma = 0.005
-    line_sigma = 0.05
-
-    # DCRL-ME
-    ga_batch_size = 128
-    dcrl_batch_size = 64
-    ai_batch_size = 64
-    lengthscale = 0.1
-
-    # DCRL emitter
-    critic_hidden_layer_size = (256, 256)
-    num_critic_training_steps = 3000
-    num_pg_training_steps = 150
-    replay_buffer_size = 1_024_000
-    discount = 0.99
-    reward_scaling = 1.0
-    critic_learning_rate = 3e-4
-    actor_learning_rate = 3e-4
-    policy_learning_rate = 5e-3
-    noise_clip = 0.5
-    policy_noise = 0.2
-    soft_tau_update = 0.005
-    policy_delay = 2
-
-    # damage settings: to achieve better results, compensatory behavior should be discovered in map
-    damage_joint_idx = [0, 1]    # value between [0,7]
-    damage_joint_action = [0, 0.9] # value between [-1,1]
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_path = output_path + f"/mapelites_{timestamp}"
-
-    main(   
-         episode_length, 
-         seed, 
-         batch_size, 
-         num_iterations, 
-         grid_shape,
-         policy_hidden_layer_sizes,
-         damage_joint_idx, 
-         damage_joint_action,
-         ga_batch_size,
-         dcrl_batch_size,
-         ai_batch_size,
-         lengthscale,
-         critic_hidden_layer_size,
-         num_critic_training_steps,
-         num_pg_training_steps,
-         replay_buffer_size,
-         discount,
-         reward_scaling,
-         critic_learning_rate,
-         actor_learning_rate,
-         policy_learning_rate,
-         noise_clip,
-         policy_noise,
-         soft_tau_update,
-         policy_delay,
-         output_path,
-         env_name,
-         min_descriptor, 
-         max_descriptor, 
-         iso_sigma, 
-         line_sigma, 
-         log_period,
-         )
-
-
 if __name__ == "__main__":
-    # main_local()
     args = get_args()
     save_args(args)
 

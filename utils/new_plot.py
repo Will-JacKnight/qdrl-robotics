@@ -290,10 +290,10 @@ def plot_map_elites_results(
         ax=axes[3],
     )
     plt.subplots_adjust(hspace=0.4)
-    plt.show(block=False)
+    # plt.show(block=False)
 
     if output_dir is not None:
-        plt.savefig(output_dir + "/fig.png")
+        plt.savefig(output_dir + "/coverage_qdScore_maxFitness_grid.png")
 
     # return fig, axes
 

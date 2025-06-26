@@ -88,7 +88,7 @@ def run_online_adaptation(
             f"Max real fitness by far: {max_tested_fitness:.2f}\n",
         )
 
-        if max_tested_fitness >= stop_cond:
+        if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
             # print(f"Early stopping: fitness {max_tested_fitness:.3f} >= threshold {stop_cond:.3f}")
             print(
                 f"Adaptation ends in {iter_num} iteration(s).\n",
