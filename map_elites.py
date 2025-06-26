@@ -136,4 +136,4 @@ def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_si
         # current_metrics = jax.tree.map(lambda x: jnp.array([x]) if x.shape == () else x, current_metrics)
         metrics = jax.tree.map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
-    return repertoire, metrics
+    return repertoire, metrics, env, policy_network
