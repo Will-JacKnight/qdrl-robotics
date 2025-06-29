@@ -1,0 +1,111 @@
+jax running on device: {cuda(id=0)}
+algo type: dcrl
+starting time: 20250628_173357
+Intact training without damage: 
+ Best fitness: 4976.76
+ Best descriptor: [0.453 0.66  0.517 0.158]
+ Index of best fitness niche: 6451
+
+Animation generated.
+Animation generated.
+Lengthscale: 0.4
+Noise: 0.001
+Performance threshold: 0.9
+Max iterations: 20
+real fitness: 3659.55
+ tested behaviour: [0.453 0.66  0.517 0.158]
+ Max real fitness by far: 3659.55
+
+real fitness: 3833.63
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3833.63
+
+real fitness: 3825.77
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3833.63
+
+real fitness: 3827.54
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3833.63
+
+real fitness: 3837.67
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3837.67
+
+real fitness: 3827.12
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3837.67
+
+real fitness: 3838.16
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3838.16
+
+real fitness: 3837.04
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3838.16
+
+real fitness: 3839.85
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3839.85
+
+real fitness: 3831.25
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3839.85
+
+real fitness: 3834.81
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3839.85
+
+real fitness: 3834.86
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3839.85
+
+real fitness: 3832.81
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3839.85
+
+real fitness: 3829.32
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3839.85
+
+real fitness: 3843.09
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3843.09
+
+real fitness: 3848.26
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3848.26
+
+real fitness: 3830.49
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3848.26
+
+real fitness: 3830.07
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3848.26
+
+real fitness: 3827.65
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3848.26
+
+real fitness: 3831.91
+ tested behaviour: [0.90800005 0.91800004 0.97800004 0.90000004]
+ Max real fitness by far: 3848.26
+
+Adaptation ends in 19 iteration(s).
+ best index: 64510909 
+ Best behaviour after adaptation: [0.90800005 0.91800004 0.97800004 0.90000004]
+
+Animation generated.
+real fitness: 3831.931640625
+********adaptation completes********
+%%%%%%%%%%%%%%%Running Complete%%%%%%%%%%%%%%%
+
+====================================
+CPU Time used: 00:26:35
+CPU Percent: 116%
+Memory usage: 3516544kb
+Approx Power usage: 0.0052
+Walltime usage: 00:26:56
+
+====================================

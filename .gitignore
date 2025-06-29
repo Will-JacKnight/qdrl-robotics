@@ -3,3 +3,6 @@
 **/__pycache__
 .idea
 **/*.pkl
+/qdax050
+
+*.out

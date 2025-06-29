@@ -1,6 +1,6 @@
 from typing import Dict
 
-import gpjax as gpx
+import utils.gp_jax as gpx  # Our pure JAX implementation
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -17,7 +17,7 @@ def upper_confidence_bound(mean: jnp.array, std: jnp.array, kappa=0.05) -> jnp.a
 
 def run_online_adaptation(
                       repertoire: MapElitesRepertoire,
-                      env, policy_network, key,
+                      env, policy_network, key, output_path,
                       damage_joint_idx, damage_joint_action,
                       max_iters=20, performance_threshold=0.9, lengthscale=0.4, noise=1e-3):
 
@@ -88,7 +88,7 @@ def run_online_adaptation(
             f"Max real fitness by far: {max_tested_fitness:.2f}\n",
         )
 
-        if max_tested_fitness >= stop_cond:
+        if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
             # print(f"Early stopping: fitness {max_tested_fitness:.3f} >= threshold {stop_cond:.3f}")
             print(
                 f"Adaptation ends in {iter_num} iteration(s).\n",
@@ -100,11 +100,11 @@ def run_online_adaptation(
             key, subkey = jax.random.split(key)
             rollout = run_single_rollout(env, policy_network, best_params, subkey, 
                                          damage_joint_idx, damage_joint_action,
-                                         "./outputs/post_adaptation_with_damage.html")
+                                         output_path + "/post_adaptation_with_damage.html")
             
             real_fitness = rollout['rewards'].sum()
             print(f"real fitness: {real_fitness}")
-            breakpoint()
+            # breakpoint()
 
             break
     
