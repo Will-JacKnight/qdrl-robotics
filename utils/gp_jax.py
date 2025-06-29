@@ -166,11 +166,21 @@ class Posterior:
 class kernels:
     @staticmethod
     def Matern52(lengthscale: float = 1.0):
-        """Matern 5/2 kernel"""
+        """
+        The Matérn kernel with smoothness parameter fixed at 2.5.
+
+
+        Computes the covariance for pairs of inputs $(x, y)$ with
+        lengthscale parameter $\ell$ and variance $\sigma^2$.
+
+        $$
+        k(x, y) = \sigma^2 \exp \Bigg(1+ \frac{\sqrt{5}\lvert x-y \rvert}{\ell^2} + \frac{5\lvert x - y \rvert^2}{3\ell^2} \Bigg)\exp\Bigg(-\frac{\sqrt{5}\lvert x-y\rvert}{\ell^2} \Bigg)
+        $$
+        """
         def kernel_fn(x1: jnp.ndarray, x2: jnp.ndarray) -> jnp.ndarray:
             # Handle single points
             if x1.ndim == 1:
-                x1 = x1.reshape(1, -1)
+                x1 = x1.reshape(1, -1) 
             if x2.ndim == 1:
                 x2 = x2.reshape(1, -1)
                 
@@ -179,7 +189,7 @@ class kernels:
             scaled_dists = jnp.sqrt(5.0) * dists / lengthscale
             
             # Matern 5/2 formula
-            kernel_vals = (1.0 + scaled_dists + (5.0/3.0) * (scaled_dists**2)) * jnp.exp(-scaled_dists)
+            kernel_vals = (1.0 + scaled_dists + (scaled_dists**2) / 3.0) * jnp.exp(-scaled_dists)
             return kernel_vals
         
         return kernel_fn

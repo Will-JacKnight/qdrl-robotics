@@ -1,6 +1,7 @@
 from typing import Dict
 
-import utils.gp_jax as gpx  # Our pure JAX implementation
+# import utils.gp_jax as gpx
+import gpjax as gpx
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt

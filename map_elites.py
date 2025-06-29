@@ -14,6 +14,22 @@ from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs as scorin
 from qdax.utils.metrics import default_qd_metrics
 from tqdm import trange
 
+def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes):
+    """
+    designed for adaptation tests only
+    """
+    # Init environment
+    env = environments.create(env_name, episode_length=episode_length)
+
+    # Init policy network
+    policy_layer_sizes = policy_hidden_layer_sizes + (env.action_size,)
+    policy_network = MLP(
+        layer_sizes=policy_layer_sizes,
+        kernel_init=jax.nn.initializers.lecun_uniform(),
+        final_activation=jnp.tanh,
+    )
+    return env, policy_network
+
 
 def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, grid_shape,
                    min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, key):
