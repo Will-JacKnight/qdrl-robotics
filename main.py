@@ -6,7 +6,8 @@ from datetime import datetime
 import jax
 import jax.numpy as jnp
 
-from adaptation import run_online_adaptation
+# from adaptation import run_online_adaptation
+from adaptation_tgp import run_online_adaptation
 from map_elites import run_map_elites, init_env_and_policy_network
 from dcrl import run_dcrl_map_elites
 from rollout import run_single_rollout
@@ -147,18 +148,18 @@ def get_args():
     if len(args.damage_joint_idx) != len(args.damage_joint_action):
         raise ValueError("Number of damage joint actions need to match the number of damage joint indices.")    
 
-    if "--algo_type" not in sys.argv:
-        raise ValueError("You must specify --algo_type explicitly from the command line.")
+    # if "--algo_type" not in sys.argv:
+    #     raise ValueError("You must specify --algo_type explicitly from the command line.")
     
     return args
 
 
 if __name__ == "__main__":
     args = get_args()
-    save_args(args)
+    # save_args(args)
 
-    # uncomment below for adaptation test only
-    args.output_path = "./outputs/mapelites_20250628_154241"
+    # args.output_path = "./outputs/mapelites_20250628_154241"
+    args.output_path = "./outputs/dcrl_20250628_173357"
 
     main(
         args.algo_type,

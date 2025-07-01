@@ -1,7 +1,7 @@
 from typing import Dict
 
-import utils.gp_jax as gpx
-# import gpjax as gpx
+# import utils.gp_jax as gpx
+import tinygp as tgp
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -12,7 +12,7 @@ from tqdm import trange
 from rollout import run_single_rollout
 
 
-def upper_confidence_bound(mean, std, kappa=0.05):
+def upper_confidence_bound(mean: jnp.ndarray, std: jnp.ndarray, kappa=0.05) -> jnp.ndarray:
     return jnp.argmax(mean + kappa * std)
     
 
@@ -32,36 +32,33 @@ def run_online_adaptation(
     fitnesses = repertoire.fitnesses
     next_idx = jnp.argmax(fitnesses)
 
-    D = gpx.Dataset()
     tested_indices = []
     real_fitnesses = []
     tested_goals = []
     means_adjusted = fitnesses    # mu_0 = P(x)
 
     # Define the GP model
-    kernel = gpx.kernels.Matern52(lengthscale=lengthscale)
-    mean_fn = gpx.mean_functions.Zero()
-    prior = gpx.gps.Prior(kernel=kernel, mean_function=mean_fn)
+    kernel = tgp.kernels.Matern52(scale=lengthscale)
+    mean_fn = lambda x: jnp.zeros_like(x[..., 0])  # Zero mean function
     acquisition_fn = jax.jit(upper_confidence_bound)
-
 
     for iter_num in trange(max_iters, desc="Adaptation"):
         # input("Press Enter to continue...")
         stop_cond = performance_threshold * jnp.max(means_adjusted)
 
         if iter_num != 0:
-            likelihood = gpx.likelihoods.Gaussian(num_datapoints=D.n, obs_stddev=noise)
-            posterior = prior * likelihood
-
-            latent_dist = posterior.predict(test_inputs=repertoire.centroids, train_data=D)
-            predictive_dist = posterior.likelihood(latent_dist)
-
-            means_residual = predictive_dist.mean()
-            variances = predictive_dist.variance()
-
-            means_adjusted = fitnesses + means_residual
-            next_idx = acquisition_fn(means_adjusted, variances)
-            print(f"next index: {next_idx}")
+            # Create a new GP with current observations
+            gp = tgp.GaussianProcess(
+                kernel,
+                X_obs,
+                diag=jnp.broadcast_to(noise, y_obs.shape[0]),
+                mean=mean_fn
+            )
+            # breakpoint()
+            means_residual, variances = gp.predict(y_obs, X_test=repertoire.centroids, return_var=True)
+            means_adjusted = jnp.squeeze(fitnesses, axis=1) + means_residual         ## mismatching shape
+            next_idx = acquisition_fn(means_adjusted, jnp.sqrt(variances))
+            print(f"next_idx: {next_idx}")
 
         next_goal = repertoire.centroids[next_idx]
         tested_indices.append(next_idx)
@@ -73,11 +70,13 @@ def run_online_adaptation(
         rollout = run_single_rollout(env, policy_network, params, subkey, damage_joint_idx, damage_joint_action, None)          # rollout = {'rewards': jnp.array, 'state': jnp.array}
         real_fitness = rollout['rewards'].sum()
 
-        obs_dataset = gpx.Dataset(
-            X=jnp.expand_dims(next_goal, axis=0),
-            y=jnp.expand_dims(real_fitness - fitnesses[next_idx], axis=[0, 1]),
-        )
-        D = D + obs_dataset if iter_num != 0 else obs_dataset   # add observation to the dataset
+        # Add new observation
+        if iter_num == 0:
+            X_obs = jnp.expand_dims(next_goal, axis=0)
+            y_obs = jnp.array([real_fitness - fitnesses[next_idx]]).reshape(-1)
+        else:
+            X_obs = jnp.concatenate([X_obs, jnp.expand_dims(next_goal, axis=0)], axis=0)
+            y_obs = jnp.concatenate([y_obs, jnp.array([real_fitness - fitnesses[next_idx]]).reshape(-1)], axis=0)
 
         real_fitnesses.append(real_fitness.item())
         max_tested_fitness = max(real_fitnesses)
@@ -106,6 +105,7 @@ def run_online_adaptation(
             
             real_fitness = rollout['rewards'].sum()
             print(f"real fitness: {real_fitness}")
+            # breakpoint()
 
             break
     

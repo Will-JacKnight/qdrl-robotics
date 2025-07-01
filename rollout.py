@@ -5,11 +5,13 @@ import jax.numpy as jnp
 import numpy as np
 from brax.v1.io import html
 
+from typing import Optional
+
 
 def run_single_rollout(env, policy_network, params, key, 
-                       damage_joint_idx=None | list, 
-                       damage_joint_action=None | list,
-                       output_dir=None | str):
+                       damage_joint_idx: Optional[list] = None, 
+                       damage_joint_action: Optional[list] = None,
+                       output_dir: Optional[str] = None):
 
     jit_env_reset = jax.jit(env.reset)
     jit_env_step = jax.jit(env.step)

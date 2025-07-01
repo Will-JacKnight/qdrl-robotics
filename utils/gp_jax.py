@@ -4,14 +4,14 @@ Pure JAX implementation of Gaussian Process functionality with GPJax-compatible 
 
 import jax
 import jax.numpy as jnp
-from typing import NamedTuple, Callable, Any, Dict
+from typing import Callable, Optional
 import functools
 
 
 class Dataset:
     """Dataset container matching GPJax API"""
     
-    def __init__(self, X: jnp.ndarray = None, y: jnp.ndarray = None):
+    def __init__(self, X: Optional[jnp.ndarray] = None, y: Optional[jnp.ndarray] = None):
         if X is None:
             self.X = jnp.empty((0, 1))
         else:
@@ -109,10 +109,15 @@ class Posterior:
     
     def predict(self, test_inputs: jnp.ndarray, train_data: Dataset) -> LatentDistribution:
         """GP prediction returning latent distribution"""
+        # Ensure test_inputs is 2D
+        if test_inputs.ndim == 1:
+            test_inputs = test_inputs.reshape(1, -1)
+            
         if train_data.n == 0:
             # No training data, return prior
-            mean = self.mean_function(test_inputs)
-            var = jnp.ones_like(mean)
+            mean = self.mean_function(test_inputs).flatten()
+            # Use kernel diagonal for prior variance instead of ones
+            var = jnp.diag(self.kernel(test_inputs, test_inputs))
             return LatentDistribution(mean, var)
         
         # Compute kernel matrices
@@ -124,24 +129,22 @@ class Posterior:
         noise_var = self.likelihood_obj.obs_variance
         K_train_noisy = K_train + noise_var * jnp.eye(train_data.n)
         
-        # Numerical stability
+        # Add jitter for numerical stability
         jitter = 1e-6
         K_train_noisy = K_train_noisy + jitter * jnp.eye(train_data.n)
         
-        # Cholesky decomposition for numerical stability
-        try:
-            L = jnp.linalg.cholesky(K_train_noisy)
-        except:
-            # Fallback to adding more jitter
-            K_train_noisy = K_train_noisy + 1e-4 * jnp.eye(train_data.n)
-            L = jnp.linalg.cholesky(K_train_noisy)
+        # JAX-compatible stable Cholesky decomposition
+        # Use a larger jitter for numerical stability
+        stable_jitter = 1e-4
+        K_stable = K_train_noisy + stable_jitter * jnp.eye(train_data.n)
+        L = jnp.linalg.cholesky(K_stable)
         
         # Mean function evaluation
-        mean_train = self.mean_function(train_data.X)
-        mean_test = self.mean_function(test_inputs)
+        mean_train = self.mean_function(train_data.X).flatten()
+        mean_test = self.mean_function(test_inputs).flatten()
         
-        # Residuals
-        y_residual = train_data.y.squeeze() - mean_train
+        # Residuals - ensure shapes match
+        y_residual = train_data.y.flatten() - mean_train
         
         # Solve linear systems
         alpha = jax.scipy.linalg.solve_triangular(L, y_residual, lower=True)
@@ -171,10 +174,10 @@ class kernels:
 
 
         Computes the covariance for pairs of inputs $(x, y)$ with
-        lengthscale parameter $\ell$ and variance $\sigma^2$.
+        lengthscale parameter $\\ell$ and variance $\\sigma^2$.
 
         $$
-        k(x, y) = \sigma^2 \exp \Bigg(1+ \frac{\sqrt{5}\lvert x-y \rvert}{\ell^2} + \frac{5\lvert x - y \rvert^2}{3\ell^2} \Bigg)\exp\Bigg(-\frac{\sqrt{5}\lvert x-y\rvert}{\ell^2} \Bigg)
+        k(x, y) = \\sigma^2 \\exp \\Bigg(1+ \\frac{\\sqrt{5}\\lvert x-y \\rvert}{\\ell^2} + \\frac{5\\lvert x - y \\rvert^2}{3\\ell^2} \\Bigg)\\exp\\Bigg(-\\frac{\\sqrt{5}\\lvert x-y\\rvert}{\\ell^2} \\Bigg)
         $$
         """
         def kernel_fn(x1: jnp.ndarray, x2: jnp.ndarray) -> jnp.ndarray:
@@ -200,6 +203,7 @@ class mean_functions:
     def Zero():
         """Zero mean function"""
         def mean_fn(x: jnp.ndarray) -> jnp.ndarray:
+            # Ensure consistent output shape
             if x.ndim == 1:
                 return jnp.zeros(1)
             return jnp.zeros(x.shape[0])

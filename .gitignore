@@ -4,5 +4,6 @@
 .idea
 **/*.pkl
 /qdax050
+test_env
 
 *.out
