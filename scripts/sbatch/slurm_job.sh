@@ -12,4 +12,8 @@ source /vol/cuda/12.0.0/setup.sh
 
 # python ./main.py
 python -c "import jax.numpy as jnp; x = jnp.array([1.0, 2.0, 3.0]); print(x.device)"
+
+# interactive job
+srun --pty --gres=gpu:1 bash
+
 echo "%%%%%%%%%%%%%%%Running Complete%%%%%%%%%%%%%%%"

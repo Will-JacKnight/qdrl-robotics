@@ -1,5 +1,9 @@
 # Environment
 ## Package Installation
+- always upgrade pip before running pip install:
+    ```
+    pip install --upgrade pip
+    ```
 - accelerate MAP training (jax==0.4.28 to accelerate using cuda): requirements.txt
 - adaptation only (compatible with tinygp): requirements_tgp.txt
 
