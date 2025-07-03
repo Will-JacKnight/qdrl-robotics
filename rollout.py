@@ -3,7 +3,7 @@ import os
 import jax
 import jax.numpy as jnp
 import numpy as np
-from brax.v1.io import html
+from brax.io import html
 
 from typing import Optional
 

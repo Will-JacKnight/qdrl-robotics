@@ -80,14 +80,9 @@ def main(
     #                         min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
     
 
-
     repertoire, metrics = load_pkls(output_path)
     env, policy_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
-
-    env_steps = metrics["iteration"] * episode_length * batch_size
-    plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
-                            min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
-    return 
+ 
     best_fitness = jnp.max(repertoire.fitnesses)
     best_idx = jnp.argmax(repertoire.fitnesses)
     best_descriptor = repertoire.descriptors[best_idx]
@@ -164,10 +159,8 @@ if __name__ == "__main__":
     args = get_args()
     # save_args(args)
 
-    # args.output_path = "./outputs/mapelites_20250628_154241"
-    # args.output_path = "./outputs/dcrl_20250628_173357"
-    # args.output_path = "./outputs/dcrl_20250702_105607"
-    args.output_path = "./outputs/dcrl_20250703_114735"
+    args.output_path = "./outputs/mapelites_20250701_152736"
+    # args.output_path = "./outputs/dcrl_20250703_114735"
 
     main(
         args.algo_type,

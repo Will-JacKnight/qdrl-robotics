@@ -99,7 +99,7 @@ def run_online_adaptation(
         if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
             # print(f"Early stopping: fitness {max_tested_fitness:.3f} >= threshold {stop_cond:.3f}")
             print(
-                f"Adaptation ends in {iter_num} iteration(s).\n",
+                f"Adaptation ends in {iter_num + 1} iteration(s).\n",
                 f"best index: {best_idx} \n",
                 f"Best behaviour after adaptation: {repertoire.descriptors[best_idx]}\n",
             )
