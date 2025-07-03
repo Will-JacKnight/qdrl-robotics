@@ -218,7 +218,7 @@ def plot_map_elites_results(
     repertoire: MapElitesRepertoire,
     min_bd: jnp.ndarray,
     max_bd: jnp.ndarray,
-    grid_shape: jnp.ndarray,
+    grid_shape: Tuple,
     output_dir: None | str,
 ) -> Tuple[Optional[Figure], Axes]:
     """Plots three usual QD metrics, namely the coverage, the maximum fitness

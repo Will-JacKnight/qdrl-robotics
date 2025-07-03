@@ -1,9 +1,9 @@
 {
     "config": "config.json",
-    "output_path": "outputs/mapelites_20250628_154241",
-    "algo_type": "mapelites",
+    "output_path": "outputs/dcrl_20250702_105607",
+    "algo_type": "dcrl",
     "episode_length": 1000,
-    "batch_size": 1024,
+    "batch_size": 4096,
     "num_iterations": 1000,
     "grid_shape": [
         10,
@@ -40,7 +40,7 @@
     ],
     "num_critic_training_steps": 3000,
     "num_pg_training_steps": 150,
-    "replay_buffer_size": 1024000,
+    "replay_buffer_size": 5000000,
     "discount": 0.99,
     "reward_scaling": 1.0,
     "critic_learning_rate": 0.0003,

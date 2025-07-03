@@ -1,9 +1,16 @@
+# environments
 /venv*
+/qdax050
+/test_env
+
+
+# systems
 .DS_Store
 **/__pycache__
 .idea
-**/*.pkl
-/qdax050
-test_env
 
+
+# output data
+**/*.pkl
 *.out
+/outputs/archive

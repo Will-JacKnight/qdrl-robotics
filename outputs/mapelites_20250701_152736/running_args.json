@@ -1,9 +1,9 @@
 {
     "config": "config.json",
-    "output_path": "outputs/dcrl_20250628_173357",
-    "algo_type": "dcrl",
+    "output_path": "outputs/mapelites_20250701_152736",
+    "algo_type": "mapelites",
     "episode_length": 1000,
-    "batch_size": 1024,
+    "batch_size": 8192,
     "num_iterations": 1000,
     "grid_shape": [
         10,

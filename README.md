@@ -1,7 +1,7 @@
 # Environment
 ## Package Installation
 - accelerate MAP training (jax==0.4.28 to accelerate using cuda): requirements.txt
-- adaptation only (compatible with tinygp): requirements_adaptation.txt
+- adaptation only (compatible with tinygp): requirements_tgp.txt
 
 - if run adaptation experiments on pure cpu, run the following:
     ```
@@ -18,7 +18,7 @@
 ## Configurations
 - Default parameters are stored in ```./config.json```
 - Shell command will override default parameters
-- Must specify running algo by setting the flag ```--algo_type <op>```, ```<op>``` can be either mapelites or dcrl
+- Must specify running algo by setting the flag ```--algo_type <op>```, ```<op>``` currently only supports mapelites or dcrl
 
 ## Some Default Parameters
 - env_name: 'ant_uni' its reward = forward reward (proportional to forward velocity) + healthy reward - control cost - contact cost

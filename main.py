@@ -6,8 +6,8 @@ from datetime import datetime
 import jax
 import jax.numpy as jnp
 
-# from adaptation import run_online_adaptation
-from adaptation_tgp import run_online_adaptation
+from adaptation import run_online_adaptation
+# from adaptation_tgp import run_online_adaptation
 from map_elites import run_map_elites, init_env_and_policy_network
 from dcrl import run_dcrl_map_elites
 from rollout import run_single_rollout
@@ -57,33 +57,32 @@ def main(
     key, subkey = jax.random.split(key)
 
 
-    # # map creation
-    # match algo_type:
-    #     case "mapelites":
-    #         repertoire, metrics, env, policy_network = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
-    #                                         grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
-    #     case "dcrl":
-    #         repertoire, metrics, env, policy_network = run_dcrl_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
-    #                                         grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
-    #                                         dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
-    #                                         num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
-    #                                         actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
-    #                                         policy_delay, log_period, subkey)
-    #     case _:
-    #         raise ValueError(f"Unknown algo_type: {algo_type}")
+    # map creation
+    match algo_type:
+        case "mapelites":
+            repertoire, metrics, env, policy_network = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
+                                            grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
+        case "dcrl":
+            repertoire, metrics, env, policy_network = run_dcrl_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
+                                            grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
+                                            dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
+                                            num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
+                                            actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
+                                            policy_delay, log_period, subkey)
+        case _:
+            raise ValueError(f"Unknown algo_type: {algo_type}")
     
+    save_pkls(output_path, repertoire=repertoire, metrics=metrics)
 
+    "remove the following inside plot function"
+    env_steps = metrics["iteration"] * episode_length * batch_size
+    plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
+                            min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
     
-    # save_pkls(output_path, repertoire=repertoire, metrics=metrics)
 
 
     repertoire, metrics = load_pkls(output_path)
     env, policy_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
-
-    # # plot map-elites results
-    # env_steps = metrics["iteration"] * episode_length * batch_size
-    # plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
-    #                         min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
 
     best_fitness = jnp.max(repertoire.fitnesses)
     best_idx = jnp.argmax(repertoire.fitnesses)
@@ -97,19 +96,20 @@ def main(
         f"Index of best fitness niche: {best_idx}\n"
     )
 
-    # key, subkey = jax.random.split(key)
-    # rollout = run_single_rollout(env, policy_network, params, subkey, 
-    #                              None, None,
-    #                              output_path + "/pre_adaptation_without_damage.html")
+    key, subkey = jax.random.split(key)
+    rollout = run_single_rollout(env, policy_network, params, subkey, 
+                                 None, None,
+                                 output_path + "/pre_adaptation_without_damage.html")
 
-    # key, subkey = jax.random.split(key)
-    # rollout = run_single_rollout(env, policy_network, params, subkey, 
-    #                              damage_joint_idx, damage_joint_action, 
-    #                              output_path + "/pre_adaptation_with_damage.html")
+    key, subkey = jax.random.split(key)
+    rollout = run_single_rollout(env, policy_network, params, subkey, 
+                                 damage_joint_idx, damage_joint_action, 
+                                 output_path + "/pre_adaptation_with_damage.html")
 
 
     key, subkey = jax.random.split(key)
-    tested_indices, real_fitness, tested_goals = run_online_adaptation(repertoire, env, policy_network, subkey, output_path,
+    tested_indices, real_fitness, tested_goals = run_online_adaptation(repertoire, env, policy_network, subkey, output_path, 
+                                                                       min_descriptor, max_descriptor, grid_shape,
                                                                        damage_joint_idx, damage_joint_action,)  #####
     print("********adaptation completes********")
 
@@ -136,10 +136,10 @@ def get_args():
     parser.add_argument("--damage_joint_action", type=int, nargs='+', help="Action value of the damaged joint")
     args = parser.parse_args()
 
-    # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    # args.output_path = args.output_path + f"/{args.algo_type}_{timestamp}"
-    # print(f"algo type: {args.algo_type}")
-    # print(f"starting time: {timestamp}")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    args.output_path = args.output_path + f"/{args.algo_type}_{timestamp}"
+    print(f"algo type: {args.algo_type}")
+    print(f"starting time: {timestamp}")
 
     args.grid_shape = tuple(args.grid_shape)
     args.policy_hidden_layer_sizes = tuple(args.policy_hidden_layer_sizes)
@@ -148,18 +148,20 @@ def get_args():
     if len(args.damage_joint_idx) != len(args.damage_joint_action):
         raise ValueError("Number of damage joint actions need to match the number of damage joint indices.")    
 
-    # if "--algo_type" not in sys.argv:
-    #     raise ValueError("You must specify --algo_type explicitly from the command line.")
+    if "--algo_type" not in sys.argv:
+        raise ValueError("You must specify --algo_type explicitly from the command line.")
     
     return args
 
 
 if __name__ == "__main__":
+    print(jax.devices())
+    
     args = get_args()
-    # save_args(args)
+    save_args(args)
 
     # args.output_path = "./outputs/mapelites_20250628_154241"
-    args.output_path = "./outputs/dcrl_20250628_173357"
+    # args.output_path = "./outputs/dcrl_20250628_173357"
 
     main(
         args.algo_type,

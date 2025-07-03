@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from tqdm import trange
+from utils.new_plot import plot_multidimensional_map_elites_grid
 
 from rollout import run_single_rollout
 
@@ -19,6 +20,7 @@ def upper_confidence_bound(mean, std, kappa=0.05):
 def run_online_adaptation(
                       repertoire: MapElitesRepertoire,
                       env, policy_network, key, output_path,
+                      min_descriptor, max_descriptor, grid_shape,
                       damage_joint_idx, damage_joint_action,
                       max_iters=20, performance_threshold=0.9, lengthscale=0.4, noise=1e-3):
 
@@ -57,10 +59,9 @@ def run_online_adaptation(
             predictive_dist = posterior.likelihood(latent_dist)
 
             means_residual = predictive_dist.mean()
-            variances = predictive_dist.variance()
-
-            means_adjusted = fitnesses + means_residual
-            next_idx = acquisition_fn(means_adjusted, variances)
+            stddev = predictive_dist.stddev()
+            means_adjusted = jnp.squeeze(fitnesses, axis=1) + means_residual
+            next_idx = acquisition_fn(means_adjusted, stddev)
             print(f"next index: {next_idx}")
 
         next_goal = repertoire.centroids[next_idx]
@@ -89,6 +90,16 @@ def run_online_adaptation(
             f"tested behaviour: {repertoire.descriptors[next_idx]}\n",
             f"Max real fitness by far: {max_tested_fitness:.2f}\n",
         )
+
+        update_grid_fitness()
+        repertoire.fitnesses[next_idx] = real_fitness.item()
+        fig, ax = plt.subplots()
+        frames = []
+
+        fig, _ = plot_multidimensional_map_elites_grid(repertoire, min_descriptor, max_descriptor, grid_shape)
+        ax.set_title(f"Iteration {iter_num + 1}")
+        frames.append(fig)
+        
 
         if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
             # print(f"Early stopping: fitness {max_tested_fitness:.3f} >= threshold {stop_cond:.3f}")

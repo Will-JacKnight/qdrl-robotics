@@ -6,7 +6,7 @@ cd $PBS_O_WORKDIR
 
 source qdax050/bin/activate
 
-python -c "import jax.numpy as jnp; x = jnp.array([1.0, 2.0, 3.0]); print(f\"jax running on device: {x.devices()}\")"
+export JAX_PLATFORM_NAME=gpu
 python main.py --config config.json --algo_type dcrl --output_path outputs
 
 

@@ -1,0 +1,70 @@
+jax running on device: {cuda(id=0)}
+algo type: mapelites
+starting time: 20250701_152736
+Intact training without damage: 
+ Best fitness: 2493.60
+ Best descriptor: [0.289      0.52000004 0.65300006 0.30100003]
+ Index of best fitness niche: 5263
+
+Animation generated.
+Animation generated.
+Lengthscale: 0.4
+Noise: 0.001
+Performance threshold: 0.9
+Max iterations: 20
+real fitness: 677.80
+ tested behaviour: [0.289      0.52000004 0.65300006 0.30100003]
+ Max real fitness by far: 677.80
+
+next index: 5875
+real fitness: 863.34
+ tested behaviour: [0.80300003 0.592      0.70600003 0.537     ]
+ Max real fitness by far: 863.34
+
+next index: 6322
+real fitness: 621.83
+ tested behaviour: [0.37300003 0.638      0.246      0.27100003]
+ Max real fitness by far: 863.34
+
+next index: 9298
+real fitness: 563.92
+ tested behaviour: [0.216      0.92100006 0.91600007 0.82400006]
+ Max real fitness by far: 863.34
+
+next index: 2592
+real fitness: 644.06
+ tested behaviour: [0.513      0.284      0.90400004 0.261     ]
+ Max real fitness by far: 863.34
+
+next index: 7816
+real fitness: 812.87
+ tested behaviour: [0.80300003 0.702      0.2        0.62200004]
+ Max real fitness by far: 863.34
+
+next index: 9989
+real fitness: 598.65
+ tested behaviour: [0.9250001  0.91200006 0.81000006 0.90700006]
+ Max real fitness by far: 863.34
+
+next index: 9227
+real fitness: 1057.47
+ tested behaviour: [0.28300002 0.933      0.27100003 0.708     ]
+ Max real fitness by far: 1057.47
+
+Adaptation ends in 7 iteration(s).
+ best index: 9227 
+ Best behaviour after adaptation: [0.28300002 0.933      0.27100003 0.708     ]
+
+Animation generated.
+real fitness: 867.1456298828125
+********adaptation completes********
+%%%%%%%%%%%%%%%Running Complete%%%%%%%%%%%%%%%
+
+====================================
+CPU Time used: 00:21:58
+CPU Percent: 99%
+Memory usage: 2667700kb
+Approx Power usage: 0.004199999999999999
+Walltime usage: 00:23:59
+
+====================================
