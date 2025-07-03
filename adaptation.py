@@ -91,14 +91,11 @@ def run_online_adaptation(
             f"Max real fitness by far: {max_tested_fitness:.2f}\n",
         )
 
-        update_grid_fitness()
         repertoire.fitnesses[next_idx] = real_fitness.item()
-        fig, ax = plt.subplots()
-        frames = []
 
-        fig, _ = plot_multidimensional_map_elites_grid(repertoire, min_descriptor, max_descriptor, grid_shape)
+        fig, ax = plot_multidimensional_map_elites_grid(repertoire, min_descriptor, max_descriptor, grid_shape)
         ax.set_title(f"Iteration {iter_num + 1}")
-        frames.append(fig)
+        plt.savefig(output_path + f"/grid/{iter_num+1}.png")
         
 
         if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):

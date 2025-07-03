@@ -57,27 +57,27 @@ def main(
     key, subkey = jax.random.split(key)
 
 
-    # map creation
-    match algo_type:
-        case "mapelites":
-            repertoire, metrics, env, policy_network = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
-                                            grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
-        case "dcrl":
-            repertoire, metrics, env, policy_network = run_dcrl_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
-                                            grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
-                                            dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
-                                            num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
-                                            actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
-                                            policy_delay, log_period, subkey)
-        case _:
-            raise ValueError(f"Unknown algo_type: {algo_type}")
+    # # map creation
+    # match algo_type:
+    #     case "mapelites":
+    #         repertoire, metrics, env, policy_network = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
+    #                                         grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
+    #     case "dcrl":
+    #         repertoire, metrics, env, policy_network = run_dcrl_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
+    #                                         grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
+    #                                         dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
+    #                                         num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
+    #                                         actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
+    #                                         policy_delay, log_period, subkey)
+    #     case _:
+    #         raise ValueError(f"Unknown algo_type: {algo_type}")
     
-    save_pkls(output_path, repertoire=repertoire, metrics=metrics)
+    # save_pkls(output_path, repertoire=repertoire, metrics=metrics)
 
-    "remove the following inside plot function"
-    env_steps = metrics["iteration"] * episode_length * batch_size
-    plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
-                            min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
+    # "remove the following inside plot function"
+    # env_steps = metrics["iteration"] * episode_length * batch_size
+    # plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
+    #                         min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
     
 
 
@@ -96,15 +96,15 @@ def main(
         f"Index of best fitness niche: {best_idx}\n"
     )
 
-    key, subkey = jax.random.split(key)
-    rollout = run_single_rollout(env, policy_network, params, subkey, 
-                                 None, None,
-                                 output_path + "/pre_adaptation_without_damage.html")
+    # key, subkey = jax.random.split(key)
+    # rollout = run_single_rollout(env, policy_network, params, subkey, 
+    #                              None, None,
+    #                              output_path + "/pre_adaptation_without_damage.html")
 
-    key, subkey = jax.random.split(key)
-    rollout = run_single_rollout(env, policy_network, params, subkey, 
-                                 damage_joint_idx, damage_joint_action, 
-                                 output_path + "/pre_adaptation_with_damage.html")
+    # key, subkey = jax.random.split(key)
+    # rollout = run_single_rollout(env, policy_network, params, subkey, 
+    #                              damage_joint_idx, damage_joint_action, 
+    #                              output_path + "/pre_adaptation_with_damage.html")
 
 
     key, subkey = jax.random.split(key)
@@ -148,8 +148,8 @@ def get_args():
     if len(args.damage_joint_idx) != len(args.damage_joint_action):
         raise ValueError("Number of damage joint actions need to match the number of damage joint indices.")    
 
-    if "--algo_type" not in sys.argv:
-        raise ValueError("You must specify --algo_type explicitly from the command line.")
+    # if "--algo_type" not in sys.argv:
+    #     raise ValueError("You must specify --algo_type explicitly from the command line.")
     
     return args
 
@@ -158,10 +158,11 @@ if __name__ == "__main__":
     print(jax.devices())
     
     args = get_args()
-    save_args(args)
+    # save_args(args)
 
     # args.output_path = "./outputs/mapelites_20250628_154241"
     # args.output_path = "./outputs/dcrl_20250628_173357"
+    args.output_path = "./outputs/dcrl_20250702_105607"
 
     main(
         args.algo_type,
