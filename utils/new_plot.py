@@ -297,6 +297,26 @@ def plot_map_elites_results(
 
     # return fig, axes
 
+def plot_live_grid_update(
+    iter_num: int,
+    updated_repertoire: MapElitesRepertoire,
+    min_descriptor: jnp.ndarray,
+    max_descriptor: jnp.ndarray,
+    grid_shape: Tuple,
+    output_path: str,
+) -> None:
+    """
+    plot grid changes during ite adaptation, and save the animation to output_path/grid folder
+    """
+
+    _, ax = plot_multidimensional_map_elites_grid(updated_repertoire, min_descriptor, max_descriptor, grid_shape)
+    ax.set_title(f"Iteration {iter_num + 1}")
+
+    output_path += "/grid"
+    os.makedirs(output_path, exist_ok=True) 
+    plt.savefig(output_path + f"/{iter_num+1}.png")
+
+
 
 def multiline(
     xs: Iterable, ys: Iterable, c: Iterable, ax: Optional[Axes] = None, **kwargs: Any

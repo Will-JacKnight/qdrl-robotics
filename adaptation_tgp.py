@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from tqdm import trange
+from utils.new_plot import plot_live_grid_update
+
 
 from rollout import run_single_rollout
 
@@ -88,6 +90,10 @@ def run_online_adaptation(
             f"tested behaviour: {repertoire.descriptors[next_idx]}\n",
             f"Max real fitness by far: {max_tested_fitness:.2f}\n",
         )
+        
+        # save live plots after each adaptation
+        repertoire = repertoire.replace(fitnesses=means_adjusted)
+        plot_live_grid_update(iter_num, repertoire, min_descriptor, max_descriptor, grid_shape, output_path)
 
         if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
             # print(f"Early stopping: fitness {max_tested_fitness:.3f} >= threshold {stop_cond:.3f}")

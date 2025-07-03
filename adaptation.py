@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from tqdm import trange
-from utils.new_plot import plot_multidimensional_map_elites_grid
+from utils.new_plot import plot_live_grid_update
 
 from rollout import run_single_rollout
 
@@ -91,12 +91,9 @@ def run_online_adaptation(
             f"Max real fitness by far: {max_tested_fitness:.2f}\n",
         )
 
-        repertoire.fitnesses[next_idx] = real_fitness.item()
-
-        fig, ax = plot_multidimensional_map_elites_grid(repertoire, min_descriptor, max_descriptor, grid_shape)
-        ax.set_title(f"Iteration {iter_num + 1}")
-        plt.savefig(output_path + f"/grid/{iter_num+1}.png")
-        
+        # save live plots after each adaptation
+        repertoire = repertoire.replace(fitnesses=means_adjusted)
+        plot_live_grid_update(iter_num, repertoire, min_descriptor, max_descriptor, grid_shape, output_path)
 
         if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
             # print(f"Early stopping: fitness {max_tested_fitness:.3f} >= threshold {stop_cond:.3f}")
