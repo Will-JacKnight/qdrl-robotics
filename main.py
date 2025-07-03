@@ -84,6 +84,10 @@ def main(
     repertoire, metrics = load_pkls(output_path)
     env, policy_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
 
+    env_steps = metrics["iteration"] * episode_length * batch_size
+    plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
+                            min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
+    return 
     best_fitness = jnp.max(repertoire.fitnesses)
     best_idx = jnp.argmax(repertoire.fitnesses)
     best_descriptor = repertoire.descriptors[best_idx]
@@ -96,22 +100,22 @@ def main(
         f"Index of best fitness niche: {best_idx}\n"
     )
 
-    # key, subkey = jax.random.split(key)
-    # rollout = run_single_rollout(env, policy_network, params, subkey, 
-    #                              None, None,
-    #                              output_path + "/pre_adaptation_without_damage.html")
+    key, subkey = jax.random.split(key)
+    rollout = run_single_rollout(env, policy_network, params, subkey, 
+                                 None, None,
+                                 output_path + "/pre_adaptation_without_damage.html")
 
-    # key, subkey = jax.random.split(key)
-    # rollout = run_single_rollout(env, policy_network, params, subkey, 
-    #                              damage_joint_idx, damage_joint_action, 
-    #                              output_path + "/pre_adaptation_with_damage.html")
+    key, subkey = jax.random.split(key)
+    rollout = run_single_rollout(env, policy_network, params, subkey, 
+                                 damage_joint_idx, damage_joint_action, 
+                                 output_path + "/pre_adaptation_with_damage.html")
 
 
     key, subkey = jax.random.split(key)
     tested_indices, real_fitness, tested_goals = run_online_adaptation(repertoire, env, policy_network, subkey, output_path, 
                                                                        min_descriptor, max_descriptor, grid_shape,
                                                                        damage_joint_idx, damage_joint_action,)  #####
-    print("********adaptation completes********")
+    print("********execution completes********")
 
 
 
@@ -162,7 +166,8 @@ if __name__ == "__main__":
 
     # args.output_path = "./outputs/mapelites_20250628_154241"
     # args.output_path = "./outputs/dcrl_20250628_173357"
-    args.output_path = "./outputs/dcrl_20250702_105607"
+    # args.output_path = "./outputs/dcrl_20250702_105607"
+    args.output_path = "./outputs/dcrl_20250703_114735"
 
     main(
         args.algo_type,

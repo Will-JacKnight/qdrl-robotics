@@ -38,7 +38,7 @@ def run_online_adaptation(
     tested_indices = []
     real_fitnesses = []
     tested_goals = []
-    means_adjusted = fitnesses    # mu_0 = P(x)
+    means_adjusted = jnp.squeeze(fitnesses, axis=1)    # mu_0 = P(x)
 
     # Define the GP model
     kernel = gpx.kernels.Matern52(lengthscale=lengthscale)
@@ -92,7 +92,8 @@ def run_online_adaptation(
         )
 
         # save live plots after each adaptation
-        repertoire = repertoire.replace(fitnesses=means_adjusted)
+        fitnesses = jnp.expand_dims(means_adjusted, axis=1)
+        repertoire = repertoire.replace(fitnesses=fitnesses)
         plot_live_grid_update(iter_num, repertoire, min_descriptor, max_descriptor, grid_shape, output_path)
 
         if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
@@ -112,6 +113,7 @@ def run_online_adaptation(
             real_fitness = rollout['rewards'].sum()
             print(f"real fitness: {real_fitness}")
 
+            print("********adaptation completes********")
             break
     
     # print(f"tested indices: {tested_indices}")
