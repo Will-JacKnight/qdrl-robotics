@@ -1,4 +1,5 @@
 {
+    "mode": "adaptation",
     "seed": 42,
     "output_path": "./outputs",
     "log_period": 10,

@@ -13,4 +13,10 @@
 # output data
 **/*.pkl
 *.out
+**.sh.e**
+**.sh.o**
 /outputs/archive
+
+# affliates
+/sample_code
+/utils/hpc-utils

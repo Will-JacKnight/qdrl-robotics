@@ -8,15 +8,15 @@ import jax.numpy as jnp
 
 from adaptation import run_online_adaptation
 # from adaptation_tgp import run_online_adaptation
-from map_elites import run_map_elites, init_env_and_policy_network
+from map_elites import run_map_elites
 from dcrl import run_dcrl_map_elites
-from rollout import run_single_rollout
-# from utils.plot_results import plot_map_elites_results
+from rollout import run_single_rollout, init_env_and_policy_network
 from utils.util import load_pkls, save_pkls, save_args
 from utils.new_plot import plot_map_elites_results
 
 
 def main(
+         mode,
          algo_type,
          episode_length, 
          seed, 
@@ -57,28 +57,29 @@ def main(
     key, subkey = jax.random.split(key)
 
 
-    # # map creation
-    # match algo_type:
-    #     case "mapelites":
-    #         repertoire, metrics, env, policy_network = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
-    #                                         grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
-    #     case "dcrl":
-    #         repertoire, metrics, env, policy_network = run_dcrl_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
-    #                                         grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
-    #                                         dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
-    #                                         num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
-    #                                         actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
-    #                                         policy_delay, log_period, subkey)
-    #     case _:
-    #         raise ValueError(f"Unknown algo_type: {algo_type}")
-    
-    # save_pkls(output_path, repertoire=repertoire, metrics=metrics)
+    # map creation
+    if mode == "training":
+        match algo_type:
+            case "mapelites":
+                repertoire, metrics = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
+                                                grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
+            case "dcrl":
+                repertoire, metrics = run_dcrl_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
+                                                grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
+                                                dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
+                                                num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
+                                                actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
+                                                policy_delay, log_period, subkey)
+            case _:
+                raise ValueError(f"Unknown algo_type: {algo_type}")
 
-    # "remove the following inside plot function"
-    # env_steps = metrics["iteration"] * episode_length * batch_size
-    # plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
-    #                         min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
-    
+        save_pkls(output_path, repertoire=repertoire, metrics=metrics)
+
+        "remove the following inside plot function"
+        env_steps = metrics["iteration"] * episode_length * batch_size
+        plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
+                                min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
+
 
     repertoire, metrics = load_pkls(output_path)
     env, policy_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
@@ -110,7 +111,6 @@ def main(
     tested_indices, real_fitness, tested_goals = run_online_adaptation(repertoire, env, policy_network, subkey, output_path, 
                                                                        min_descriptor, max_descriptor, grid_shape,
                                                                        damage_joint_idx, damage_joint_action,)  #####
-    print("********execution completes********")
 
 
 
@@ -123,7 +123,7 @@ def get_args():
         config_args = json.load(f)
 
     parser.set_defaults(**config_args)
-
+    parser.add_argument("--mode", type=str, help="run mode: training || adaptation (default)")
     parser.add_argument("--output_path", type=str, help="relative output path for results")
     parser.add_argument("--algo_type", type=str, help="choose from: mapelites || dcrl")
     parser.add_argument("--episode_length", type=int, help="Maximum rollout length")
@@ -135,6 +135,7 @@ def get_args():
     parser.add_argument("--damage_joint_action", type=int, nargs='+', help="Action value of the damaged joint")
     args = parser.parse_args()
 
+    print(f"Running on: {args.mode} mode")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     args.output_path = args.output_path + f"/{args.algo_type}_{timestamp}"
     print(f"algo type: {args.algo_type}")
@@ -159,10 +160,11 @@ if __name__ == "__main__":
     args = get_args()
     # save_args(args)
 
-    args.output_path = "./outputs/mapelites_20250701_152736"
-    # args.output_path = "./outputs/dcrl_20250703_114735"
+    # args.output_path = "./outputs/mapelites_20250701_152736"
+    args.output_path = "./outputs/dcrl_20250703_114735"
 
     main(
+        args.mode,
         args.algo_type,
         args.episode_length, 
         args.seed, 

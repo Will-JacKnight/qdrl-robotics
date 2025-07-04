@@ -16,7 +16,6 @@ from qdax.custom_types import EnvState, Params, RNGKey
 from qdax.tasks.brax.v1 import descriptor_extractor
 from qdax.tasks.brax.v1.wrappers.reward_wrappers import OffsetRewardWrapper, ClipRewardWrapper
 from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs
-
 from qdax.utils.metrics import default_qd_metrics
 
 
@@ -218,4 +217,4 @@ def run_dcrl_map_elites(env_name,  #
         current_metrics["time"] = jnp.repeat(timelapse, log_period)
         metrics = jax.tree.map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
-    return repertoire, metrics, env, policy_network
+    return repertoire, metrics
