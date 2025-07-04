@@ -6,7 +6,6 @@ cd $PBS_O_WORKDIR
 
 source qdax050/bin/activate
 
-export JAX_PLATFORMS=gpu
 python main.py --config config.json --algo_type dcrl --output_path outputs --mode training
 
 

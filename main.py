@@ -156,12 +156,12 @@ def get_args():
 
 if __name__ == "__main__":
     print(jax.devices())
-    
+
     args = get_args()
-    # save_args(args)
+    save_args(args)
 
     # args.output_path = "./outputs/mapelites_20250701_152736"
-    args.output_path = "./outputs/dcrl_20250703_114735"
+    # args.output_path = "./outputs/dcrl_20250703_114735"
 
     main(
         args.mode,
