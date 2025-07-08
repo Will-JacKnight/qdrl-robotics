@@ -10,7 +10,7 @@ from adaptation import run_online_adaptation
 # from adaptation_tgp import run_online_adaptation
 from map_elites import run_map_elites
 from dcrl import run_dcrl_map_elites
-from rollout import run_single_rollout, init_env_and_policy_network
+from rollout import run_single_rollout, init_env_and_policy_network, render_rollout_to_html
 from utils.util import load_pkls, save_pkls, save_args
 from utils.new_plot import plot_map_elites_results
 
@@ -24,8 +24,8 @@ def main(
          num_iterations, 
          grid_shape,
          policy_hidden_layer_sizes,
-         damage_joint_idx, 
-         damage_joint_action,
+         damage_joint_idx: jnp.ndarray, 
+         damage_joint_action: jnp.ndarray,
          ga_batch_size,
          dcrl_batch_size,
          ai_batch_size,
@@ -95,23 +95,20 @@ def main(
         f"Best descriptor: {best_descriptor}\n",
         f"Index of best fitness niche: {best_idx}\n"
     )
-    
+
     if mode == "training":
         key, subkey = jax.random.split(key)
-        rollout = run_single_rollout(env, policy_network, params, subkey, 
-                                    None, None,
-                                    output_path + "/pre_adaptation_without_damage.html")
+        rollout = run_single_rollout(env, policy_network, params, subkey, None, None)
+        render_rollout_to_html(rollout['states'], env, output_path + "/pre_adaptation_without_damage.html")
+        
 
     key, subkey = jax.random.split(key)
-    rollout = run_single_rollout(env, policy_network, params, subkey, 
-                                 damage_joint_idx, damage_joint_action, 
-                                 output_path + "/pre_adaptation_with_damage.html")
-
+    rollout = run_single_rollout(env, policy_network, params, subkey, damage_joint_idx, damage_joint_action)
+    render_rollout_to_html(rollout['states'], env, output_path + "/pre_adaptation_with_damage.html")
 
     key, subkey = jax.random.split(key)
-    tested_indices, real_fitness, tested_goals = run_online_adaptation(repertoire, env, policy_network, subkey, output_path, 
-                                                                       min_descriptor, max_descriptor, grid_shape,
-                                                                       damage_joint_idx, damage_joint_action,)  #####
+    run_online_adaptation(repertoire, env, policy_network, subkey, output_path, min_descriptor, max_descriptor, 
+                          grid_shape, damage_joint_idx, damage_joint_action, episode_length)
 
 
 
@@ -150,6 +147,9 @@ def get_args():
 
     if len(args.damage_joint_idx) != len(args.damage_joint_action):
         raise ValueError("Number of damage joint actions need to match the number of damage joint indices.")    
+
+    args.damage_joint_idx = jnp.array(args.damage_joint_idx)
+    args.damage_joint_action = jnp.array(args.damage_joint_action)
 
     # if "--algo_type" not in sys.argv:
     #     raise ValueError("You must specify --algo_type explicitly from the command line.")

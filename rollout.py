@@ -32,17 +32,24 @@ def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_si
             )
     return env, policy_network
 
+
 def render_rollout_to_html(states, env, output_path):
     with open(output_path, "w") as f:
         f.write(html.render(env.sys, [s.qp for s in states[:500]]))
         print("Animation generated.")
 
-# @jax.jit
-def run_single_rollout(env, policy_network, params, key, 
-                       damage_joint_idx: Optional[list] = None, 
-                       damage_joint_action: Optional[list] = None,
-                       output_path: Optional[str] = None):
 
+def run_single_rollout(
+    env, 
+    policy_network, 
+    params, 
+    key, 
+    damage_joint_idx: Optional[jnp.ndarray] = None, 
+    damage_joint_action: Optional[jnp.ndarray] = None,
+) -> Dict:
+    """
+    non-jittable version for single rollout
+    """
     jit_env_reset = jax.jit(env.reset)
     jit_env_step = jax.jit(env.step)
     jit_inference_fn = jax.jit(policy_network.apply)
@@ -62,7 +69,7 @@ def run_single_rollout(env, policy_network, params, key,
         states.append(state)
         action = jit_inference_fn(params, state.obs)
         if damage_joint_idx is not None:
-            action = action.at[jnp.array(damage_joint_idx)].set(damage_joint_action)
+            action = action.at[damage_joint_idx].set(damage_joint_action)
         actions.append(action)
         state = jit_env_step(state, action)     # get next state
         rewards.append(state.reward)
@@ -70,11 +77,6 @@ def run_single_rollout(env, policy_network, params, key,
         # r_forward.append(state.metrics["reward_forward"])
         # r_control.append(state.metrics["reward_ctrl"])
         # r_contact.append(state.metrics["reward_contact"])
-
-    if (output_dir is not None):
-        with open(output_dir, "w") as f:
-            f.write(html.render(env.sys, [s.qp for s in states[:500]]))
-            print("Animation generated.")
 
     return {
         'rewards': np.array(rewards),
@@ -85,3 +87,44 @@ def run_single_rollout(env, policy_network, params, key,
         # 'control_reward': np.array(r_control),
         # 'contact_reward': np.array(r_contact),
         }
+
+
+@jax.jit
+def jit_run_single_rollout(
+    env, 
+    policy_network, 
+    params, 
+    key, 
+    damage_joint_idx: jnp.ndarray, 
+    damage_joint_action: jnp.ndarray,
+    episode_length: int,
+) -> jnp.ndarray:
+    """
+    jit version for single rollout, on the assumption that 
+        - the rollout always lasts episode_length steps and there're no early terminations
+        - damage is always applied
+
+    returns:
+        - total_rewards: fitness of the rollout, calculated as the sum of step rewards
+    """
+    jit_env_reset = jax.jit(env.reset)
+    jit_env_step = jax.jit(env.step)
+    jit_inference_fn = jax.jit(policy_network.apply)
+
+
+    key, subkey = jax.random.split(key)
+    state = jit_env_reset(rng=subkey)
+
+    def step_fn(carry, _):
+        state, total_rewards = carry
+        action = jit_inference_fn(params, state.obs)
+        action = action.at[damage_joint_idx].set(damage_joint_action)
+        state = jit_env_step(state, action)     # get next state
+        reward = state.reward
+        carry = (state, total_rewards + reward)
+        return carry, reward
+    
+    init_carry = (state, jnp.float32(0.0))
+    (_, total_rewards), _ = jax.lax.scan(step_fn, init_carry, length=episode_length)
+
+    return total_rewards

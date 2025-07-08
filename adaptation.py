@@ -11,7 +11,7 @@ from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from tqdm import trange
 from utils.new_plot import plot_iter_grid
 
-from rollout import run_single_rollout
+from rollout import run_single_rollout, render_rollout_to_html, jit_run_single_rollout
 
 
 def upper_confidence_bound(mean, std, kappa=0.05):
@@ -23,6 +23,7 @@ def run_online_adaptation(
                       env, policy_network, key, output_path,
                       min_descriptor, max_descriptor, grid_shape,
                       damage_joint_idx, damage_joint_action,
+                      episode_length,
                       max_iters=20, performance_threshold=0.9, lengthscale=0.4, noise=1e-3):
 
 
@@ -74,7 +75,7 @@ def run_online_adaptation(
         # evaluate on the real robot
         params = jax.tree.map(lambda x: x[next_idx], repertoire.genotypes)
         key, subkey = jax.random.split(key)
-        rollout = run_single_rollout(env, policy_network, params, subkey, damage_joint_idx, damage_joint_action, None)          # rollout = {'rewards': jnp.array, 'state': jnp.array}
+        rollout = run_single_rollout(env, policy_network, params, subkey, damage_joint_idx, damage_joint_action)          # rollout = {'rewards': jnp.array, 'state': jnp.array}
         real_fitness = rollout['rewards'].sum()
 
         obs_dataset = gpx.Dataset(
@@ -102,8 +103,8 @@ def run_online_adaptation(
         for idx in trange(grid_size, desc="real fitness evaluation"):
             params = jax.tree.map(lambda x: x[idx], repertoire.genotypes)
             key, subkey = jax.random.split(key)
-            real_rollout = run_single_rollout(env, policy_network, params, subkey, damage_joint_idx, damage_joint_action)
-            real_cell_fitnesses.append(real_rollout['rewards'].sum())
+            real_rewards = jit_run_single_rollout(env, policy_network, params, subkey, damage_joint_idx, damage_joint_action, episode_length)
+            real_cell_fitnesses.append(real_rewards)
         repertoire = repertoire.replace(fitnesses=jnp.array(real_cell_fitnesses))
         plot_iter_grid(iter_num, repertoire, min_descriptor, max_descriptor, grid_shape, output_path, "real")
 
@@ -118,9 +119,8 @@ def run_online_adaptation(
 
             best_params = jax.tree.map(lambda x: x[best_idx], repertoire.genotypes)
             key, subkey = jax.random.split(key)
-            rollout = run_single_rollout(env, policy_network, best_params, subkey, 
-                                         damage_joint_idx, damage_joint_action,
-                                         output_path + "/post_adaptation_with_damage.html")
+            rollout = run_single_rollout(env, policy_network, best_params, subkey, damage_joint_idx, damage_joint_action)
+            render_rollout_to_html(rollout['states'], env, output_path + "/post_adaptation_with_damage.html")
             
             real_fitness = rollout['rewards'].sum()
             print(f"real fitness: {real_fitness}")
@@ -137,4 +137,4 @@ def run_online_adaptation(
     # print(f"real fitnesses: {real_fitnesses}")
     # print(f"tested goals: {tested_goals}")
 
-    return np.array(tested_indices), np.array(real_iter_fitnesses), np.array(tested_goals)
+    # return np.array(tested_indices), np.array(real_iter_fitnesses), np.array(tested_goals)
