@@ -1,4 +1,5 @@
 from typing import Dict
+import math
 
 import utils.gp_jax as gpx
 # import gpjax as gpx
@@ -8,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from tqdm import trange
-from utils.new_plot import plot_live_grid_update
+from utils.new_plot import plot_iter_grid
 
 from rollout import run_single_rollout
 
@@ -36,7 +37,8 @@ def run_online_adaptation(
 
     D = gpx.Dataset()
     tested_indices = []
-    real_fitnesses = []
+    real_iter_fitnesses = []
+    real_cell_fitnesses = []
     tested_goals = []
     means_adjusted = jnp.squeeze(fitnesses, axis=1)    # mu_0 = P(x)
 
@@ -46,6 +48,7 @@ def run_online_adaptation(
     prior = gpx.gps.Prior(kernel=kernel, mean_function=mean_fn)
     acquisition_fn = jax.jit(upper_confidence_bound)
 
+    grid_size = math.prod(grid_shape)
 
     for iter_num in trange(max_iters, desc="Adaptation"):
         # input("Press Enter to continue...")
@@ -80,9 +83,9 @@ def run_online_adaptation(
         )
         D = D + obs_dataset if iter_num != 0 else obs_dataset   # add observation to the dataset
 
-        real_fitnesses.append(real_fitness.item())
-        max_tested_fitness = max(real_fitnesses)
-        if real_fitness.item() == max_tested_fitness:
+        real_iter_fitnesses.append(real_fitness)
+        max_tested_fitness = max(real_iter_fitnesses)
+        if real_fitness == max_tested_fitness:
             best_idx = next_idx
 
         print(
@@ -91,9 +94,19 @@ def run_online_adaptation(
             f"Max real fitness by far: {max_tested_fitness:.2f}\n",
         )
 
-        # save live plots after each adaptation
+        # plot predicted grid after each adaptation iteration
         repertoire = repertoire.replace(fitnesses=jnp.expand_dims(means_adjusted, axis=1))
-        plot_live_grid_update(iter_num, repertoire, min_descriptor, max_descriptor, grid_shape, output_path)
+        plot_iter_grid(iter_num, repertoire, min_descriptor, max_descriptor, grid_shape, output_path, "predicted")
+
+        # plot real fitness grid after each adaptation iteration
+        for idx in trange(grid_size, desc="real fitness evaluation"):
+            params = jax.tree.map(lambda x: x[idx], repertoire.genotypes)
+            key, subkey = jax.random.split(key)
+            real_rollout = run_single_rollout(env, policy_network, params, subkey, damage_joint_idx, damage_joint_action)
+            real_cell_fitnesses.append(real_rollout['rewards'].sum())
+        repertoire = repertoire.replace(fitnesses=jnp.array(real_cell_fitnesses))
+        plot_iter_grid(iter_num, repertoire, min_descriptor, max_descriptor, grid_shape, output_path, "real")
+
 
         if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
             # print(f"Early stopping: fitness {max_tested_fitness:.3f} >= threshold {stop_cond:.3f}")
@@ -124,4 +137,4 @@ def run_online_adaptation(
     # print(f"real fitnesses: {real_fitnesses}")
     # print(f"tested goals: {tested_goals}")
 
-    return np.array(tested_indices), np.array(real_fitnesses), np.array(tested_goals)
+    return np.array(tested_indices), np.array(real_iter_fitnesses), np.array(tested_goals)

@@ -1,5 +1,6 @@
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Literal
 import os
+import math
 
 import jax.numpy as jnp
 import matplotlib as mpl
@@ -298,25 +299,25 @@ def plot_map_elites_results(
 
     # return fig, axes
 
-def plot_live_grid_update(
+def plot_iter_grid(
     iter_num: int,
-    updated_repertoire: MapElitesRepertoire,
+    repertoire: MapElitesRepertoire,
     min_descriptor: jnp.ndarray,
     max_descriptor: jnp.ndarray,
     grid_shape: Tuple,
     output_path: str,
+    mode: Literal["predicted", "real"],
 ) -> None:
     """
-    plot grid changes during ite adaptation, and save the animation to output_path/grid folder
+    plot means of post distribution of GP as fitness prediction during each ITE adaptation.
     """
 
-    _, ax = plot_multidimensional_map_elites_grid(updated_repertoire, min_descriptor, max_descriptor, grid_shape)
-    ax.set_title(f"Iteration {iter_num + 1}")
+    _, ax = plot_multidimensional_map_elites_grid(repertoire, min_descriptor, max_descriptor, grid_shape)
+    ax.set_title(f"Predicted fitness @ iteration {iter_num + 1}")
 
-    output_path += "/grid"
+    output_path += f"/{mode}_grid"
     os.makedirs(output_path, exist_ok=True) 
-    plt.savefig(output_path + f"/{iter_num+1}.png")
-
+    plt.savefig(output_path + f"/{iter_num + 1}.png")
 
 
 def multiline(

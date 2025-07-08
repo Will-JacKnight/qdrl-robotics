@@ -32,11 +32,16 @@ def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_si
             )
     return env, policy_network
 
+def render_rollout_to_html(states, env, output_path):
+    with open(output_path, "w") as f:
+        f.write(html.render(env.sys, [s.qp for s in states[:500]]))
+        print("Animation generated.")
 
+# @jax.jit
 def run_single_rollout(env, policy_network, params, key, 
                        damage_joint_idx: Optional[list] = None, 
                        damage_joint_action: Optional[list] = None,
-                       output_dir: Optional[str] = None):
+                       output_path: Optional[str] = None):
 
     jit_env_reset = jax.jit(env.reset)
     jit_env_step = jax.jit(env.step)

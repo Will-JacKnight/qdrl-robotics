@@ -95,11 +95,12 @@ def main(
         f"Best descriptor: {best_descriptor}\n",
         f"Index of best fitness niche: {best_idx}\n"
     )
-
-    key, subkey = jax.random.split(key)
-    rollout = run_single_rollout(env, policy_network, params, subkey, 
-                                 None, None,
-                                 output_path + "/pre_adaptation_without_damage.html")
+    
+    if mode == "training":
+        key, subkey = jax.random.split(key)
+        rollout = run_single_rollout(env, policy_network, params, subkey, 
+                                    None, None,
+                                    output_path + "/pre_adaptation_without_damage.html")
 
     key, subkey = jax.random.split(key)
     rollout = run_single_rollout(env, policy_network, params, subkey, 
@@ -160,12 +161,12 @@ if __name__ == "__main__":
     print(jax.devices())
 
     args = get_args()
-    save_args(args)
+    # save_args(args)
 
     # args.output_path = "./outputs/mapelites_20250701_152736"
     # args.output_path = "./outputs/dcrl_20250703_114735"
     # args.output_path = "./outputs/dcrl_20250702_105607"
-    # args.output_path = "./outputs/dcrl_20250704_185243"
+    args.output_path = "./outputs/dcrl_20250704_185243"
 
     main(
         args.mode,
