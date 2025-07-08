@@ -10,7 +10,7 @@ import qdax.tasks.brax.v1 as environments
 from qdax.core.neuroevolution.networks.networks import MLP
 from qdax.tasks.brax.v1.wrappers.reward_wrappers import OffsetRewardWrapper, ClipRewardWrapper
 
-from utils.reward_wrapper import WalkRewardOnlyWrapper
+from utils.reward_wrapper import ForwardStepRewardWrapper
 
 
 def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes):
@@ -21,7 +21,7 @@ def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_si
     env = environments.create(env_name, episode_length=episode_length)
     # env = OffsetRewardWrapper(env, offset=environments.reward_offset[env_name])
     # env = ClipRewardWrapper(env, clip_min=0.,)
-    env = WalkRewardOnlyWrapper(env, env_name)
+    env = ForwardStepRewardWrapper(env, env_name)
 
     # Init policy network
     policy_layer_sizes = policy_hidden_layer_sizes + (env.action_size,)
@@ -45,6 +45,10 @@ def run_single_rollout(env, policy_network, params, key,
     states = []
     rewards = []
     actions = []
+    # r_survive = []
+    # r_forward = []
+    # r_control = []
+    # r_contact = []
 
     key, subkey = jax.random.split(key)
     state = jit_env_reset(rng=subkey)
@@ -57,6 +61,10 @@ def run_single_rollout(env, policy_network, params, key,
         actions.append(action)
         state = jit_env_step(state, action)     # get next state
         rewards.append(state.reward)
+        # r_survive.append(state.metrics["reward_survive"])
+        # r_forward.append(state.metrics["reward_forward"])
+        # r_control.append(state.metrics["reward_ctrl"])
+        # r_contact.append(state.metrics["reward_contact"])
 
     if (output_dir is not None):
         with open(output_dir, "w") as f:
@@ -66,5 +74,9 @@ def run_single_rollout(env, policy_network, params, key,
     return {
         'rewards': np.array(rewards),
         'states': np.array(states),
-        'actions': np.array(actions)
+        'actions': np.array(actions),
+        # 'survive_reward': np.array(r_survive),
+        # 'forward_reward': np.array(r_forward),
+        # 'control_reward': np.array(r_control),
+        # 'contact_reward': np.array(r_contact),
         }

@@ -135,11 +135,13 @@ def get_args():
     parser.add_argument("--damage_joint_action", type=int, nargs='+', help="Action value of the damaged joint")
     args = parser.parse_args()
 
-    print(f"Running on: {args.mode} mode")
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    args.output_path = args.output_path + f"/{args.algo_type}_{timestamp}"
     print(f"algo type: {args.algo_type}")
-    print(f"starting time: {timestamp}")
+    run_mode = args.mode
+    print(f"Running on: {run_mode} mode")
+    if run_mode == "train":
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        args.output_path = args.output_path + f"/{args.algo_type}_{timestamp}"
+        print(f"starting time: {timestamp}")
 
     args.grid_shape = tuple(args.grid_shape)
     args.policy_hidden_layer_sizes = tuple(args.policy_hidden_layer_sizes)
@@ -162,6 +164,8 @@ if __name__ == "__main__":
 
     # args.output_path = "./outputs/mapelites_20250701_152736"
     # args.output_path = "./outputs/dcrl_20250703_114735"
+    # args.output_path = "./outputs/dcrl_20250702_105607"
+    # args.output_path = "./outputs/dcrl_20250704_185243"
 
     main(
         args.mode,

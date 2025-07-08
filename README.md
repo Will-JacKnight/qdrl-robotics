@@ -23,7 +23,7 @@
 - Default parameters are stored in ```./config.json```
 - Shell command will override default parameters
 - Must specify running algo by setting the flag ```--algo_type <op>```, ```<op>``` currently only supports mapelites or dcrl
-- Run mode is set to ```adaptation``` by default. during training, one has to specify the mode flag by ```--mode training```
+- Run mode is set to ```adaptation``` by default. during training, one has to specify the mode flag by ```--mode training``` or use hpc_job.sh instead
 
 ## Some Default Parameters
 - env_name: 'ant_uni' its reward = forward reward (proportional to forward velocity) + healthy reward - control cost - contact cost

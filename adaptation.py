@@ -92,8 +92,7 @@ def run_online_adaptation(
         )
 
         # save live plots after each adaptation
-        fitnesses = jnp.expand_dims(means_adjusted, axis=1)
-        repertoire = repertoire.replace(fitnesses=fitnesses)
+        repertoire = repertoire.replace(fitnesses=jnp.expand_dims(means_adjusted, axis=1))
         plot_live_grid_update(iter_num, repertoire, min_descriptor, max_descriptor, grid_shape, output_path)
 
         if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
@@ -113,6 +112,11 @@ def run_online_adaptation(
             real_fitness = rollout['rewards'].sum()
             print(f"real fitness: {real_fitness}")
 
+            # print(f"survive reward: {rollout['survive_reward'].sum()}")
+            # print(f"forward reward: {rollout['forward_reward'].sum()}")
+            # print(f"control reward: {rollout['control_reward'].sum()}")
+            # print(f"contact reward: {rollout['contact_reward'].sum()}")
+            
             print("********adaptation completes********")
             break
     
