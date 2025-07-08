@@ -1,3 +1,4 @@
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Literal
 import argparse
 import json
 import sys
@@ -16,21 +17,21 @@ from utils.new_plot import plot_map_elites_results
 
 
 def main(
-         mode,
+         mode: Literal["training", "adaptation"],
          algo_type,
          episode_length, 
          seed, 
          batch_size, 
-         num_iterations, 
-         grid_shape,
-         policy_hidden_layer_sizes,
+         num_iterations: int, 
+         grid_shape: Tuple[int, ...],
+         policy_hidden_layer_sizes: Tuple[int, ...],
          damage_joint_idx: jnp.ndarray, 
          damage_joint_action: jnp.ndarray,
          ga_batch_size,
          dcrl_batch_size,
          ai_batch_size,
          lengthscale,
-         critic_hidden_layer_size,
+         critic_hidden_layer_size: Tuple[int, ...],
          num_critic_training_steps,
          num_pg_training_steps,
          replay_buffer_size,
@@ -43,13 +44,13 @@ def main(
          policy_noise,
          soft_tau_update,
          policy_delay,
-         output_path,
-         env_name,
+         output_path: str,
+         env_name: str,
          min_descriptor, 
          max_descriptor, 
-         iso_sigma, 
-         line_sigma, 
-         log_period,
+         iso_sigma: int, 
+         line_sigma: int, 
+         log_period: int,
          ):
     
 
@@ -136,10 +137,13 @@ def get_args():
     print(f"algo type: {args.algo_type}")
     run_mode = args.mode
     print(f"Running on: {run_mode} mode")
-    if run_mode == "train":
+    if run_mode == "training":
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         args.output_path = args.output_path + f"/{args.algo_type}_{timestamp}"
         print(f"starting time: {timestamp}")
+
+        if "--algo_type" not in sys.argv:
+            raise ValueError("You must specify --algo_type explicitly from the command line.")
 
     args.grid_shape = tuple(args.grid_shape)
     args.policy_hidden_layer_sizes = tuple(args.policy_hidden_layer_sizes)
@@ -150,9 +154,6 @@ def get_args():
 
     args.damage_joint_idx = jnp.array(args.damage_joint_idx)
     args.damage_joint_action = jnp.array(args.damage_joint_action)
-
-    # if "--algo_type" not in sys.argv:
-    #     raise ValueError("You must specify --algo_type explicitly from the command line.")
     
     return args
 

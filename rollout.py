@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict
 import os
 
 import jax
@@ -88,43 +88,42 @@ def run_single_rollout(
         # 'contact_reward': np.array(r_contact),
         }
 
-
-@jax.jit
-def jit_run_single_rollout(
-    env, 
-    policy_network, 
-    params, 
-    key, 
-    damage_joint_idx: jnp.ndarray, 
-    damage_joint_action: jnp.ndarray,
-    episode_length: int,
-) -> jnp.ndarray:
-    """
-    jit version for single rollout, on the assumption that 
-        - the rollout always lasts episode_length steps and there're no early terminations
-        - damage is always applied
-
-    returns:
-        - total_rewards: fitness of the rollout, calculated as the sum of step rewards
-    """
+def create_jit_rollout_fn(env, policy_network, episode_length: int):
     jit_env_reset = jax.jit(env.reset)
     jit_env_step = jax.jit(env.step)
     jit_inference_fn = jax.jit(policy_network.apply)
-
-
-    key, subkey = jax.random.split(key)
-    state = jit_env_reset(rng=subkey)
-
-    def step_fn(carry, _):
-        state, total_rewards = carry
-        action = jit_inference_fn(params, state.obs)
-        action = action.at[damage_joint_idx].set(damage_joint_action)
-        state = jit_env_step(state, action)     # get next state
-        reward = state.reward
-        carry = (state, total_rewards + reward)
-        return carry, reward
     
-    init_carry = (state, jnp.float32(0.0))
-    (_, total_rewards), _ = jax.lax.scan(step_fn, init_carry, length=episode_length)
+    @jax.jit
+    def _jit_run_single_rollout(
+        params, 
+        key, 
+        damage_joint_idx: jnp.ndarray, 
+        damage_joint_action: jnp.ndarray,
+    ) -> jnp.ndarray:
+        """
+        jit version for single rollout, on the assumption that 
+            - the rollout always lasts episode_length steps and there're no early terminations
+            - damage is always applied
 
-    return total_rewards
+        returns:
+            - total_rewards: fitness of the rollout, calculated as the sum of step rewards
+        """
+
+        key, subkey = jax.random.split(key)
+        state = jit_env_reset(rng=subkey)
+
+        def step_fn(carry, _):
+            state, total_rewards = carry
+            action = jit_inference_fn(params, state.obs)
+            action = action.at[damage_joint_idx].set(damage_joint_action)
+            state = jit_env_step(state, action)     # get next state
+            reward = state.reward
+            carry = (state, total_rewards + reward)
+            return carry, reward
+        
+        init_carry = (state, jnp.float32(0.0))
+        (_, total_rewards), _ = jax.lax.scan(step_fn, init_carry, length=episode_length)
+
+        return total_rewards
+
+    return _jit_run_single_rollout

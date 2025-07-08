@@ -11,7 +11,7 @@ from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from tqdm import trange
 from utils.new_plot import plot_iter_grid
 
-from rollout import run_single_rollout, render_rollout_to_html, jit_run_single_rollout
+from rollout import run_single_rollout, render_rollout_to_html, create_jit_rollout_fn
 
 
 def upper_confidence_bound(mean, std, kappa=0.05):
@@ -32,6 +32,8 @@ def run_online_adaptation(
     print("Performance threshold:", performance_threshold)
     print("Max iterations:", max_iters)
 
+    jit_rollout_fn = create_jit_rollout_fn(env, policy_network, episode_length)
+
     # select the most promising behavior from MAP
     fitnesses = repertoire.fitnesses
     next_idx = jnp.argmax(fitnesses)
@@ -39,7 +41,6 @@ def run_online_adaptation(
     D = gpx.Dataset()
     tested_indices = []
     real_iter_fitnesses = []
-    real_cell_fitnesses = []
     tested_goals = []
     means_adjusted = jnp.squeeze(fitnesses, axis=1)    # mu_0 = P(x)
 
@@ -100,12 +101,15 @@ def run_online_adaptation(
         plot_iter_grid(iter_num, repertoire, min_descriptor, max_descriptor, grid_shape, output_path, "predicted")
 
         # plot real fitness grid after each adaptation iteration
-        for idx in trange(grid_size, desc="real fitness evaluation"):
-            params = jax.tree.map(lambda x: x[idx], repertoire.genotypes)
-            key, subkey = jax.random.split(key)
-            real_rewards = jit_run_single_rollout(env, policy_network, params, subkey, damage_joint_idx, damage_joint_action, episode_length)
-            real_cell_fitnesses.append(real_rewards)
-        repertoire = repertoire.replace(fitnesses=jnp.array(real_cell_fitnesses))
+        params_batch = jax.tree.map(lambda x: x.reshape((grid_size,) + x.shape[1:]), repertoire.genotypes)
+        keys = jax.random.split(key, grid_size)
+
+        def single_eval(param, key):
+            return jit_rollout_fn(param, key, damage_joint_idx, damage_joint_action)
+        
+        batched_rewards = jax.vmap(single_eval)(params_batch, keys)
+        repertoire = repertoire.replace(fitnesses=batched_rewards.reshape((-1, 1)))
+
         plot_iter_grid(iter_num, repertoire, min_descriptor, max_descriptor, grid_shape, output_path, "real")
 
 
