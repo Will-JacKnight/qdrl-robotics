@@ -291,7 +291,9 @@ def plot_map_elites_results(
         grid_shape=grid_shape,
         ax=axes[3],
     )
-    plt.subplots_adjust(hspace=0.4)
+
+
+    # plt.subplots_adjust(hspace=0.4)
     # plt.show(block=False)
 
     if output_dir is not None:
@@ -299,25 +301,45 @@ def plot_map_elites_results(
 
     # return fig, axes
 
-def plot_iter_grid(
-    iter_num: int,
+def plot_grid_results(
+    mode: Literal["predicted", "real"],
     repertoire: MapElitesRepertoire,
     min_descriptor: jnp.ndarray,
     max_descriptor: jnp.ndarray,
     grid_shape: Tuple,
     output_path: str,
-    mode: Literal["predicted", "real"],
+    iter_num: Optional[int] = None,
 ) -> None:
     """
     plot means of post distribution of GP as fitness prediction during each ITE adaptation.
     """
+    if mode == "predicted" and iter_num is None:
+        raise ValueError("iter_num must be provided for predicted mode")
 
     _, ax = plot_multidimensional_map_elites_grid(repertoire, min_descriptor, max_descriptor, grid_shape)
-    ax.set_title(f"Predicted fitness @ iteration {iter_num + 1}")
+    
+    if mode == "predicted":
+        ax.set_title(f"{mode} fitness @ iteration {iter_num + 1}")
+        os.makedirs(output_path + f"/{mode}_grid", exist_ok=True) 
+        plt.savefig(output_path + f"/{mode}_grid/{iter_num + 1}.png")
 
-    output_path += f"/{mode}_grid"
-    os.makedirs(output_path, exist_ok=True) 
-    plt.savefig(output_path + f"/{iter_num + 1}.png")
+    else:
+        ax.set_title("real fitness")
+        plt.savefig(output_path + f"/real_fitness_grid.png")
+    plt.close()
+
+def plot_diff_qd_score(
+    adaptation_steps: list,
+    diff_qd_score: list,
+):
+
+    ax.plot(adaptation_steps, diff_qd_score)
+    ax.set_xlabel("Adaptation steps")
+    ax.set_ylabel("Diff QD Score")
+    ax.set_title("Diff QD Score during Adaptation")
+    ax.set_aspect(0.95 / ax[1].get_data_ratio(), adjustable="box")
+
+    return fig, ax
 
 
 def multiline(

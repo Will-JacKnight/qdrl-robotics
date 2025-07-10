@@ -11,6 +11,8 @@ from qdax.core.neuroevolution.networks.networks import MLP
 from qdax.tasks.brax.v1.wrappers.reward_wrappers import OffsetRewardWrapper, ClipRewardWrapper
 
 from utils.reward_wrapper import ForwardStepRewardWrapper
+from utils.util import load_pkls
+from utils.new_plot import plot_grid_results
 
 
 def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes):
@@ -35,7 +37,7 @@ def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_si
 
 def render_rollout_to_html(states, env, output_path):
     with open(output_path, "w") as f:
-        f.write(html.render(env.sys, [s.qp for s in states[:500]]))
+        f.write(html.render(env.sys, [s.qp for s in states]))
         print("Animation generated.")
 
 
@@ -127,3 +129,33 @@ def create_jit_rollout_fn(env, policy_network, episode_length: int):
         return total_rewards
 
     return _jit_run_single_rollout
+
+
+if __name__ == "__main__":
+    key = jax.random.key(42)
+    output_path = "./outputs/dcrl_20250704_185243"
+    damage_joint_idx = jnp.array([0,1])
+    damage_joint_action = jnp.array([0,0.9])
+
+
+    repertoire, _ = load_pkls(output_path)
+    env, policy_network = init_env_and_policy_network("ant_uni", 1000, (32,32))
+
+    jit_rollout_fn = create_jit_rollout_fn(env, policy_network, 1000)
+
+    def single_eval(param, key):
+        return jit_rollout_fn(param, key, damage_joint_idx, damage_joint_action)
+
+    while True:
+        key, subkey = jax.random.split(key)
+        keys = jax.random.split(subkey, 10000)
+        batched_rewards = jax.vmap(single_eval)(repertoire.genotypes, keys)
+        repertoire = repertoire.replace(fitnesses=batched_rewards.reshape((-1, 1)))
+        plot_grid_results("real", repertoire, jnp.array([0.]), jnp.array([1.]), (10,10,10,10), output_path)
+
+        best_real_idx = jnp.argmax(batched_rewards)
+        best_params = jax.tree.map(lambda x: x[best_real_idx], repertoire.genotypes)
+        key, subkey = jax.random.split(key)
+        rollout = run_single_rollout(env, policy_network, best_params, subkey, damage_joint_idx, damage_joint_action)
+        render_rollout_to_html(rollout['states'], env, output_path + "/best_real_fitness.html")
+        breakpoint()

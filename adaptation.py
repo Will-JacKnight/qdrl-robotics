@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from tqdm import trange
-from utils.new_plot import plot_iter_grid
+from utils.new_plot import plot_grid_results
 
 from rollout import run_single_rollout, render_rollout_to_html, create_jit_rollout_fn
 
@@ -32,8 +32,6 @@ def run_online_adaptation(
     print("Performance threshold:", performance_threshold)
     print("Max iterations:", max_iters)
 
-    jit_rollout_fn = create_jit_rollout_fn(env, policy_network, episode_length)
-
     # select the most promising behavior from MAP
     fitnesses = repertoire.fitnesses
     next_idx = jnp.argmax(fitnesses)
@@ -50,7 +48,53 @@ def run_online_adaptation(
     prior = gpx.gps.Prior(kernel=kernel, mean_function=mean_fn)
     acquisition_fn = jax.jit(upper_confidence_bound)
 
+
+
+    # plot real fitness grid
     grid_size = math.prod(grid_shape)
+    jit_rollout_fn = create_jit_rollout_fn(env, policy_network, episode_length)
+
+    def single_eval(param, key):
+        return jit_rollout_fn(param, key, damage_joint_idx, damage_joint_action)
+
+    # batched_rewards = []
+    # for i in trange(grid_size):
+    #     key, subkey = jax.random.split(key)
+    #     params = jax.tree.map(lambda x: x[i], repertoire.genotypes)
+    #     batched_rewards.append(single_eval(params, subkey))
+
+    key, subkey = jax.random.split(key)
+    keys = jax.random.split(subkey, grid_size)
+    batched_rewards = jax.vmap(single_eval)(repertoire.genotypes, keys)
+
+    repertoire = repertoire.replace(fitnesses=batched_rewards.reshape((-1, 1)))
+
+    plot_grid_results("real", repertoire, min_descriptor, max_descriptor, grid_shape, output_path)
+
+
+    top_k = 10
+    indices = jnp.argpartition(batched_rewards, -top_k)[-top_k:]     # get indices of top 10 fitness behaviours
+    sorted_top_indices = indices[jnp.argsort(-batched_rewards[indices])] # behaviour indices in descending fitnesses
+    
+    best_real_idx = jnp.argmax(batched_rewards)
+    print(f"best index after damage: {best_real_idx}")
+    print(f"best real behaviour after damage: {repertoire.descriptors[best_real_idx]}")
+    print(f"best real fitness after damage:{jnp.max(batched_rewards)}")
+    print(f"top {top_k} real fitness indices: {sorted_top_indices} \n")
+
+    # print(batched_rewards[1125])
+    # params = jax.tree.map(lambda x: x[1125], repertoire.genotypes)
+    # key, subkey = jax.random.split(key)
+    # test_reward = single_eval(params, subkey)
+    # print(test_reward)
+
+    best_params = jax.tree.map(lambda x: x[best_real_idx], repertoire.genotypes)
+    key, subkey = jax.random.split(key)
+    rollout = run_single_rollout(env, policy_network, best_params, subkey, damage_joint_idx, damage_joint_action)
+    render_rollout_to_html(rollout['states'], env, output_path + "/best_real_fitness.html")
+
+
+
 
     for iter_num in trange(max_iters, desc="Adaptation"):
         # input("Press Enter to continue...")
@@ -98,19 +142,7 @@ def run_online_adaptation(
 
         # plot predicted grid after each adaptation iteration
         repertoire = repertoire.replace(fitnesses=jnp.expand_dims(means_adjusted, axis=1))
-        plot_iter_grid(iter_num, repertoire, min_descriptor, max_descriptor, grid_shape, output_path, "predicted")
-
-        # plot real fitness grid after each adaptation iteration
-        params_batch = jax.tree.map(lambda x: x.reshape((grid_size,) + x.shape[1:]), repertoire.genotypes)
-        keys = jax.random.split(key, grid_size)
-
-        def single_eval(param, key):
-            return jit_rollout_fn(param, key, damage_joint_idx, damage_joint_action)
-        
-        batched_rewards = jax.vmap(single_eval)(params_batch, keys)
-        repertoire = repertoire.replace(fitnesses=batched_rewards.reshape((-1, 1)))
-
-        plot_iter_grid(iter_num, repertoire, min_descriptor, max_descriptor, grid_shape, output_path, "real")
+        plot_grid_results("predicted", repertoire, min_descriptor, max_descriptor, grid_shape, output_path, iter_num)
 
 
         if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
