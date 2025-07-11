@@ -133,7 +133,8 @@ def create_jit_rollout_fn(env, policy_network, episode_length: int):
 
 if __name__ == "__main__":
     key = jax.random.key(42)
-    output_path = "./outputs/dcrl_20250704_185243"
+    # output_path = "./outputs/dcrl_20250703_114735"
+    output_path = "./outputs/mapelites_20250701_152736"
     damage_joint_idx = jnp.array([0,1])
     damage_joint_action = jnp.array([0,0.9])
 
@@ -151,7 +152,7 @@ if __name__ == "__main__":
         keys = jax.random.split(subkey, 10000)
         batched_rewards = jax.vmap(single_eval)(repertoire.genotypes, keys)
         repertoire = repertoire.replace(fitnesses=batched_rewards.reshape((-1, 1)))
-        plot_grid_results("real", repertoire, jnp.array([0.]), jnp.array([1.]), (10,10,10,10), output_path)
+        plot_grid_results("real", repertoire, jnp.array(0.), jnp.array(1.), (10,10,10,10), output_path)
 
         best_real_idx = jnp.argmax(batched_rewards)
         best_params = jax.tree.map(lambda x: x[best_real_idx], repertoire.genotypes)

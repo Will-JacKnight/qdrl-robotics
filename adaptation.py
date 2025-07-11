@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from tqdm import trange
-from utils.new_plot import plot_grid_results
+from utils.new_plot import plot_diff_qd_score, plot_grid_results
 
 from rollout import run_single_rollout, render_rollout_to_html, create_jit_rollout_fn
 
@@ -51,6 +51,7 @@ def run_online_adaptation(
 
 
     # plot real fitness grid
+    avg_diff_qd_scores = []
     grid_size = math.prod(grid_shape)
     jit_rollout_fn = create_jit_rollout_fn(env, policy_network, episode_length)
 
@@ -77,23 +78,15 @@ def run_online_adaptation(
     sorted_top_indices = indices[jnp.argsort(-batched_rewards[indices])] # behaviour indices in descending fitnesses
     
     best_real_idx = jnp.argmax(batched_rewards)
-    print(f"best index after damage: {best_real_idx}")
+    print(f"\nbest index after damage: {best_real_idx}")
     print(f"best real behaviour after damage: {repertoire.descriptors[best_real_idx]}")
     print(f"best real fitness after damage:{jnp.max(batched_rewards)}")
     print(f"top {top_k} real fitness indices: {sorted_top_indices} \n")
-
-    # print(batched_rewards[1125])
-    # params = jax.tree.map(lambda x: x[1125], repertoire.genotypes)
-    # key, subkey = jax.random.split(key)
-    # test_reward = single_eval(params, subkey)
-    # print(test_reward)
 
     best_params = jax.tree.map(lambda x: x[best_real_idx], repertoire.genotypes)
     key, subkey = jax.random.split(key)
     rollout = run_single_rollout(env, policy_network, best_params, subkey, damage_joint_idx, damage_joint_action)
     render_rollout_to_html(rollout['states'], env, output_path + "/best_real_fitness.html")
-
-
 
 
     for iter_num in trange(max_iters, desc="Adaptation"):
@@ -144,8 +137,18 @@ def run_online_adaptation(
         repertoire = repertoire.replace(fitnesses=jnp.expand_dims(means_adjusted, axis=1))
         plot_grid_results("predicted", repertoire, min_descriptor, max_descriptor, grid_shape, output_path, iter_num)
 
+        # calulate diff qd score
+        diff_score = np.zeros(grid_size)
+        filled_mask = jnp.isfinite(means_adjusted) & jnp.isfinite(batched_rewards)
+        diff_score[filled_mask] = (batched_rewards[filled_mask] - means_adjusted[filled_mask])
+        avg_diff_qd_score = jnp.abs(diff_score.sum()) / jnp.sum(filled_mask)
+
+        print(f"diff QD score: {avg_diff_qd_score:.3f}\n")
+        avg_diff_qd_scores.append(avg_diff_qd_score)
 
         if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
+
+            adaptation_steps = iter_num + 1
             # print(f"Early stopping: fitness {max_tested_fitness:.3f} >= threshold {stop_cond:.3f}")
             print(
                 f"Adaptation ends in {iter_num + 1} iteration(s).\n",
@@ -169,6 +172,7 @@ def run_online_adaptation(
             print("********adaptation completes********")
             break
     
+    plot_diff_qd_score(adaptation_steps, avg_diff_qd_scores, output_path)
     # print(f"tested indices: {tested_indices}")
     # print(f"real fitnesses: {real_fitnesses}")
     # print(f"tested goals: {tested_goals}")

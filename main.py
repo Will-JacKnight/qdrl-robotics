@@ -134,6 +134,13 @@ def get_args():
     parser.add_argument("--damage_joint_action", type=int, nargs='+', help="Action value of the damaged joint")
     args = parser.parse_args()
 
+    args.grid_shape = tuple(args.grid_shape)
+    args.policy_hidden_layer_sizes = tuple(args.policy_hidden_layer_sizes)
+    args.critic_hidden_layer_size = tuple(args.critic_hidden_layer_size)
+
+    if len(args.damage_joint_idx) != len(args.damage_joint_action):
+        raise ValueError("Number of damage joint actions need to match the number of damage joint indices.")
+
     print(f"algo type: {args.algo_type}")
     run_mode = args.mode
     print(f"Running on: {run_mode} mode")
@@ -145,12 +152,7 @@ def get_args():
         if "--algo_type" not in sys.argv:
             raise ValueError("You must specify --algo_type explicitly from the command line.")
 
-    args.grid_shape = tuple(args.grid_shape)
-    args.policy_hidden_layer_sizes = tuple(args.policy_hidden_layer_sizes)
-    args.critic_hidden_layer_size = tuple(args.critic_hidden_layer_size)
-
-    if len(args.damage_joint_idx) != len(args.damage_joint_action):
-        raise ValueError("Number of damage joint actions need to match the number of damage joint indices.")    
+        save_args(args)
 
     args.damage_joint_idx = jnp.array(args.damage_joint_idx)
     args.damage_joint_action = jnp.array(args.damage_joint_action)
@@ -162,12 +164,11 @@ if __name__ == "__main__":
     print(jax.devices())
 
     args = get_args()
-    # save_args(args)
 
     # args.output_path = "./outputs/mapelites_20250701_152736"
     # args.output_path = "./outputs/dcrl_20250703_114735"
-    # args.output_path = "./outputs/dcrl_20250702_105607"
-    args.output_path = "./outputs/dcrl_20250704_185243"
+    args.output_path = "./outputs/dcrl_20250710_134938"
+    # args.output_path = "./outputs/dcrl_20250704_185243"
 
     main(
         args.mode,

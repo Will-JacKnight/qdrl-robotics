@@ -221,7 +221,7 @@ def plot_map_elites_results(
     min_bd: jnp.ndarray,
     max_bd: jnp.ndarray,
     grid_shape: Tuple,
-    output_dir: None | str,
+    output_dir: Optional[str] = None,
 ) -> Tuple[Optional[Figure], Axes]:
     """Plots three usual QD metrics, namely the coverage, the maximum fitness
     and the QD-score, along the number of environment steps. This function also
@@ -328,18 +328,39 @@ def plot_grid_results(
         plt.savefig(output_path + f"/real_fitness_grid.png")
     plt.close()
 
+
 def plot_diff_qd_score(
-    adaptation_steps: list,
-    diff_qd_score: list,
+    adaptation_steps: int,
+    avg_diff_qd_score: list,
+    output_path: str,
 ):
+    # Customize matplotlib params
+    font_size = 16
+    params = {
+        "axes.labelsize": font_size,
+        "axes.titlesize": font_size,
+        "legend.fontsize": font_size,
+        "xtick.labelsize": font_size,
+        "ytick.labelsize": font_size,
+        "text.usetex": False,
+        "axes.titlepad": 10,
+    }
 
-    ax.plot(adaptation_steps, diff_qd_score)
-    ax.set_xlabel("Adaptation steps")
-    ax.set_ylabel("Diff QD Score")
-    ax.set_title("Diff QD Score during Adaptation")
-    ax.set_aspect(0.95 / ax[1].get_data_ratio(), adjustable="box")
+    mpl.rcParams.update(params)
 
-    return fig, ax
+    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(10, 10))
+    # axes = axes.flatten()
+
+    adaptation_steps = np.arange(adaptation_steps)
+    
+    axes.plot(adaptation_steps, avg_diff_qd_score)
+    axes.set_xlabel("Adaptation steps")
+    axes.set_ylabel("Average Diff QD Score")
+    axes.set_title("Average Diff QD Score during Adaptation")
+    axes.set_aspect(0.95 / axes.get_data_ratio(), adjustable="box")
+
+    plt.savefig(output_path + "/diff_qd_score.png")
+    plt.close()
 
 
 def multiline(
