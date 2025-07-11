@@ -1,0 +1,19 @@
+{
+    "config": "config.json",
+    "mode": "adaptation",
+    "output_path": "outputs/dcrl_20250704_185243",
+    "algo_type": null,
+    "episode_length": 1000,
+    "batch_size": 4096,
+    "num_iterations": 3000,
+    "grid_shape": [
+        10,
+        10,
+        10,
+        10
+    ],
+    "policy_hidden_layer_sizes": [
+        32,
+        32
+    ],
+    "damage_joint_idx": 
