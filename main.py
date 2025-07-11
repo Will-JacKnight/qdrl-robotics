@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
     # args.output_path = "./outputs/mapelites_20250701_152736"
     # args.output_path = "./outputs/dcrl_20250703_114735"
-    args.output_path = "./outputs/dcrl_20250710_134938"
+    # args.output_path = "./outputs/dcrl_20250710_134938"
     # args.output_path = "./outputs/dcrl_20250704_185243"
 
     main(

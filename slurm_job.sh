@@ -7,13 +7,12 @@ export PATH=/vol/bitbucket/${USER}/qdrl-robotics/qdax050/bin/:$PATH     # points
 # if using miniconda, uncomment the below line
 # source ~/.bashrc
 source activate
-source /vol/cuda/12.0.0/setup.sh
+source /vol/cuda/12.9.0/setup.sh
 # . /vol/cuda/12.0.0/setup.sh
 
-# python ./main.py
-python -c "import jax.numpy as jnp; x = jnp.array([1.0, 2.0, 3.0]); print(x.device)"
+python main.py --config config.json --algo_type dcrl --output_path outputs --mode training
 
 # interactive job
-srun --pty --gres=gpu:1 bash
+# srun --pty --gres=gpu:1 bash
 
 echo "%%%%%%%%%%%%%%%Running Complete%%%%%%%%%%%%%%%"
