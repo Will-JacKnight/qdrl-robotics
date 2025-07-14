@@ -34,3 +34,4 @@
 - batch_size: 1024
 - damage_joint_idx: [0, 1]    # value between [0,7]
 - damage_joint_action: [0, 0.9] # value between [-1,1]
+- zero_sensor_idx: null # value between [0,86]

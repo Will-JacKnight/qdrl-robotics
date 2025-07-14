@@ -27,6 +27,7 @@ def main(
          policy_hidden_layer_sizes: Tuple[int, ...],
          damage_joint_idx: jnp.ndarray, 
          damage_joint_action: jnp.ndarray,
+         zero_sensor_idx: jnp.ndarray, 
          ga_batch_size,
          dcrl_batch_size,
          ai_batch_size,
@@ -45,12 +46,15 @@ def main(
          soft_tau_update,
          policy_delay,
          output_path: str,
+         exp_path: str,
          env_name: str,
          min_descriptor, 
          max_descriptor, 
          iso_sigma: int, 
          line_sigma: int, 
          log_period: int,
+         max_iters: int, 
+         performance_threshold
          ):
     
 
@@ -99,17 +103,19 @@ def main(
 
     if mode == "training":
         key, subkey = jax.random.split(key)
-        rollout = run_single_rollout(env, policy_network, params, subkey, None, None)
+        rollout = run_single_rollout(env, policy_network, params, subkey)
         render_rollout_to_html(rollout['states'], env, output_path + "/pre_adaptation_without_damage.html")
         
 
     key, subkey = jax.random.split(key)
-    rollout = run_single_rollout(env, policy_network, params, subkey, damage_joint_idx, damage_joint_action)
-    render_rollout_to_html(rollout['states'], env, output_path + "/pre_adaptation_with_damage.html")
+    rollout = run_single_rollout(env, policy_network, params, subkey, 
+                                 damage_joint_idx, damage_joint_action, zero_sensor_idx)
+    render_rollout_to_html(rollout['states'], env, exp_path + "/pre_adaptation_with_damage.html")
 
     key, subkey = jax.random.split(key)
-    run_online_adaptation(repertoire, env, policy_network, subkey, output_path, min_descriptor, max_descriptor, 
-                          grid_shape, damage_joint_idx, damage_joint_action, episode_length)
+    run_online_adaptation(repertoire, env, policy_network, subkey, exp_path, min_descriptor, max_descriptor, grid_shape, 
+                          damage_joint_idx, damage_joint_action, zero_sensor_idx,
+                          episode_length, max_iters, performance_threshold)
 
 
 
@@ -123,7 +129,8 @@ def get_args():
 
     parser.set_defaults(**config_args)
     parser.add_argument("--mode", type=str, help="run mode: training || adaptation (default)")
-    parser.add_argument("--output_path", type=str, help="relative output path for results")
+    parser.add_argument("--output_path", type=str, help="relative path to the MAP")
+    parser.add_argument("--exp_path", type=str, help="relative path to specific damage runs")
     parser.add_argument("--algo_type", type=str, help="choose from: mapelites || dcrl")
     parser.add_argument("--episode_length", type=int, help="Maximum rollout length")
     parser.add_argument("--batch_size", type=int, help="Training batch size")
@@ -131,7 +138,8 @@ def get_args():
     parser.add_argument("--grid_shape", type=int, nargs='+', help="Shape of the MAP grid, use format: --grid_shape 10 10 10 10")
     parser.add_argument("--policy_hidden_layer_sizes", type=int, nargs='+', help="Hidden layer size of controller policy")
     parser.add_argument("--damage_joint_idx", type=int, nargs='+', help="Index of the damaged joint")
-    parser.add_argument("--damage_joint_action", type=int, nargs='+', help="Action value of the damaged joint")
+    parser.add_argument("--damage_joint_action", type=float, nargs='+', help="Action value of the damaged joint")
+    parser.add_argument("--zero_sensor_idx", type=int, nargs='+', help="Index of the zero sensor")
     args = parser.parse_args()
 
     args.grid_shape = tuple(args.grid_shape)
@@ -154,9 +162,16 @@ def get_args():
 
         save_args(args)
 
-    args.damage_joint_idx = jnp.array(args.damage_joint_idx)
-    args.damage_joint_action = jnp.array(args.damage_joint_action)
-    
+    if args.damage_type == "physical":
+        args.damage_joint_idx = jnp.array(args.damage_joint_idx)
+        args.damage_joint_action = jnp.array(args.damage_joint_action)
+        args.zero_sensor_idx = None
+    elif args.damage_type == "sensory":
+        args.damage_joint_idx = None
+        args.damage_joint_action = None
+        args.zero_sensor_idx = jnp.array(args.zero_sensor_idx)
+    else:
+        raise ValueError("Unsupported damage type, please set between physical | sensory")
     return args
 
 
@@ -169,6 +184,7 @@ if __name__ == "__main__":
     # args.output_path = "./outputs/dcrl_20250703_114735"
     # args.output_path = "./outputs/dcrl_20250710_134938"
     # args.output_path = "./outputs/dcrl_20250704_185243"
+    args.output_path = "outputs/slurm/dcrl_20250710_133450"
 
     main(
         args.mode,
@@ -181,6 +197,7 @@ if __name__ == "__main__":
         args.policy_hidden_layer_sizes,
         args.damage_joint_idx, 
         args.damage_joint_action,
+        args.zero_sensor_idx,
         args.ga_batch_size,
         args.dcrl_batch_size,
         args.ai_batch_size,
@@ -199,12 +216,15 @@ if __name__ == "__main__":
         args.soft_tau_update,
         args.policy_delay,
         args.output_path,
+        args.exp_path,
         args.env_name,
         args.min_descriptor, 
         args.max_descriptor, 
         args.iso_sigma, 
         args.line_sigma, 
         args.log_period,
+        args.max_iters, 
+        args.performance_threshold
     )
 
 

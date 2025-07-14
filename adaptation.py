@@ -1,5 +1,6 @@
 from typing import Dict
 import math
+import functools
 
 import utils.gp_jax as gpx
 # import gpjax as gpx
@@ -14,17 +15,14 @@ from utils.new_plot import plot_diff_qd_score, plot_grid_results
 from rollout import run_single_rollout, render_rollout_to_html, create_jit_rollout_fn
 
 
-def upper_confidence_bound(mean, std, kappa=0.05):
-    return jnp.argmax(mean + kappa * std)
-    
-
 def run_online_adaptation(
-                      repertoire: MapElitesRepertoire,
-                      env, policy_network, key, output_path,
-                      min_descriptor, max_descriptor, grid_shape,
-                      damage_joint_idx, damage_joint_action,
-                      episode_length,
-                      max_iters=20, performance_threshold=0.9, lengthscale=0.4, noise=1e-3):
+    repertoire: MapElitesRepertoire,
+    env, policy_network, key, exp_path,
+    min_descriptor, max_descriptor, grid_shape,
+    damage_joint_idx, damage_joint_action, zero_sensor_idx, 
+    episode_length, max_iters=20, performance_threshold=0.9, 
+    lengthscale=0.4, noise=1e-3
+):
 
 
     print("Lengthscale:", lengthscale)
@@ -41,6 +39,9 @@ def run_online_adaptation(
     real_iter_fitnesses = []
     tested_goals = []
     means_adjusted = jnp.squeeze(fitnesses, axis=1)    # mu_0 = P(x)
+    
+    def upper_confidence_bound(mean, std, kappa=0.05):
+        return jnp.argmax(mean + kappa * std)
 
     # Define the GP model
     kernel = gpx.kernels.Matern52(lengthscale=lengthscale)
@@ -49,14 +50,14 @@ def run_online_adaptation(
     acquisition_fn = jax.jit(upper_confidence_bound)
 
 
-
     # plot real fitness grid
     avg_diff_qd_scores = []
     grid_size = math.prod(grid_shape)
     jit_rollout_fn = create_jit_rollout_fn(env, policy_network, episode_length)
 
-    def single_eval(param, key):
-        return jit_rollout_fn(param, key, damage_joint_idx, damage_joint_action)
+    single_eval = functools.partial(jit_rollout_fn, 
+                                   damage_joint_idx=damage_joint_idx, 
+                                   damage_joint_action=damage_joint_action)
 
     # batched_rewards = []
     # for i in trange(grid_size):
@@ -70,7 +71,7 @@ def run_online_adaptation(
 
     repertoire = repertoire.replace(fitnesses=batched_rewards.reshape((-1, 1)))
 
-    plot_grid_results("real", repertoire, min_descriptor, max_descriptor, grid_shape, output_path)
+    plot_grid_results("real", repertoire, min_descriptor, max_descriptor, grid_shape, exp_path)
 
 
     top_k = 10
@@ -80,13 +81,14 @@ def run_online_adaptation(
     best_real_idx = jnp.argmax(batched_rewards)
     print(f"\nbest index after damage: {best_real_idx}")
     print(f"best real behaviour after damage: {repertoire.descriptors[best_real_idx]}")
-    print(f"best real fitness after damage:{jnp.max(batched_rewards)}")
+    print(f"best real fitness after damage:{jnp.max(batched_rewards):.2f}")
     print(f"top {top_k} real fitness indices: {sorted_top_indices} \n")
 
     best_params = jax.tree.map(lambda x: x[best_real_idx], repertoire.genotypes)
     key, subkey = jax.random.split(key)
-    rollout = run_single_rollout(env, policy_network, best_params, subkey, damage_joint_idx, damage_joint_action)
-    render_rollout_to_html(rollout['states'], env, output_path + "/best_real_fitness.html")
+    rollout = run_single_rollout(env, policy_network, best_params, subkey, 
+                                 damage_joint_idx, damage_joint_action, zero_sensor_idx)
+    render_rollout_to_html(rollout['states'], env, exp_path + "/best_real_fitness.html")
 
 
     for iter_num in trange(max_iters, desc="Adaptation"):
@@ -113,7 +115,8 @@ def run_online_adaptation(
         # evaluate on the real robot
         params = jax.tree.map(lambda x: x[next_idx], repertoire.genotypes)
         key, subkey = jax.random.split(key)
-        rollout = run_single_rollout(env, policy_network, params, subkey, damage_joint_idx, damage_joint_action)          # rollout = {'rewards': jnp.array, 'state': jnp.array}
+        rollout = run_single_rollout(env, policy_network, params, subkey, 
+                                     damage_joint_idx, damage_joint_action, zero_sensor_idx)
         real_fitness = rollout['rewards'].sum()
 
         obs_dataset = gpx.Dataset(
@@ -135,7 +138,7 @@ def run_online_adaptation(
 
         # plot predicted grid after each adaptation iteration
         repertoire = repertoire.replace(fitnesses=jnp.expand_dims(means_adjusted, axis=1))
-        plot_grid_results("predicted", repertoire, min_descriptor, max_descriptor, grid_shape, output_path, iter_num)
+        plot_grid_results("predicted", repertoire, min_descriptor, max_descriptor, grid_shape, exp_path, iter_num)
 
         # calulate diff qd score
         diff_score = np.zeros(grid_size)
@@ -158,8 +161,9 @@ def run_online_adaptation(
 
             best_params = jax.tree.map(lambda x: x[best_idx], repertoire.genotypes)
             key, subkey = jax.random.split(key)
-            rollout = run_single_rollout(env, policy_network, best_params, subkey, damage_joint_idx, damage_joint_action)
-            render_rollout_to_html(rollout['states'], env, output_path + "/post_adaptation_with_damage.html")
+            rollout = run_single_rollout(env, policy_network, best_params, subkey, 
+                                         damage_joint_idx, damage_joint_action, zero_sensor_idx)
+            render_rollout_to_html(rollout['states'], env, exp_path + "/post_adaptation_with_damage.html")
             
             real_fitness = rollout['rewards'].sum()
             print(f"real fitness: {real_fitness}")
@@ -172,7 +176,7 @@ def run_online_adaptation(
             print("********adaptation completes********")
             break
     
-    plot_diff_qd_score(adaptation_steps, avg_diff_qd_scores, output_path)
+    plot_diff_qd_score(adaptation_steps, avg_diff_qd_scores, exp_path)
     # print(f"tested indices: {tested_indices}")
     # print(f"real fitnesses: {real_fitnesses}")
     # print(f"tested goals: {tested_goals}")

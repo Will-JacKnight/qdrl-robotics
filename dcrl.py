@@ -17,7 +17,7 @@ from qdax.tasks.brax.v1 import descriptor_extractor
 from qdax.tasks.brax.v1.wrappers.reward_wrappers import OffsetRewardWrapper, ClipRewardWrapper
 from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs
 from qdax.utils.metrics import default_qd_metrics
-
+from rollout import init_env_and_policy_network
 
 def run_dcrl_map_elites(env_name,  #
              episode_length, #
@@ -49,19 +49,8 @@ def run_dcrl_map_elites(env_name,  #
              log_period, 
              key):
     
-    
-    # Init environment
-    env = environments.create(env_name, episode_length=episode_length)
-    env = OffsetRewardWrapper(env, offset=environments.reward_offset[env_name])
-    env = ClipRewardWrapper(env, clip_min=0.,)
+    env, policy_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
 
-    # Init policy network
-    policy_layer_sizes = policy_hidden_layer_sizes + (env.action_size,)
-    policy_network = MLP(
-        layer_sizes=policy_layer_sizes,
-        kernel_init=jax.nn.initializers.lecun_uniform(),
-        final_activation=jnp.tanh,
-    )
     reset_fn = jax.jit(env.reset)
     
     actor_dc_network = MLPDC(

@@ -1,13 +1,12 @@
 from typing import Any, List, Optional, Tuple
 import jax
 import jax.numpy as jnp
-from brax.envs.base import Env, State, Wrapper
-
-from qdax.tasks.brax.v1.wrappers.base_wrappers import QDWrapper
+from brax.v1 import jumpy as jp
+from brax.v1.envs import Env, State, Wrapper
 
 # name of the forward/velocity reward
 FORWARD_REWARD_NAMES = {
-    "ant_uni": "reward_forward",
+    "ant": "reward_forward",
     "halfcheetah": "reward_run",
     "walker2d": "reward_forward",
     "hopper": "reward_forward",
@@ -33,7 +32,7 @@ class ForwardStepRewardWrapper(Wrapper):
     def name(self) -> str:
         return self._env_name
     
-    def step(self, state: State, action: jax.Array) -> State:
+    def step(self, state: State, action: jp.ndarray) -> State:
         state = self.env.step(state, action)
         new_reward = state.metrics[self._forward_reward_name]
         return state.replace(reward=new_reward)

@@ -16,6 +16,7 @@
 **.sh.e**
 **.sh.o**
 /outputs/archive
+**/*.html
 
 # affliates
 /sample_code

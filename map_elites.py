@@ -13,20 +13,14 @@ from qdax.core.neuroevolution.networks.networks import MLP
 from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs as scoring_function
 from qdax.utils.metrics import default_qd_metrics
 from tqdm import trange
+from rollout import init_env_and_policy_network
 
 
 def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, grid_shape,
                    min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, key):
-    # Init environment
-    env = environments.create(env_name, episode_length=episode_length)
 
-    # Init policy network
-    policy_layer_sizes = policy_hidden_layer_sizes + (env.action_size,)
-    policy_network = MLP(
-        layer_sizes=policy_layer_sizes,
-        kernel_init=jax.nn.initializers.lecun_uniform(),
-        final_activation=jnp.tanh,
-    )
+    env, policy_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
+    
     reset_fn = jax.jit(env.reset)
 
     # Init population of controllers
