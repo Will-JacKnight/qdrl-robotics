@@ -7,11 +7,11 @@ cd $PBS_O_WORKDIR
 source qdax050/bin/activate
 
 # map creation
-python main.py --config config.json --algo_type dcrl --output_path outputs --mode training
+# python main.py --config config.json --algo_type dcrl --output_path outputs --mode training
 
 # adaptation inspection
-# output_path="outputs/dcrl_20250704_185243"
-# python main.py --config config.json --output_path $output_path
+output_path="outputs/hpc/dcrl_20250710_134938"
+python main.py --config config.json --output_path $output_path --exp_path $output_path
 
 # # damage rotation
 # damaged_joint_idx=("0 1" "0 1" "4 5 6 7" "0 1 6 7")

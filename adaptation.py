@@ -30,6 +30,11 @@ def run_online_adaptation(
     print("Performance threshold:", performance_threshold)
     print("Max iterations:", max_iters)
 
+    print("damage_joint_idx:", damage_joint_idx)
+    print("damage_joint_action:", damage_joint_action)
+    print("zero_sensor_idx:", zero_sensor_idx)
+
+
     # select the most promising behavior from MAP
     fitnesses = repertoire.fitnesses
     next_idx = jnp.argmax(fitnesses)
@@ -57,13 +62,8 @@ def run_online_adaptation(
 
     single_eval = functools.partial(jit_rollout_fn, 
                                    damage_joint_idx=damage_joint_idx, 
-                                   damage_joint_action=damage_joint_action)
-
-    # batched_rewards = []
-    # for i in trange(grid_size):
-    #     key, subkey = jax.random.split(key)
-    #     params = jax.tree.map(lambda x: x[i], repertoire.genotypes)
-    #     batched_rewards.append(single_eval(params, subkey))
+                                   damage_joint_action=damage_joint_action,
+                                   zero_sensor_idx=zero_sensor_idx)
 
     key, subkey = jax.random.split(key)
     keys = jax.random.split(subkey, grid_size)
