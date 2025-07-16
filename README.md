@@ -1,3 +1,6 @@
+# Intelligent Trial and Error
+<img src="https://github.com/Will-JacKnight/qdrl-robotics/docs/images/intact_walking.gif" height="150"/>
+<img src="https://github.com/Will-JacKnight/qdrl-robotics/docs/images/recovery_demo.gif" height="150"/>
 
 # Environment
 ## Package Installation
@@ -19,7 +22,7 @@
 
 
 
-# Parameter 
+# Parameter
 ## Configurations
 - Default parameters are stored in ```./config.json```
 - Shell command will override default parameters
