@@ -140,6 +140,7 @@ def get_args():
     parser.add_argument("--damage_joint_idx", type=int, nargs='+', help="Index of the damaged joint")
     parser.add_argument("--damage_joint_action", type=float, nargs='+', help="Action value of the damaged joint")
     parser.add_argument("--zero_sensor_idx", type=int, nargs='+', help="Index of the zero sensor")
+    parser.add_argument("--damage_type", type=str, help="Damage type: physical | sensory")
     args = parser.parse_args()
 
     args.grid_shape = tuple(args.grid_shape)

@@ -138,9 +138,8 @@ def create_jit_rollout_fn(
 
         def step_fn(carry, _):
             state, total_rewards = carry
-            obs = state.obs
-            obs = obs.at[zero_sensor_idx].set(0.0)
-            action = jit_inference_fn(params, obs)
+            state.obs.at[zero_sensor_idx].set(0.0)
+            action = jit_inference_fn(params, state.obs)
             action = action.at[damage_joint_idx].set(damage_joint_action)
             state = jit_env_step(state, action)     # get next state
             reward = state.reward
