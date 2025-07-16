@@ -1,16 +1,8 @@
 # Intelligent Trial and Error
+<img src="docs/images/intact_walking.gif" height="150"/><img src="docs/images/recovery_demo.gif" height="150"/>
 
-<div style="display: flex; align-items: flex-start;">
-  <figure style="margin: 0; text-align: center;">
-    <img src="docs/images/intact_walking.gif" height="150"/>
-    <figcaption><em>Intact walking behavior</em></figcaption>
-  </figure>
-
-  <figure style="margin: 0; text-align: center;">
-    <img src="docs/images/recovery_demo.gif" height="150"/>
-    <figcaption><em>Recovery behaviour after physical damage to a joint</em></figcaption>
-  </figure>
-</div>
+- Left: Intact walking behavior
+- Right: Recovery behaviour after physical damage to a joint
 
 # Environment
 ## Package Installation
