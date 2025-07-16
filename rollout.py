@@ -83,8 +83,8 @@ def run_single_rollout(
 
         # simulate failing sensors
         if zero_sensor_idx is not None:
-            state.obs.at[zero_sensor_idx].set(0.0)
-
+            damaged_obs = state.obs.at[zero_sensor_idx].set(0.0)
+        state = state.replace(obs=damaged_obs)
         action = jit_inference_fn(params, state.obs)
 
         # apply damage to actions
@@ -104,20 +104,17 @@ def run_single_rollout(
         }
 
 
-def create_jit_rollout_fn(
+def jit_rollout_fn(
     env, 
     policy_network, 
-    episode_length: int,
-    damage_joint_idx: Optional[jnp.ndarray] = None, 
-    damage_joint_action: Optional[jnp.ndarray] = None,
-    zero_sensor_idx: Optional[jnp.ndarray] = None
+    episode_length: int
 ):
     jit_env_reset = jax.jit(env.reset)
     jit_env_step = jax.jit(env.step)
     jit_inference_fn = jax.jit(policy_network.apply)
     
     @jax.jit
-    def _jit_run_single_rollout(
+    def _jit_fitness_rollout(
         params, 
         key, 
         damage_joint_idx: jnp.ndarray, 
@@ -138,7 +135,8 @@ def create_jit_rollout_fn(
 
         def step_fn(carry, _):
             state, total_rewards = carry
-            state.obs.at[zero_sensor_idx].set(0.0)
+            damaged_obs = state.obs.at[zero_sensor_idx].set(0.0)
+            state = state.replace(obs=damaged_obs)
             action = jit_inference_fn(params, state.obs)
             action = action.at[damage_joint_idx].set(damage_joint_action)
             state = jit_env_step(state, action)     # get next state
@@ -150,15 +148,8 @@ def create_jit_rollout_fn(
         (_, total_rewards), _ = jax.lax.scan(step_fn, init_carry, length=episode_length)
 
         return total_rewards
-    
-    if damage_joint_idx is None:
-        damage_joint_idx = jnp.array([], dtype=jnp.int32)
-    if damage_joint_action is None:
-        damage_joint_action = jnp.array([], dtype=jnp.float32)
-    if zero_sensor_idx is None:
-        zero_sensor_idx = jnp.array([], dtype=jnp.int32)
 
-    return _jit_run_single_rollout
+    return _jit_fitness_rollout
 
 
 # if __name__ == "__main__":

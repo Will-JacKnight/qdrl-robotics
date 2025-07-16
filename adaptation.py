@@ -12,7 +12,7 @@ from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from tqdm import trange
 from utils.new_plot import plot_diff_qd_score, plot_grid_results
 
-from rollout import run_single_rollout, render_rollout_to_html, create_jit_rollout_fn
+from rollout import run_single_rollout, render_rollout_to_html, jit_rollout_fn
 
 
 def run_online_adaptation(
@@ -58,9 +58,9 @@ def run_online_adaptation(
     # plot real fitness grid
     avg_diff_qd_scores = []
     grid_size = math.prod(grid_shape)
-    jit_rollout_fn = create_jit_rollout_fn(env, policy_network, episode_length)
+    fitness_rollout_fn = jit_rollout_fn(env, policy_network, episode_length)
 
-    single_eval = functools.partial(jit_rollout_fn, 
+    single_eval = functools.partial(fitness_rollout_fn, 
                                    damage_joint_idx=damage_joint_idx, 
                                    damage_joint_action=damage_joint_action,
                                    zero_sensor_idx=zero_sensor_idx)

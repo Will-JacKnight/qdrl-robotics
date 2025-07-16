@@ -166,10 +166,10 @@ def get_args():
     if args.damage_type == "physical":
         args.damage_joint_idx = jnp.array(args.damage_joint_idx)
         args.damage_joint_action = jnp.array(args.damage_joint_action)
-        args.zero_sensor_idx = None
+        args.zero_sensor_idx = jnp.array([], dtype=jnp.int32)
     elif args.damage_type == "sensory":
-        args.damage_joint_idx = None
-        args.damage_joint_action = None
+        args.damage_joint_idx = jnp.array([], dtype=jnp.int32)
+        args.damage_joint_action = jnp.array([], dtype=jnp.float32)
         args.zero_sensor_idx = jnp.array(args.zero_sensor_idx)
     else:
         raise ValueError("Unsupported damage type, please set between physical | sensory")
