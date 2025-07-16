@@ -1,6 +1,16 @@
 # Intelligent Trial and Error
-<img src="https://github.com/Will-JacKnight/qdrl-robotics/docs/images/intact_walking.gif" height="150"/>
-<img src="https://github.com/Will-JacKnight/qdrl-robotics/docs/images/recovery_demo.gif" height="150"/>
+
+<div style="display: flex; align-items: flex-start;">
+  <figure style="margin: 0; text-align: center;">
+    <img src="docs/images/intact_walking.gif" height="150"/>
+    <figcaption><em>Intact walking behavior</em></figcaption>
+  </figure>
+
+  <figure style="margin: 0; text-align: center;">
+    <img src="docs/images/recovery_demo.gif" height="150"/>
+    <figcaption><em>Recovery behaviour after physical damage to a joint</em></figcaption>
+  </figure>
+</div>
 
 # Environment
 ## Package Installation
