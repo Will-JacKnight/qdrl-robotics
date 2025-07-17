@@ -14,6 +14,25 @@ from utils.new_plot import plot_diff_qd_score, plot_grid_results
 
 from rollout import run_single_rollout, render_rollout_to_html, jit_rollout_fn
 
+def upper_confidence_bound(
+    mean, 
+    std, 
+    kappa=0.05
+):
+    return jnp.argmax(mean + kappa * std)
+
+def get_top_k_indices(
+    top_k: int,
+    fitnesses,
+    sorted=True,
+):
+    '''
+    returns:
+        - indices in descending fitness order by default
+    '''
+    indices = jnp.argpartition(fitnesses, -top_k)[-top_k:]     # get indices of top 10 fitness behaviours
+    sorted_top_indices = indices[jnp.argsort(-fitnesses[indices])] # behaviour indices in descending fitnesses
+    return sorted_top_indices if sorted else indices
 
 def run_online_adaptation(
     repertoire: MapElitesRepertoire,
@@ -44,9 +63,6 @@ def run_online_adaptation(
     real_iter_fitnesses = []
     tested_goals = []
     means_adjusted = jnp.squeeze(fitnesses, axis=1)    # mu_0 = P(x)
-    
-    def upper_confidence_bound(mean, std, kappa=0.05):
-        return jnp.argmax(mean + kappa * std)
 
     # Define the GP model
     kernel = gpx.kernels.Matern52(lengthscale=lengthscale)
@@ -71,12 +87,12 @@ def run_online_adaptation(
 
     repertoire = repertoire.replace(fitnesses=batched_rewards.reshape((-1, 1)))
 
-    plot_grid_results("real", repertoire, min_descriptor, max_descriptor, grid_shape, exp_path)
-
+    vmin = batched_rewards.min()
+    vmax = batched_rewards.max()
+    plot_grid_results("real", repertoire, min_descriptor, max_descriptor, grid_shape, exp_path, vmin=vmin, vmax=vmax)
 
     top_k = 10
-    indices = jnp.argpartition(batched_rewards, -top_k)[-top_k:]     # get indices of top 10 fitness behaviours
-    sorted_top_indices = indices[jnp.argsort(-batched_rewards[indices])] # behaviour indices in descending fitnesses
+    sorted_top_indices = get_top_k_indices(top_k, batched_rewards)
     
     best_real_idx = jnp.argmax(batched_rewards)
     print(f"\nbest index after damage: {best_real_idx}")
@@ -106,18 +122,27 @@ def run_online_adaptation(
             stddev = predictive_dist.stddev()
             means_adjusted = jnp.squeeze(fitnesses, axis=1) + means_residual
             next_idx = acquisition_fn(means_adjusted, stddev)
-            print(f"next index: {next_idx}")
+            print(f"\nnext index: {next_idx}\n")
+
+            filled_mask = jnp.isfinite(means_adjusted)
+            print(f"min estimate: {means_adjusted[filled_mask].min()}")
+
+
+            
 
         next_goal = repertoire.centroids[next_idx]
         tested_indices.append(next_idx)
         tested_goals.append(next_goal)
 
-        # evaluate on the real robot
-        params = jax.tree.map(lambda x: x[next_idx], repertoire.genotypes)
-        key, subkey = jax.random.split(key)
-        rollout = run_single_rollout(env, policy_network, params, subkey, 
-                                     damage_joint_idx, damage_joint_action, zero_sensor_idx)
-        real_fitness = rollout['rewards'].sum()
+        # # op1: re-evaluate on the real robot
+        # params = jax.tree.map(lambda x: x[next_idx], repertoire.genotypes)
+        # key, subkey = jax.random.split(key)
+        # rollout = run_single_rollout(env, policy_network, params, subkey, 
+        #                              damage_joint_idx, damage_joint_action, zero_sensor_idx)
+        # real_fitness = rollout['rewards'].sum()
+
+        # op2: sample from real fitness grid
+        real_fitness = batched_rewards[next_idx]
 
         obs_dataset = gpx.Dataset(
             X=jnp.expand_dims(next_goal, axis=0),
@@ -129,16 +154,19 @@ def run_online_adaptation(
         max_tested_fitness = max(real_iter_fitnesses)
         if real_fitness == max_tested_fitness:
             best_idx = next_idx
+        
+        sorted_top_indices = get_top_k_indices(top_k, means_adjusted)
 
         print(
             f"real fitness: {real_fitness:.2f}\n",
             f"tested behaviour: {repertoire.descriptors[next_idx]}\n",
-            f"Max real fitness by far: {max_tested_fitness:.2f}\n",
+            f"max real fitness by far: {max_tested_fitness:.2f}\n",
+            f"top {top_k} real fitness indices: {sorted_top_indices}\n"
         )
 
         # plot predicted grid after each adaptation iteration
         repertoire = repertoire.replace(fitnesses=jnp.expand_dims(means_adjusted, axis=1))
-        plot_grid_results("predicted", repertoire, min_descriptor, max_descriptor, grid_shape, exp_path, iter_num)
+        plot_grid_results("predicted", repertoire, min_descriptor, max_descriptor, grid_shape, exp_path, iter_num, vmin=vmin, vmax=vmax)
 
         # calulate diff qd score
         diff_score = np.zeros(grid_size)

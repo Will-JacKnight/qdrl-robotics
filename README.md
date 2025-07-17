@@ -40,3 +40,7 @@
 - damage_joint_idx: [0, 1]    # value between [0,7]
 - damage_joint_action: [0, 0.9] # value between [-1,1]
 - zero_sensor_idx: null # value between [0,86]
+
+## Repertoire
+- batched_rewards: evaluates all cells in the archive, without any inf/nan values
+- repertoire.fitnesses: with empty cells are portrayed as -inf

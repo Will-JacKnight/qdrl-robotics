@@ -309,6 +309,8 @@ def plot_grid_results(
     grid_shape: Tuple,
     output_path: str,
     iter_num: Optional[int] = None,
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
 ) -> None:
     """
     plot means of post distribution of GP as fitness prediction during each ITE adaptation.
@@ -316,7 +318,7 @@ def plot_grid_results(
     if mode == "predicted" and iter_num is None:
         raise ValueError("iter_num must be provided for predicted mode")
 
-    _, ax = plot_multidimensional_map_elites_grid(repertoire, min_descriptor, max_descriptor, grid_shape)
+    _, ax = plot_multidimensional_map_elites_grid(repertoire, min_descriptor, max_descriptor, grid_shape, vmin=vmin, vmax=vmax)
     
     if mode == "predicted":
         ax.set_title(f"{mode} fitness @ iteration {iter_num + 1}")

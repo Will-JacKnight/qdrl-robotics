@@ -6,6 +6,7 @@ import jax
 import jax.numpy as jnp
 from typing import Callable, Optional
 import functools
+import matplotlib.pyplot as plt
 
 
 class Dataset:
@@ -168,31 +169,27 @@ class Posterior:
 
 class kernels:
     @staticmethod
-    def Matern52(lengthscale: float = 1.0):
+    def Matern52(lengthscale: float = 1.0, variance: Optional[float] = 1.0):
         """
         The Matérn kernel with smoothness parameter fixed at 2.5.
 
 
         Computes the covariance for pairs of inputs $(x, y)$ with
         lengthscale parameter $\\ell$ and variance $\\sigma^2$.
-
-        $$
-        k(x, y) = \\sigma^2 \\exp \\Bigg(1+ \\frac{\\sqrt{5}\\lvert x-y \\rvert}{\\ell^2} + \\frac{5\\lvert x - y \\rvert^2}{3\\ell^2} \\Bigg)\\exp\\Bigg(-\\frac{\\sqrt{5}\\lvert x-y\\rvert}{\\ell^2} \\Bigg)
-        $$
         """
         def kernel_fn(x1: jnp.ndarray, x2: jnp.ndarray) -> jnp.ndarray:
             # Handle single points
             if x1.ndim == 1:
-                x1 = x1.reshape(1, -1) 
+                x1 = x1.reshape(-1, 1) 
             if x2.ndim == 1:
-                x2 = x2.reshape(1, -1)
+                x2 = x2.reshape(-1, 1)
                 
             # Compute pairwise distances
             dists = jnp.linalg.norm(x1[:, None, :] - x2[None, :, :], axis=-1)
             scaled_dists = jnp.sqrt(5.0) * dists / lengthscale
             
             # Matern 5/2 formula
-            kernel_vals = (1.0 + scaled_dists + (scaled_dists**2) / 3.0) * jnp.exp(-scaled_dists)
+            kernel_vals = variance * (1.0 + scaled_dists + (scaled_dists**2) / 3.0) * jnp.exp(-scaled_dists)
             return kernel_vals
         
         return kernel_fn
@@ -222,3 +219,25 @@ class gps:
     def Prior(kernel: Callable, mean_function: Callable):
         """Create a GP prior"""
         return Prior(kernel, mean_function) 
+
+if __name__ == "__main__":
+    x = jnp.arange(100)
+    y = jnp.sin(x)
+    D = Dataset(X=x, y=y)
+
+
+    kernel = kernels.Matern52(lengthscale=0.4)
+    mean_fn = mean_functions.Zero()
+    prior = gps.Prior(kernel=kernel, mean_function=mean_fn)
+
+
+    likelihood = likelihoods.Gaussian(num_datapoints=D.n, obs_stddev=1e-3)
+    posterior = prior * likelihood
+
+    latent_dist = posterior.predict(test_inputs=jnp.arange(100), train_data=D)
+    predictive_dist = posterior.likelihood(latent_dist)
+
+    means_residual = predictive_dist.mean()
+    stddev = predictive_dist.stddev()
+
+    breakpoint()

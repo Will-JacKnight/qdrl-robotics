@@ -30,7 +30,7 @@
     "policy_noise": 0.2,
     "soft_tau_update": 0.005,
     "policy_delay": 2,
-    "max_iters": 50,
+    "max_iters": 20,
     "performance_threshold": 0.9,
     "damage_type": "physical",
     "damage_joint_idx": [0, 1],
