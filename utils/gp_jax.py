@@ -22,6 +22,9 @@ class Dataset:
             self.y = jnp.empty((0, 1))
         else:
             self.y = y
+
+    def __str__(self):
+        return f"Dataset with {self.n} points:\nX:\n{self.X}\ny:\n{self.y}"
     
     @property
     def n(self) -> int:
@@ -40,7 +43,7 @@ class Dataset:
             y=jnp.concatenate([self.y, other.y], axis=0)
         )
 
-
+    
 class PredictiveDistribution:
     """Distribution returned by posterior predictions"""
     
@@ -112,7 +115,7 @@ class Posterior:
         """GP prediction returning latent distribution"""
         # Ensure test_inputs is 2D
         if test_inputs.ndim == 1:
-            test_inputs = test_inputs.reshape(1, -1)
+            test_inputs = test_inputs.reshape(-1, 1)
             
         if train_data.n == 0:
             # No training data, return prior
