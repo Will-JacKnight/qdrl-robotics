@@ -19,7 +19,7 @@ from rollout import init_env_and_policy_network
 def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, grid_shape,
                    min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, key):
 
-    env, policy_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
+    env, policy_network, _ = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
     
     reset_fn = jax.jit(env.reset)
 

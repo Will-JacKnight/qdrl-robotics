@@ -49,15 +49,9 @@ def run_dcrl_map_elites(env_name,  #
              log_period, 
              key):
     
-    env, policy_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
+    env, policy_network, actor_dc_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
 
     reset_fn = jax.jit(env.reset)
-    
-    actor_dc_network = MLPDC(
-        layer_sizes=policy_layer_sizes,
-        kernel_init=jax.nn.initializers.lecun_uniform(),
-        final_activation=jnp.tanh,
-    )
     
     # Init population of controllers
     key, subkey = jax.random.split(key)

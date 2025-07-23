@@ -7,7 +7,7 @@ import numpy as np
 from brax.v1.io import html
 
 import qdax.tasks.brax.v1 as environments
-from qdax.core.neuroevolution.networks.networks import MLP
+from qdax.core.neuroevolution.networks.networks import MLP, MLPDC
 from qdax.tasks.brax.v1.wrappers.reward_wrappers import OffsetRewardWrapper, ClipRewardWrapper
 from qdax.tasks.brax.v1.wrappers.init_state_wrapper import FixedInitialStateWrapper
 
@@ -35,8 +35,14 @@ def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_si
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
-            )
-    return env, policy_network
+    )
+    
+    actor_dc_network = MLPDC(
+        layer_sizes=policy_layer_sizes,
+        kernel_init=jax.nn.initializers.lecun_uniform(),
+        final_activation=jnp.tanh,
+    )
+    return env, policy_network, actor_dc_network
 
 
 def render_rollout_to_html(states, env, output_path):
