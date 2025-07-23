@@ -92,7 +92,9 @@ def run_single_rollout(
         if zero_sensor_idx is not None:
             damaged_obs = state.obs.at[zero_sensor_idx].set(0.0)
         state = state.replace(obs=damaged_obs)
-        action = jit_inference_fn(params, state.obs)
+
+        key, subkey = jax.random.split(key)
+        action = jit_inference_fn(params, state.obs, rngs={"dropout": subkey})
 
         # apply damage to actions
         if damage_joint_idx is not None:

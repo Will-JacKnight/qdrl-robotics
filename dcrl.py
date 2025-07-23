@@ -62,7 +62,8 @@ def run_dcrl_map_elites(env_name,  #
     def play_step_fn(
         env_state: EnvState, policy_params: Params, key: RNGKey
     ) -> Tuple[EnvState, Params, RNGKey, DCRLTransition]:
-        actions = policy_network.apply(policy_params, env_state.obs)
+        key, subkey = jax.random.split(key)
+        actions = policy_network.apply(policy_params, env_state.obs, train=True, rngs={"dropout": subkey})
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, actions)
 

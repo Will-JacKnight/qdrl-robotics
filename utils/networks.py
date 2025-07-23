@@ -14,10 +14,9 @@ class CustomMLP(MLP):
         - deterministic (bool): set True to disable Dropout, False by default
     """
     dropout_rate: float = 0.1
-    deterministic: bool = False
 
     @nn.compact
-    def __call__(self, obs: jnp.ndarray) -> jnp.ndarray:
+    def __call__(self, obs: jnp.ndarray, train: Optional[bool] = False) -> jnp.ndarray:
         hidden = obs
         for i, hidden_size in enumerate(self.layer_sizes):
 
@@ -28,7 +27,7 @@ class CustomMLP(MLP):
                     use_bias=self.bias,
                 )(hidden)
                 hidden = self.activation(hidden)  # type: ignore
-                hidden = nn.Dropout(rate=self.dropout_rate, deterministic=self.deterministic)(hidden)
+                hidden = nn.Dropout(rate=self.dropout_rate, deterministic=not train)(hidden)
 
             else:
                 if self.kernel_init_final is not None:
@@ -57,10 +56,9 @@ class CustomMLPDC(MLPDC):
     """
 
     dropout_rate: float = 0.1
-    deterministic: bool = False
 
     @nn.compact
-    def __call__(self, obs: jnp.ndarray, desc: jnp.ndarray) -> jnp.ndarray:
+    def __call__(self, obs: jnp.ndarray, desc: jnp.ndarray, train: Optional[bool] = False) -> jnp.ndarray:
         hidden = jnp.concatenate([obs, desc], axis=-1)
         for i, hidden_size in enumerate(self.layer_sizes):
 
@@ -71,7 +69,7 @@ class CustomMLPDC(MLPDC):
                     use_bias=self.bias,
                 )(hidden)
                 hidden = self.activation(hidden)  # type: ignore
-                hidden = nn.Dropout(rate=self.dropout_rate, deterministic=self.deterministic)(hidden)
+                hidden = nn.Dropout(rate=self.dropout_rate, deterministic=not train)(hidden)
 
             else:
                 if self.kernel_init_final is not None:

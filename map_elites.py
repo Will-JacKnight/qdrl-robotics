@@ -30,8 +30,8 @@ def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_si
     init_variables = jax.vmap(policy_network.init)(keys, fake_batch)
 
     def play_step_fn(env_state, policy_params, key,):
-
-        actions = policy_network.apply(policy_params, env_state.obs)
+        key, subkey = jax.random.split(key)
+        actions = policy_network.apply(policy_params, env_state.obs, train=True, rngs={"dropout": subkey})
 
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, actions)
