@@ -7,13 +7,14 @@ import numpy as np
 from brax.v1.io import html
 
 import qdax.tasks.brax.v1 as environments
-from qdax.core.neuroevolution.networks.networks import MLP, MLPDC
+# from qdax.core.neuroevolution.networks.networks import MLP, MLPDC
 from qdax.tasks.brax.v1.wrappers.reward_wrappers import OffsetRewardWrapper, ClipRewardWrapper
 from qdax.tasks.brax.v1.wrappers.init_state_wrapper import FixedInitialStateWrapper
 
 from utils.reward_wrapper import ForwardStepRewardWrapper
 from utils.util import load_pkls
 from utils.new_plot import plot_grid_results
+from utils.networks import CustomMLP, CustomMLPDC
 
 
 def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes):
@@ -31,13 +32,13 @@ def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_si
 
     # Init policy network
     policy_layer_sizes = policy_hidden_layer_sizes + (env.action_size,)
-    policy_network = MLP(
+    policy_network = CustomMLP(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
     )
     
-    actor_dc_network = MLPDC(
+    actor_dc_network = CustomMLPDC(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,

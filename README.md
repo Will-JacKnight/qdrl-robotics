@@ -27,6 +27,8 @@ The goal for the agent is to run as fast as possible, even when it's damaged.
 - Branch ```qdax031``` is compatible with qdax==0.3.1 (obsolete)
 
 
+## Utilities
+Some QDax features have been extended to support training and evaluations of this project. They can be found under 'utils/' folder.
 
 # Parameters
 ## Configurations
