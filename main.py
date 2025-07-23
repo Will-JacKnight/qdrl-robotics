@@ -87,7 +87,7 @@ def main(
 
 
     repertoire, metrics = load_pkls(output_path)
-    env, policy_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
+    env, policy_network, _ = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
  
     best_fitness = jnp.max(repertoire.fitnesses)
     best_idx = jnp.argmax(repertoire.fitnesses)
