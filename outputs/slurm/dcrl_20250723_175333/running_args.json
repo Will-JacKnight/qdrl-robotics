@@ -1,11 +1,11 @@
 {
     "config": "config.json",
     "mode": "training",
-    "output_path": "outputs/slurm/dcrl_20250723_174105",
+    "output_path": "outputs/slurm/dcrl_20250723_175333",
     "exp_path": null,
     "algo_type": "dcrl",
     "episode_length": 1000,
-    "batch_size": 1024,
+    "batch_size": 4096,
     "num_iterations": 3000,
     "grid_shape": [
         10,
@@ -49,7 +49,7 @@
     ],
     "num_critic_training_steps": 3000,
     "num_pg_training_steps": 150,
-    "replay_buffer_size": 1024000,
+    "replay_buffer_size": 5000000,
     "discount": 0.99,
     "reward_scaling": 1.0,
     "critic_learning_rate": 0.0003,
