@@ -104,13 +104,13 @@ def main(
 
     if mode == "training":
         key, subkey = jax.random.split(key)
-        rollout = run_single_rollout(env, policy_network, params, subkey, dropout=dropout)
+        rollout = run_single_rollout(env, policy_network, params, subkey, dropout)
         render_rollout_to_html(rollout['states'], env, output_path + "/pre_adaptation_without_damage.html")
         
 
     key, subkey = jax.random.split(key)
-    rollout = run_single_rollout(env, policy_network, params, subkey, 
-                                 damage_joint_idx, damage_joint_action, zero_sensor_idx, dropout=dropout)
+    rollout = run_single_rollout(env, policy_network, params, subkey, dropout,
+                                 damage_joint_idx, damage_joint_action, zero_sensor_idx)
     render_rollout_to_html(rollout['states'], env, exp_path + "/pre_adaptation_with_damage.html")
 
     key, subkey = jax.random.split(key)

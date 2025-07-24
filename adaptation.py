@@ -75,13 +75,12 @@ def run_online_adaptation(
     # plot real fitness grid
     avg_diff_qd_scores = []
     grid_size = math.prod(grid_shape)
-    fitness_rollout_fn = jit_rollout_fn(env, policy_network, episode_length)
+    fitness_rollout_fn = jit_rollout_fn(env, policy_network, episode_length, dropout)
 
     single_eval = functools.partial(fitness_rollout_fn, 
                                    damage_joint_idx=damage_joint_idx, 
                                    damage_joint_action=damage_joint_action,
-                                   zero_sensor_idx=zero_sensor_idx,
-                                   dropout=dropout)
+                                   zero_sensor_idx=zero_sensor_idx)
 
     key, subkey = jax.random.split(key)
     keys = jax.random.split(subkey, grid_size)
@@ -103,8 +102,8 @@ def run_online_adaptation(
 
     best_params = jax.tree.map(lambda x: x[best_real_idx], repertoire.genotypes)
     key, subkey = jax.random.split(key)
-    rollout = run_single_rollout(env, policy_network, best_params, subkey, 
-                                 damage_joint_idx, damage_joint_action, zero_sensor_idx, dropout)
+    rollout = run_single_rollout(env, policy_network, best_params, subkey, dropout, 
+                                 damage_joint_idx, damage_joint_action, zero_sensor_idx)
     render_rollout_to_html(rollout['states'], env, exp_path + "/best_real_fitness.html")
 
 
@@ -135,8 +134,8 @@ def run_online_adaptation(
         # # op1: re-evaluate on the real robot
         # params = jax.tree.map(lambda x: x[next_idx], repertoire.genotypes)
         # key, subkey = jax.random.split(key)
-        # rollout = run_single_rollout(env, policy_network, params, subkey, 
-        #                              damage_joint_idx, damage_joint_action, zero_sensor_idx, dropout)
+        # rollout = run_single_rollout(env, policy_network, params, subkey, dropout, 
+        #                              damage_joint_idx, damage_joint_action, zero_sensor_idx)
         # real_fitness = rollout['rewards'].sum()
 
         # op2: sample from real fitness grid
@@ -188,8 +187,8 @@ def run_online_adaptation(
 
             best_params = jax.tree.map(lambda x: x[best_idx], repertoire.genotypes)
             key, subkey = jax.random.split(key)
-            rollout = run_single_rollout(env, policy_network, best_params, subkey, 
-                                         damage_joint_idx, damage_joint_action, zero_sensor_idx, dropout)
+            rollout = run_single_rollout(env, policy_network, best_params, subkey, dropout, 
+                                         damage_joint_idx, damage_joint_action, zero_sensor_idx)
             render_rollout_to_html(rollout['states'], env, exp_path + "/post_adaptation_with_damage.html")
             
             real_fitness = rollout['rewards'].sum()

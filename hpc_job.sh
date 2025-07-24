@@ -24,6 +24,7 @@ damage_desc=("FL_stiff" "FL_stiff_2" "BL_BR_stiff" "FL_BR_stiff")
 
 for i in "${!damaged_joint_idx[@]}"; do
     echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    echo "Experiment ${damage_desc[$i]}:"
 
     idx="${damaged_joint_idx[$i]}"
     action="${damaged_joint_action[$i]}"

@@ -1,5 +1,6 @@
 from typing import Optional, Dict
 import os
+import functools
 
 import jax
 import jax.numpy as jnp
@@ -57,10 +58,10 @@ def run_single_rollout(
     policy_network, 
     params, 
     key, 
+    dropout: bool,
     damage_joint_idx: Optional[jnp.ndarray] = None, 
     damage_joint_action: Optional[jnp.ndarray] = None,
-    zero_sensor_idx: Optional[jnp.ndarray] = None,
-    dropout: bool
+    zero_sensor_idx: Optional[jnp.ndarray] = None
 ) -> Dict:
     """
     non-jittable version for single rollout (only supports ant_uni).
@@ -77,7 +78,8 @@ def run_single_rollout(
     """
     jit_env_reset = jax.jit(env.reset)
     jit_env_step = jax.jit(env.step)
-    jit_inference_fn = jax.jit(policy_network.apply)
+    inference_fn = functools.partial(policy_network.apply, train=dropout)
+    jit_inference_fn = jax.jit(inference_fn)
 
     states = []
     rewards = []
@@ -95,7 +97,7 @@ def run_single_rollout(
             state = state.replace(obs=damaged_obs)
 
         key, subkey = jax.random.split(key)
-        action = jit_inference_fn(params, state.obs, train=dropout, rngs={"dropout": subkey})
+        action = jit_inference_fn(params, state.obs, rngs={"dropout": subkey})
 
         # apply damage to actions
         if damage_joint_idx is not None:
@@ -117,11 +119,13 @@ def run_single_rollout(
 def jit_rollout_fn(
     env, 
     policy_network, 
-    episode_length: int
+    episode_length: int,
+    dropout: bool
 ):
     jit_env_reset = jax.jit(env.reset)
     jit_env_step = jax.jit(env.step)
-    jit_inference_fn = jax.jit(policy_network.apply)
+    inference_fn = functools.partial(policy_network.apply, train=dropout)
+    jit_inference_fn = jax.jit(inference_fn)
     
     @jax.jit
     def _jit_fitness_rollout(
@@ -130,7 +134,6 @@ def jit_rollout_fn(
         damage_joint_idx: jnp.ndarray, 
         damage_joint_action: jnp.ndarray,
         zero_sensor_idx: jnp.ndarray,
-        dropout: bool
     ) -> jnp.ndarray:
         """
         jit version for single rollout, on the assumption that 
@@ -145,19 +148,19 @@ def jit_rollout_fn(
         state = jit_env_reset(rng=subkey)
 
         def step_fn(carry, _):
-            state, total_rewards = carry
+            state, total_rewards, key = carry
             damaged_obs = state.obs.at[zero_sensor_idx].set(0.0)
             state = state.replace(obs=damaged_obs)
             key, subkey = jax.random.split(key)
-            action = jit_inference_fn(params, state.obs, train=dropout, rngs={"dropout": subkey})
+            action = jit_inference_fn(params, state.obs, rngs={"dropout": subkey})
             action = action.at[damage_joint_idx].set(damage_joint_action)
             state = jit_env_step(state, action)     # get next state
             reward = state.reward
-            carry = (state, total_rewards + reward)
+            carry = (state, total_rewards + reward, key)
             return carry, reward
         
-        init_carry = (state, jnp.float32(0.0))
-        (_, total_rewards), _ = jax.lax.scan(step_fn, init_carry, length=episode_length)
+        init_carry = (state, jnp.float32(0.0), key)
+        (_, total_rewards, _), _ = jax.lax.scan(step_fn, init_carry, length=episode_length)
 
         return total_rewards
 
@@ -198,4 +201,5 @@ def jit_rollout_fn(
 #         key, subkey = jax.random.split(key)
 #         rollout = run_single_rollout(env, policy_network, best_params, subkey, damage_joint_idx, damage_joint_action)
 #         print(rollout['rewards'].sum())
+#         # breakpoint()
 #         # breakpoint()
