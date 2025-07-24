@@ -16,4 +16,9 @@ The following tests are trained on forward reward only:
 - dcrl_20250711_113903 (slurm, 5000 iterations)
 
 Earlier dcrls have implementation issues with actor_dc_network which may result them to degrade to DCG-ME, and is fixed for later models.
-- hpc/dcrl_20250723_160932
+
+
+Correct implementation and ones trained on forward reward:
+- hpc/dcrl_20250723_160932 (no dropouts)
+- hpc/mapelites_20250724_102129
+- slurm/dcrl_20250723_175333 (dropouts)

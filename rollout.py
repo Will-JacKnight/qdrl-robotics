@@ -91,7 +91,7 @@ def run_single_rollout(
         # simulate failing sensors
         if zero_sensor_idx is not None:
             damaged_obs = state.obs.at[zero_sensor_idx].set(0.0)
-        state = state.replace(obs=damaged_obs)
+            state = state.replace(obs=damaged_obs)
 
         key, subkey = jax.random.split(key)
         action = jit_inference_fn(params, state.obs, rngs={"dropout": subkey})

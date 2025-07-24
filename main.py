@@ -181,13 +181,6 @@ if __name__ == "__main__":
 
     args = get_args()
 
-    # args.output_path = "./outputs/mapelites_20250701_152736"
-    # args.output_path = "./outputs/dcrl_20250703_114735"
-    # args.output_path = "./outputs/dcrl_20250710_134938"
-    # args.output_path = "./outputs/dcrl_20250704_185243"
-    # args.output_path = "outputs/slurm/dcrl_20250710_133450"
-    # args.exp_path = args.output_path
-
     main(
         args.mode,
         args.algo_type,
