@@ -20,5 +20,5 @@ Earlier dcrls have implementation issues with actor_dc_network which may result 
 
 Correct implementation and ones trained on forward reward:
 - hpc/dcrl_20250723_160932 (no dropouts)
-- hpc/mapelites_20250724_102129
+- hpc/mapelites_20250724_102129 (dropouts)
 - slurm/dcrl_20250723_175333 (dropouts)

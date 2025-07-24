@@ -54,7 +54,8 @@ def main(
          line_sigma: int, 
          log_period: int,
          max_iters: int, 
-         performance_threshold
+         performance_threshold,
+         dropout: bool
          ):
     
 
@@ -67,14 +68,14 @@ def main(
         match algo_type:
             case "mapelites":
                 repertoire, metrics = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
-                                                grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey)
+                                                grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey, dropout)
             case "dcrl":
                 repertoire, metrics = run_dcrl_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
                                                 grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
                                                 dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
                                                 num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
                                                 actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
-                                                policy_delay, log_period, subkey)
+                                                policy_delay, log_period, subkey, dropout)
             case _:
                 raise ValueError(f"Unknown algo_type: {algo_type}")
 
@@ -103,19 +104,19 @@ def main(
 
     if mode == "training":
         key, subkey = jax.random.split(key)
-        rollout = run_single_rollout(env, policy_network, params, subkey)
+        rollout = run_single_rollout(env, policy_network, params, subkey, dropout=dropout)
         render_rollout_to_html(rollout['states'], env, output_path + "/pre_adaptation_without_damage.html")
         
 
     key, subkey = jax.random.split(key)
     rollout = run_single_rollout(env, policy_network, params, subkey, 
-                                 damage_joint_idx, damage_joint_action, zero_sensor_idx)
+                                 damage_joint_idx, damage_joint_action, zero_sensor_idx, dropout=dropout)
     render_rollout_to_html(rollout['states'], env, exp_path + "/pre_adaptation_with_damage.html")
 
     key, subkey = jax.random.split(key)
     run_online_adaptation(repertoire, env, policy_network, subkey, exp_path, min_descriptor, max_descriptor, grid_shape, 
                           damage_joint_idx, damage_joint_action, zero_sensor_idx,
-                          episode_length, max_iters, performance_threshold)
+                          episode_length, dropout, max_iters, performance_threshold)
 
 
 
@@ -219,7 +220,8 @@ if __name__ == "__main__":
         args.line_sigma, 
         args.log_period,
         args.max_iters, 
-        args.performance_threshold
+        args.performance_threshold,
+        args.dropout
     )
 
 

@@ -59,7 +59,8 @@ def run_single_rollout(
     key, 
     damage_joint_idx: Optional[jnp.ndarray] = None, 
     damage_joint_action: Optional[jnp.ndarray] = None,
-    zero_sensor_idx: Optional[jnp.ndarray] = None
+    zero_sensor_idx: Optional[jnp.ndarray] = None,
+    dropout: bool
 ) -> Dict:
     """
     non-jittable version for single rollout (only supports ant_uni).
@@ -94,7 +95,7 @@ def run_single_rollout(
             state = state.replace(obs=damaged_obs)
 
         key, subkey = jax.random.split(key)
-        action = jit_inference_fn(params, state.obs, rngs={"dropout": subkey})
+        action = jit_inference_fn(params, state.obs, train=dropout, rngs={"dropout": subkey})
 
         # apply damage to actions
         if damage_joint_idx is not None:
@@ -128,7 +129,8 @@ def jit_rollout_fn(
         key, 
         damage_joint_idx: jnp.ndarray, 
         damage_joint_action: jnp.ndarray,
-        zero_sensor_idx: jnp.ndarray
+        zero_sensor_idx: jnp.ndarray,
+        dropout: bool
     ) -> jnp.ndarray:
         """
         jit version for single rollout, on the assumption that 
@@ -146,7 +148,8 @@ def jit_rollout_fn(
             state, total_rewards = carry
             damaged_obs = state.obs.at[zero_sensor_idx].set(0.0)
             state = state.replace(obs=damaged_obs)
-            action = jit_inference_fn(params, state.obs)
+            key, subkey = jax.random.split(key)
+            action = jit_inference_fn(params, state.obs, train=dropout, rngs={"dropout": subkey})
             action = action.at[damage_joint_idx].set(damage_joint_action)
             state = jit_env_step(state, action)     # get next state
             reward = state.reward

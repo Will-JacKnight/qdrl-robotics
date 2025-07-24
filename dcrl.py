@@ -47,7 +47,8 @@ def run_dcrl_map_elites(env_name,  #
              soft_tau_update,
              policy_delay,
              log_period, 
-             key):
+             key,
+             dropout):
     
     env, policy_network, actor_dc_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes)
 
@@ -63,7 +64,7 @@ def run_dcrl_map_elites(env_name,  #
         env_state: EnvState, policy_params: Params, key: RNGKey
     ) -> Tuple[EnvState, Params, RNGKey, DCRLTransition]:
         key, subkey = jax.random.split(key)
-        actions = policy_network.apply(policy_params, env_state.obs, train=True, rngs={"dropout": subkey})
+        actions = policy_network.apply(policy_params, env_state.obs, train=dropout, rngs={"dropout": subkey})
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, actions)
 
