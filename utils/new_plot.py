@@ -254,7 +254,7 @@ def plot_map_elites_results(
     mpl.rcParams.update(params)
 
     # Visualize the training evolution and final repertoire
-    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(40, 10))
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(20, 20))
     axes = axes.flatten()
 
     axes[0].plot(env_steps, metrics["coverage"])

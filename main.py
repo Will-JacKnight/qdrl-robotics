@@ -81,7 +81,6 @@ def main(
 
         save_pkls(output_path, repertoire=repertoire, metrics=metrics)
 
-        "remove the following inside plot function"
         env_steps = metrics["iteration"] * episode_length * batch_size
         plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
                                 min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
