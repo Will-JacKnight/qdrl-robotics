@@ -16,8 +16,21 @@ from tqdm import trange
 from rollout import init_env_and_policy_network
 
 
-def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, grid_shape,
-                   min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, key, dropout_rate):
+def run_map_elites(env_name, 
+                episode_length, 
+                policy_hidden_layer_sizes, 
+                batch_size, 
+                num_iterations, 
+                grid_shape,
+                min_descriptor, 
+                max_descriptor, 
+                iso_sigma, 
+                line_sigma, 
+                log_period, 
+                key, 
+                dropout_rate, 
+                training_damage_rate,
+):
 
     env, policy_network, _ = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes, dropout_rate)
     
@@ -35,6 +48,20 @@ def run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_si
 
         state_desc = env_state.info["state_descriptor"]
         next_state = env.step(env_state, actions)
+
+        # uniform selection of damage joint
+        key, subkey = jax.random.split(key)
+        damage_joint_idx = jax.random.randint(subkey, shape=(), minval=0, maxval=8)
+        key, subkey = jax.random.split(key)
+        damage_joint_action = jax.random.uniform(subkey, shape=(), minval=-1.0, maxval=1.0)
+
+        # inject selected damage at training_damage_rate
+        key, subkey = jax.random.split(key)
+        damage_mask = (jax.random.uniform(subkey) < training_damage_rate).astype(jnp.float32)
+        # apply damage when damage_mask = 1, don't apply when damage_mask = 0
+        actions = actions.at[damage_joint_idx].set(
+            actions[damage_joint_idx] * (1 - damage_mask) + damage_joint_action * damage_mask
+        )
 
         transition = QDTransition(
             obs=env_state.obs,

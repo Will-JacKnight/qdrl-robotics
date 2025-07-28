@@ -55,7 +55,8 @@ def main(
          log_period: int,
          max_iters: int, 
          performance_threshold,
-         dropout_rate
+         dropout_rate,
+         training_damage_rate,
 ):
     
 
@@ -68,14 +69,15 @@ def main(
         match algo_type:
             case "mapelites":
                 repertoire, metrics = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
-                                                grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey, dropout_rate)
+                                                grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey, 
+                                                dropout_rate, training_damage_rate)
             case "dcrl":
                 repertoire, metrics = run_dcrl_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
                                                 grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
                                                 dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
                                                 num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
                                                 actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
-                                                policy_delay, log_period, subkey, dropout_rate)
+                                                policy_delay, log_period, subkey, dropout_rate, training_damage_rate)
             case _:
                 raise ValueError(f"Unknown algo_type: {algo_type}")
 
@@ -221,7 +223,8 @@ if __name__ == "__main__":
         args.log_period,
         args.max_iters, 
         args.performance_threshold,
-        args.dropout_rate
+        args.dropout_rate,
+        args.training_damage_rate,
     )
 
 
