@@ -10,8 +10,9 @@ source qdax050/bin/activate
 # python main.py --config config.json --algo_type dcrl --output_path outputs/hpc --mode training
 
 # # adaptation inspection
-output_path="outputs/hpc/mapelites_20250727_211830"
-# output_path="outputs/hpc/dcrl_20250723_160932"
+# output_path="outputs/hpc/mapelites_20250727_211830"
+output_path="outputs/hpc/dcrl_20250727_210952"
+echo "Damage_joint_idx=$output_path"
 # python main.py --config config.json --output_path $output_path  --exp_path $output_path --damage_type physical
 
 exp_path="${output_path}/physical_damage"
@@ -39,9 +40,9 @@ for i in "${!damaged_joint_idx[@]}"; do
 done
 
 
-# exp_path="${output_path}/sensory_damage"
-# rm -rf "$exp_path"
-# mkdir -p "$exp_path"
-# python main.py --config config.json --output_path $output_path --exp_path $exp_path --damage_type sensory
+exp_path="${output_path}/sensory_damage"
+rm -rf "$exp_path"
+mkdir -p "$exp_path"
+python main.py --config config.json --output_path $output_path --exp_path $exp_path --damage_type sensory
 
 echo "%%%%%%%%%%%%%%%Running Complete%%%%%%%%%%%%%%%"
