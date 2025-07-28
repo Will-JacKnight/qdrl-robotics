@@ -18,7 +18,7 @@ from utils.new_plot import plot_grid_results
 from utils.networks import CustomMLP, CustomMLPDC
 
 
-def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes):
+def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes, dropout_rate):
     """
     init environment and policy network
     """
@@ -37,12 +37,14 @@ def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_si
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
+        dropout_rate=dropout_rate
     )
     
     actor_dc_network = CustomMLPDC(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
+        dropout_rate=dropout_rate
     )
     return env, policy_network, actor_dc_network
 
@@ -58,7 +60,6 @@ def run_single_rollout(
     policy_network, 
     params, 
     key, 
-    dropout: bool,
     damage_joint_idx: Optional[jnp.ndarray] = None, 
     damage_joint_action: Optional[jnp.ndarray] = None,
     zero_sensor_idx: Optional[jnp.ndarray] = None
@@ -78,8 +79,7 @@ def run_single_rollout(
     """
     jit_env_reset = jax.jit(env.reset)
     jit_env_step = jax.jit(env.step)
-    inference_fn = functools.partial(policy_network.apply, train=dropout)
-    jit_inference_fn = jax.jit(inference_fn)
+    jit_inference_fn = jax.jit(policy_network.apply)
 
     states = []
     rewards = []
@@ -120,12 +120,10 @@ def jit_rollout_fn(
     env, 
     policy_network, 
     episode_length: int,
-    dropout: bool
 ):
     jit_env_reset = jax.jit(env.reset)
     jit_env_step = jax.jit(env.step)
-    inference_fn = functools.partial(policy_network.apply, train=dropout)
-    jit_inference_fn = jax.jit(inference_fn)
+    jit_inference_fn = jax.jit(policy_network.apply)
     
     @jax.jit
     def _jit_fitness_rollout(
@@ -165,41 +163,3 @@ def jit_rollout_fn(
         return total_rewards
 
     return _jit_fitness_rollout
-
-
-# if __name__ == "__main__":
-#     key = jax.random.key(42)
-#     # output_path = "./outputs/dcrl_20250703_114735"
-#     output_path = "outputs/slurm/dcrl_20250710_133450"
-#     damage_joint_idx = jnp.array([0,1])
-#     damage_joint_action = jnp.array([0,0.9])
-
-
-#     repertoire, _ = load_pkls(output_path)
-#     env, policy_network = init_env_and_policy_network("ant_uni", 1000, (32,32))
-
-#     jit_rollout_fn = create_jit_rollout_fn(env, policy_network, 1000)
-
-#     def single_eval(param, key):
-#         return jit_rollout_fn(param, key, damage_joint_idx, damage_joint_action)
-
-#     for i in range(50):
-#         # key, subkey = jax.random.split(key)
-#         # keys = jax.random.split(subkey, 10000)
-#         # batched_rewards = jax.vmap(single_eval)(repertoire.genotypes, keys)
-#         # repertoire = repertoire.replace(fitnesses=batched_rewards.reshape((-1, 1)))
-#         # plot_grid_results("real", repertoire, jnp.array(0.), jnp.array(1.), (10,10,10,10), output_path)
-
-#         # best_real_idx = jnp.argmax(batched_rewards)
-#         # best_params = jax.tree.map(lambda x: x[best_real_idx], repertoire.genotypes)
-#         # key, subkey = jax.random.split(key)
-#         # rollout = run_single_rollout(env, policy_network, best_params, subkey, damage_joint_idx, damage_joint_action)
-#         # render_rollout_to_html(rollout['states'], env, output_path + "/best_real_fitness.html")
-#         # best_real_idx = int(input("best_real_idx:"))
-#         best_real_idx = 1
-#         best_params = jax.tree.map(lambda x: x[best_real_idx], repertoire.genotypes)
-#         key, subkey = jax.random.split(key)
-#         rollout = run_single_rollout(env, policy_network, best_params, subkey, damage_joint_idx, damage_joint_action)
-#         print(rollout['rewards'].sum())
-#         # breakpoint()
-#         # breakpoint()

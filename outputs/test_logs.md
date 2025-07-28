@@ -22,3 +22,15 @@ Correct implementation and ones trained on forward reward:
 - hpc/dcrl_20250723_160932 (no dropouts)
 - hpc/mapelites_20250724_102129 (dropouts)
 - slurm/dcrl_20250723_175333 (dropouts)
+
+
+## Dropout rate comparison:
+- hpc/dcrl_20250723_160932 (no dropouts)
+- slurm/dcrl_20250723_175333 (dropout_rate: 0.1)
+- hpc/dcrl_20250727_210952 (dropout_rate: 0.2)
+
+- hpc/mapelites_20250724_102129 (dropout_rate: 0.1)
+- hpc/mapelites_20250727_211830 (no dropouts)
+
+## random damage injection in MAP training:
+- 
