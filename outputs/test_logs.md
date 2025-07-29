@@ -33,4 +33,4 @@ Correct implementation and ones trained on forward reward:
 - hpc/mapelites_20250727_211830 (no dropouts)
 
 ## random damage injection in MAP training:
-- 
+- hpc/dcrl_20250728_180401 (physical damage only, with training_damage_rate:0.1, dropout_rate: 0.2)
