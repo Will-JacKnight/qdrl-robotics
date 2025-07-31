@@ -3,6 +3,7 @@ import time
 from typing import Any, Tuple
 
 import jax
+from jax.lax import fori_loop
 import jax.numpy as jnp
 
 import qdax.tasks.brax.v1 as environments
@@ -68,21 +69,55 @@ def run_dcrl_map_elites(env_name,  #
         key, subkey = jax.random.split(key)
         actions = policy_network.apply(policy_params, env_state.obs, train=True, rngs={"dropout": subkey})
         state_desc = env_state.info["state_descriptor"]
+        
+        "random damage intensity"
+        key, key_num_phy, key_num_sen, key_mask = jax.random.split(key, 4)
+        num_options = jnp.arange(1, 5)
+        prob = jnp.array([0.5, 0.3, 0.15, 0.05])
+        # num_phy_damage = jax.random.randint(key_num_phy, shape=(), minval=1, maxval=5)
+        # num_sen_damage = jax.random.randint(key_num_sen, shape=(), minval=1, maxval=5)
+        num_phy_damage = jax.random.choice(key_num_phy, num_options, p=prob)
+        num_sen_damage = jax.random.choice(key_num_sen, num_options, p=prob)
+
+        damage_mask = (jax.random.uniform(key_mask) < training_damage_rate).astype(jnp.float32)
+
+        def set_sensory_damage(i, carry):
+            state, key = carry
+            key, key_noise = jax.random.split(key)
+            state_noise = jax.random.normal(key_noise, shape=state.obs.shape) * 0.05
+
+            "reset states to sim sensory damage"
+            key, key_state_idx, key_state_val = jax.random.split(key, 3)
+            damage_sensor_idx = jax.random.randint(key_state_idx, shape=(), minval=0, maxval=27)
+            damage_joint_action = jax.random.normal(key_state_val)
+
+            new_val = state.obs[damage_sensor_idx] * (1 - damage_mask) + damage_joint_action * damage_mask
+            damaged_obs = state.obs.at[damage_sensor_idx].set(new_val)
+            state = state.replace(obs=damaged_obs + state_noise)
+            return state, key
+        
+        def set_physical_damage(i, carry):
+            actions, key = carry
+            key, key_idx, key_val, key_noise = jax.random.split(key, 4)
+
+            action_noise = jax.random.normal(key_noise, shape=actions.shape) * 0.01
+            actions = jnp.clip(actions + action_noise, -1.0, 1.0)
+
+            "action reset: physical damage sim"
+            # uniform selection of damage joint
+            damage_joint_idx = jax.random.randint(key_idx, shape=(), minval=0, maxval=actions.shape[0])
+            damage_joint_action = jax.random.uniform(key_val, shape=(), minval=-1.0, maxval=1.0)
+
+            "state/action variation"
+            updated_actions = actions[damage_joint_idx] * (1 - damage_mask) + damage_joint_action * damage_mask
+            updated_actions = jnp.clip(updated_actions, -1.0, 1.0)
+            actions = actions.at[damage_joint_idx].set(updated_actions)
+            return actions, key
+        
+        env_state, key = jax.lax.fori_loop(0, num_sen_damage, set_sensory_damage, (env_state, key))
+        actions, key = jax.lax.fori_loop(0, num_phy_damage, set_physical_damage, (actions, key))
+
         next_state = env.step(env_state, actions)
-
-        # uniform selection of damage joint
-        key, subkey = jax.random.split(key)
-        damage_joint_idx = jax.random.randint(subkey, shape=(), minval=0, maxval=8)
-        key, subkey = jax.random.split(key)
-        damage_joint_action = jax.random.uniform(subkey, shape=(), minval=-1.0, maxval=1.0)
-
-        # inject selected damage at training_damage_rate
-        key, subkey = jax.random.split(key)
-        damage_mask = (jax.random.uniform(subkey) < training_damage_rate).astype(jnp.float32)
-        # apply damage when damage_mask = 1, don't apply when damage_mask = 0
-        actions = actions.at[damage_joint_idx].set(
-            actions[damage_joint_idx] * (1 - damage_mask) + damage_joint_action * damage_mask
-        )
 
         transition = DCRLTransition(
             obs=env_state.obs,

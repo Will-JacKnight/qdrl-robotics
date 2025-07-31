@@ -12,11 +12,11 @@ source qdax050/bin/activate
 # # adaptation inspection
 # output_path="outputs/hpc/mapelites_20250727_211830"
 output_path="outputs/hpc/dcrl_20250728_180401"
-echo "Damage_joint_idx=$output_path"
+echo "model path=$output_path"
 # python main.py --config config.json --output_path $output_path  --exp_path $output_path --damage_type physical
 
 exp_path="${output_path}/physical_damage"
-rm -rf "$exp_path"
+# rm -rf "$exp_path"
 mkdir -p "$exp_path"
 
 # damage rotation
@@ -41,7 +41,7 @@ done
 
 
 exp_path="${output_path}/sensory_damage"
-rm -rf "$exp_path"
+# rm -rf "$exp_path"
 mkdir -p "$exp_path"
 python main.py --config config.json --output_path $output_path --exp_path $exp_path --damage_type sensory
 

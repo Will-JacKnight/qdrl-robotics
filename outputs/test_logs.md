@@ -34,3 +34,4 @@ Correct implementation and ones trained on forward reward:
 
 ## random damage injection in MAP training:
 - hpc/dcrl_20250728_180401 (physical damage only, with training_damage_rate:0.1, dropout_rate: 0.2)
+- hpc/dcrl_20250731_153529 (random damage injection (including resets, noise, intensity) at training_damage_rate=0.05: dropout_rate: 0.2)
