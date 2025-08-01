@@ -1,9 +1,9 @@
 from typing import Dict
 import math
 import functools
+import time
 
 import utils.gp_jax as gpx
-# import gpjax as gpx
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -11,6 +11,8 @@ import numpy as np
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from tqdm import trange
 from utils.new_plot import plot_diff_qd_score, plot_grid_results
+from qdax.utils.metrics import CSVLogger
+from utils.util import log_metrics
 
 from rollout import run_single_rollout, render_rollout_to_html, jit_rollout_fn
 
@@ -58,11 +60,12 @@ def run_online_adaptation(
     fitnesses = repertoire.fitnesses
     next_idx = jnp.argmax(fitnesses)
     print("next_idx: ", next_idx)
+    
+    filled_mask = jnp.isfinite(fitnesses)
+    vmin = jnp.min(fitnesses[filled_mask])
+    vmax = jnp.max(fitnesses[filled_mask])
 
     D = gpx.Dataset()
-    tested_indices = []
-    real_iter_fitnesses = []
-    tested_goals = []
     means_adjusted = jnp.squeeze(fitnesses, axis=1)    # mu_0 = P(x)
 
     # Define the GP model
@@ -86,19 +89,18 @@ def run_online_adaptation(
     keys = jax.random.split(subkey, grid_size)
     batched_rewards = jax.vmap(single_eval)(repertoire.genotypes, keys)
     repertoire = repertoire.replace(fitnesses=batched_rewards.reshape((-1, 1)))
-
-    vmin = batched_rewards.min()
-    vmax = batched_rewards.max()
     plot_grid_results("real", repertoire, min_descriptor, max_descriptor, grid_shape, exp_path, vmin=vmin, vmax=vmax)
     
     top_k = 10
     sorted_top_indices = get_top_k_indices(top_k, batched_rewards)
     
     best_real_idx = jnp.argmax(batched_rewards)
-    print(f"\nbest index after damage: {best_real_idx}")
-    print(f"best real behaviour after damage: {repertoire.descriptors[best_real_idx]}")
-    print(f"best real fitness after damage:{jnp.max(batched_rewards):.2f}")
-    print(f"top {top_k} real fitness indices: {sorted_top_indices} \n")
+    print(
+        f"best index after damage: {best_real_idx}\n", 
+        f"best real behaviour after damage: {repertoire.descriptors[best_real_idx]}\n",
+        f"best real fitness after damage:{jnp.max(batched_rewards):.2f}\n",
+        f"top {top_k} real fitness indices: {sorted_top_indices}\n",
+    )
 
     best_params = jax.tree.map(lambda x: x[best_real_idx], repertoire.genotypes)
     key, subkey = jax.random.split(key)
@@ -106,6 +108,24 @@ def run_online_adaptation(
                                  damage_joint_idx, damage_joint_action, zero_sensor_idx)
     render_rollout_to_html(rollout['states'], env, exp_path + "/best_real_fitness.html")
 
+    # init eval_metrics
+    eval_metrics = {
+        "iterative": {key: [] for key in ["tested_indices", "tested_fitnesses", "tested_behaviours"]},
+        "global": {
+            "adaptation_time": 0.0,
+            "adaptation_steps": 0,
+            "best_real_index": best_real_idx,
+            "best_real_behaviour": repertoire.descriptors[best_real_idx],
+            "best_real_fitness": jnp.max(batched_rewards),
+            "top_k_real_fitness_index": sorted_top_indices,
+            "best_tested_index": 0,
+            "best_tested_fitness": 0.0,
+            "best_recovered_behaviour": None
+        }
+    }
+
+    # eval adaptation time
+    start_time = time.time()
 
     for iter_num in trange(max_iters, desc="Adaptation"):
         # input("Press Enter to continue...")
@@ -123,13 +143,13 @@ def run_online_adaptation(
             means_adjusted = jnp.squeeze(fitnesses, axis=1) + means_residual
             next_idx = acquisition_fn(means_adjusted, stddev)
             print(f"\nnext index: {next_idx}\n")
-            print("means_adjusted: ", means_adjusted[filled_mask])
+            # print("means_adjusted: ", means_adjusted[filled_mask])
             # filled_mask = jnp.isfinite(means_adjusted)
             # print(f"min estimate: {means_adjusted[filled_mask].min()}")
 
         next_goal = repertoire.centroids[next_idx]
-        tested_indices.append(next_idx)
-        tested_goals.append(next_goal)
+        eval_metrics["iterative"]["tested_indices"].append(next_idx)
+        eval_metrics["iterative"]["tested_behaviours"].append(next_goal)
 
         # # op1: re-evaluate on the real robot
         # params = jax.tree.map(lambda x: x[next_idx], repertoire.genotypes)
@@ -146,10 +166,9 @@ def run_online_adaptation(
             y=jnp.expand_dims(real_fitness - jnp.squeeze(fitnesses[next_idx]), axis=[0, 1]),
         )
         D = D + obs_dataset if iter_num != 0 else obs_dataset   # add observation to the dataset
-        # print(D.y)
 
-        real_iter_fitnesses.append(real_fitness)
-        max_tested_fitness = max(real_iter_fitnesses)
+        eval_metrics["iterative"]["tested_fitnesses"].append(real_fitness)
+        max_tested_fitness = max(eval_metrics["iterative"]["tested_fitnesses"])
         if real_fitness == max_tested_fitness:
             best_idx = next_idx
         
@@ -172,15 +191,19 @@ def run_online_adaptation(
         diff_score[filled_mask] = (batched_rewards[filled_mask] - means_adjusted[filled_mask])
         avg_diff_qd_score = jnp.abs(diff_score.sum()) / jnp.sum(filled_mask)
 
-        print(f"diff QD score: {avg_diff_qd_score:.3f}\n")
+        # print(f"diff QD score: {avg_diff_qd_score:.3f}\n")
         avg_diff_qd_scores.append(avg_diff_qd_score)
 
         if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
 
-            adaptation_steps = iter_num + 1
-            # print(f"Early stopping: fitness {max_tested_fitness:.3f} >= threshold {stop_cond:.3f}")
+            eval_metrics["global"]["adaptation_time"] = time.time() - start_time
+            eval_metrics["global"]["adaptation_steps"] = iter_num
+            eval_metrics["global"]["best_tested_index"] = best_idx
+            eval_metrics["global"]["best_recovered_behaviour"] = repertoire.descriptors[best_idx]
+            eval_metrics["global"]["best_tested_fitness"] = max_tested_fitness
+
             print(
-                f"Adaptation ends in {adaptation_steps} iteration(s).\n",
+                f"Adaptation ends in {iter_num} iteration(s).\n",
                 f"best index: {best_idx} \n",
                 f"Best behaviour after adaptation: {repertoire.descriptors[best_idx]}\n",
             )
@@ -197,9 +220,10 @@ def run_online_adaptation(
             print("********adaptation completes********")
             break
     
-    plot_diff_qd_score(adaptation_steps, avg_diff_qd_scores, exp_path)
+    log_metrics(exp_path, eval_metrics)
+    # plot_diff_qd_score(iter_num + 1, avg_diff_qd_scores, exp_path)
+    
+    
     # print(f"tested indices: {tested_indices}")
     # print(f"real fitnesses: {real_fitnesses}")
-    # print(f"tested goals: {tested_goals}")
-
-    # return np.array(tested_indices), np.array(real_iter_fitnesses), np.array(tested_goals)
+    # print(f"tested goals: {tested_behaviours}")

@@ -17,7 +17,7 @@ from qdax.custom_types import EnvState, Params, RNGKey
 from qdax.tasks.brax.v1 import descriptor_extractor
 from qdax.tasks.brax.v1.wrappers.reward_wrappers import OffsetRewardWrapper, ClipRewardWrapper
 from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs
-from qdax.utils.metrics import default_qd_metrics
+from qdax.utils.metrics import default_qd_metrics, CSVLogger
 from rollout import init_env_and_policy_network
 
 def run_dcrl_map_elites(env_name,  #
@@ -72,12 +72,8 @@ def run_dcrl_map_elites(env_name,  #
         
         "random damage intensity"
         key, key_num_phy, key_num_sen, key_mask = jax.random.split(key, 4)
-        num_options = jnp.arange(1, 5)
-        prob = jnp.array([0.5, 0.3, 0.15, 0.05])
-        # num_phy_damage = jax.random.randint(key_num_phy, shape=(), minval=1, maxval=5)
-        # num_sen_damage = jax.random.randint(key_num_sen, shape=(), minval=1, maxval=5)
-        num_phy_damage = jax.random.choice(key_num_phy, num_options, p=prob)
-        num_sen_damage = jax.random.choice(key_num_sen, num_options, p=prob)
+        num_phy_damage = jax.random.choice(key_num_phy, jnp.array([1, 2]), p=jnp.array([0.95, 0.05]))
+        num_sen_damage = jax.random.choice(key_num_sen, jnp.array([1, 2, 3, 4]), p=jnp.array([0.5, 0.3, 0.15, 0.05]))
 
         damage_mask = (jax.random.uniform(key_mask) < training_damage_rate).astype(jnp.float32)
 
@@ -100,7 +96,7 @@ def run_dcrl_map_elites(env_name,  #
             actions, key = carry
             key, key_idx, key_val, key_noise = jax.random.split(key, 4)
 
-            action_noise = jax.random.normal(key_noise, shape=actions.shape) * 0.01
+            action_noise = jax.random.normal(key_noise, shape=actions.shape) * 0.05
             actions = jnp.clip(actions + action_noise, -1.0, 1.0)
 
             "action reset: physical damage sim"
@@ -231,6 +227,9 @@ def run_dcrl_map_elites(env_name,  #
     # Convert init_metrics to match the metrics dictionary structure
     metrics = jax.tree.map(lambda metric, init_metric: jnp.concatenate([metric, init_metric], axis=0), metrics, init_metrics)
 
+    # Initialise CSV logger
+    # csv_logger = CSVLogger("repertoire_metrics.csv", header=list(metrics.keys()))
+
     # Main loop
     map_elites_scan_update = map_elites.scan_update
     num_loops = num_iterations // log_period
@@ -252,5 +251,8 @@ def run_dcrl_map_elites(env_name,  #
         current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
         current_metrics["time"] = jnp.repeat(timelapse, log_period)
         metrics = jax.tree.map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
+
+        # Log
+        # csv_logger.log(jax.tree.map(lambda x:x[-1], metrics))
 
     return repertoire, metrics

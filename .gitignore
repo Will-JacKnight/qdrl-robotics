@@ -17,6 +17,7 @@
 **.sh.o**
 **/archive
 **/*.html
+**/*.csv
 
 # affliates
 /sample_code

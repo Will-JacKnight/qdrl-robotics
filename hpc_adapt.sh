@@ -1,22 +1,17 @@
 #!/bin/bash
-#PBS -lwalltime=01:00:00
+#PBS -lwalltime=00:40:00
 #PBS -lselect=1:ncpus=1:mem=16gb:ngpus=1
 
 cd $PBS_O_WORKDIR
 
 source qdax050/bin/activate
 
-# map training
-# python main.py --config config.json --algo_type dcrl --output_path outputs/hpc --mode training
-
-# # adaptation inspection
-# output_path="outputs/hpc/mapelites_20250727_211830"
+# adaptation inspection
 output_path="outputs/hpc/dcrl_20250728_180401"
 echo "model path=$output_path"
-# python main.py --config config.json --output_path $output_path  --exp_path $output_path --damage_type physical
 
 exp_path="${output_path}/physical_damage"
-# rm -rf "$exp_path"
+rm -rf "$exp_path"
 mkdir -p "$exp_path"
 
 # damage rotation
@@ -41,7 +36,7 @@ done
 
 
 exp_path="${output_path}/sensory_damage"
-# rm -rf "$exp_path"
+rm -rf "$exp_path"
 mkdir -p "$exp_path"
 python main.py --config config.json --output_path $output_path --exp_path $exp_path --damage_type sensory
 
