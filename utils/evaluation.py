@@ -6,12 +6,29 @@ import numpy as np
 
 from util import load_json
 
+baseline_colors = [
+    "#c6dbef",  # light blue
+    "#9ecae1",  # medium light
+    "#6baed6",  # mid blue
+    "#4292c6",  # strong blue
+    "#2171b5",  # dark blue
+    "#084594",  # very dark blue
+]
+
+main_colors = [
+    "#ffcc00",  # vivid yellow
+    "#f1c40f",  # golden yellow 
+    "#d62728", # highlight red
+]
+
 def box_plot_performace(
     exp_paths: List[str],
+    exp_desc: List[str],
 ) -> None:
     """
     args: 
         - exp_paths: experiment directories in list format
+        - exp_desc: experiment descriptions in list format
     """
     plt.boxplot()
     plt.savefig("evaluations/performance_box_plot.png")
@@ -20,10 +37,12 @@ def box_plot_performace(
 def eval_training_metrics(
     exp_paths: List[str],
     exp_desc: List[str],
+    exp_colors: List[str],
 ) -> None:
     """
     args: 
         - exp_paths: experiment directories in list format
+        - exp_desc: experiment descriptions in list format
     """
 
     fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(30, 10))
@@ -46,9 +65,9 @@ def eval_training_metrics(
         args = load_json(exp_path, "running_args.json")
         env_steps = np.arange(args["num_iterations"] + 1) * args["episode_length"] * args["batch_size"]
         
-        axes[0].plot(env_steps, metrics["coverage"], label=exp_desc[i])
-        axes[1].plot(env_steps, metrics["max_fitness"])
-        axes[2].plot(env_steps, metrics["qd_score"])
+        axes[0].plot(env_steps, metrics["coverage"], label=exp_desc[i], color=exp_colors[i])
+        axes[1].plot(env_steps, metrics["max_fitness"], color=exp_colors[i])
+        axes[2].plot(env_steps, metrics["qd_score"], color=exp_colors[i])
 
     fig.legend(loc='lower center', ncol=len(exp_desc))
     plt.savefig("evaluations/training_metrics_comparison.png")
@@ -70,4 +89,11 @@ if __name__ == "__main__":
         "random damage injection, training_damage_rate=0.05"
     ]
 
-    eval_training_metrics(exp_paths, exp_desc)
+    exp_colors = [
+        baseline_colors[2],
+        baseline_colors[4],
+        main_colors[0],
+        main_colors[2],
+    ]
+
+    eval_training_metrics(exp_paths, exp_desc, exp_colors)
