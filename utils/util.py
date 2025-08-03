@@ -12,7 +12,7 @@ def load_repertoire_and_metrics(
     with open(output_path + "/repertoire.pkl", "rb") as f:
         repertoire = pickle.load(f)
 
-    load_metrics(output_path, "metrics.json")
+    metrics = load_json(output_path, "metrics.json")[0]
     return repertoire, metrics
 
 
@@ -52,13 +52,21 @@ def log_metrics(
 
     def convert_to_json_serializable(obj):
         if isinstance(obj, (jnp.ndarray, np.ndarray)):
-            return obj.tolist()
+            # Preserve integer types when converting to list
+            if jnp.issubdtype(obj.dtype, jnp.integer):
+                return [int(x) for x in obj.tolist()]
+            else:
+                return obj.tolist()
         elif isinstance(obj, dict):
             return {k: convert_to_json_serializable(v) for k, v in obj.items()}
         elif isinstance(obj, (list, tuple)):
             return [convert_to_json_serializable(v) for v in obj]
         elif isinstance(obj, (jnp.generic, np.generic)):  # scalars like jnp.float32
-            return obj.item()
+            # Preserve integer types for scalars
+            if jnp.issubdtype(obj.dtype, jnp.integer):
+                return int(obj.item())
+            else:
+                return obj.item()
         else:
             return obj
     
@@ -68,7 +76,7 @@ def log_metrics(
     with open(path, "w") as f:
         json.dump(all_metrics, f, indent=2)
 
-def load_metrics(
+def load_json(
     exp_path: str,
     filename: str,
 ):

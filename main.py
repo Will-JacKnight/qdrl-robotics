@@ -88,7 +88,7 @@ def main(
                                 min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
 
 
-    repertoire, metrics = load_repertoire_and_metrics(output_path)
+    repertoire, _ = load_repertoire_and_metrics(output_path)
     env, policy_network, _ = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes, dropout_rate)
  
     best_fitness = jnp.max(repertoire.fitnesses)
