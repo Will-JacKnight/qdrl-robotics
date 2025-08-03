@@ -18,6 +18,7 @@
 **/archive
 **/*.html
 **/*.csv
+**/logs
 
 # affliates
 /sample_code

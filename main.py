@@ -12,7 +12,7 @@ from adaptation import run_online_adaptation
 from map_elites import run_map_elites
 from dcrl import run_dcrl_map_elites
 from rollout import run_single_rollout, init_env_and_policy_network, render_rollout_to_html
-from utils.util import load_pkls, save_pkls, save_args
+from utils.util import load_repertoire_and_metrics, save_repertoire_and_metrics, save_args
 from utils.new_plot import plot_map_elites_results
 
 
@@ -81,14 +81,14 @@ def main(
             case _:
                 raise ValueError(f"Unknown algo_type: {algo_type}")
 
-        save_pkls(output_path, repertoire=repertoire, metrics=metrics)
+        save_repertoire_and_metrics(output_path, repertoire, metrics)
 
         env_steps = metrics["iteration"] * episode_length * batch_size
         plot_map_elites_results(env_steps=env_steps, metrics=metrics, repertoire=repertoire, 
                                 min_bd=min_descriptor, max_bd=max_descriptor, grid_shape=grid_shape, output_dir=output_path)
 
 
-    repertoire, metrics = load_pkls(output_path)
+    repertoire, metrics = load_repertoire_and_metrics(output_path)
     env, policy_network, _ = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes, dropout_rate)
  
     best_fitness = jnp.max(repertoire.fitnesses)
