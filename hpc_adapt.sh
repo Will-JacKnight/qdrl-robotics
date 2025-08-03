@@ -10,6 +10,8 @@ source qdax050/bin/activate
 output_path="outputs/hpc/dcrl_20250728_180401"
 echo "model path=$output_path"
 
+###############
+
 exp_path="${output_path}/physical_damage"
 rm -rf "$exp_path"
 mkdir -p "$exp_path"
@@ -34,10 +36,26 @@ for i in "${!damaged_joint_idx[@]}"; do
     
 done
 
+###############
 
 exp_path="${output_path}/sensory_damage"
 rm -rf "$exp_path"
 mkdir -p "$exp_path"
-python main.py --config config.json --output_path $output_path --exp_path $exp_path --damage_type sensory
+
+zero_sensor_idx=("5 6 19 20", "9 10 23 24" "8 12 19 25" "3 11 17 20")
+damage_desc=("FL" "BL" "Rand1" "Rand2")
+
+for i in "${!zero_sensor_idx[@]}"; do
+    echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+    echo "Experiment ${damage_desc[$i]}:"
+
+    idx="${zero_sensor_idx[$i]}"
+    echo "Damage_joint_idx=$idx"
+
+    damage_path="${exp_path}/${damage_desc[$i]}"
+    mkdir -p "$damage_path"
+    python main.py --config config.json --output_path $output_path --exp_path $damage_path --zero_sensor_idx $idx --damage_type sensory
+    
+done
 
 echo "%%%%%%%%%%%%%%%Running Complete%%%%%%%%%%%%%%%"
