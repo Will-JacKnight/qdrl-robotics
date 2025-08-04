@@ -13,8 +13,8 @@ from qdax.tasks.brax.v1.wrappers.reward_wrappers import OffsetRewardWrapper, Cli
 from qdax.tasks.brax.v1.wrappers.init_state_wrapper import FixedInitialStateWrapper
 
 from utils.reward_wrapper import ForwardStepRewardWrapper
-from utils.util import load_pkls
-from utils.new_plot import plot_grid_results
+# from utils.util import load_repertoire_and_metrics
+# from utils.new_plot import plot_grid_results
 from utils.networks import CustomMLP, CustomMLPDC
 
 

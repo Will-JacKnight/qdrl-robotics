@@ -161,8 +161,8 @@ def run_online_adaptation(
 
         # op2: sample from real fitness grid
         # real_fitness = batched_rewards[next_idx]
-        
-        eval_metrics["iterative"]["step_speeds"] = rollout["rewards"]
+
+        eval_metrics["iterative"]["step_speeds"].append(rollout["rewards"])
         
         obs_dataset = gpx.Dataset(
             X=jnp.expand_dims(next_goal, axis=0),
@@ -223,7 +223,7 @@ def run_online_adaptation(
             print("********adaptation completes********")
             break
     
-    log_metrics(exp_path, eval_metrics)
+    log_metrics(exp_path, "eval_metrics.json", eval_metrics)
     # plot_diff_qd_score(iter_num + 1, avg_diff_qd_scores, exp_path)
     
     

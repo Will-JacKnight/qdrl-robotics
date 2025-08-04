@@ -19,6 +19,7 @@
 **/*.html
 **/*.csv
 **/logs
+evaluations/
 
 # affliates
 /sample_code
