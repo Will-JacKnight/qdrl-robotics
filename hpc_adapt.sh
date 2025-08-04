@@ -47,7 +47,7 @@ exp_path="${output_path}/sensory_damage"
 rm -rf "$exp_path"
 mkdir -p "$exp_path"
 
-zero_sensor_idx=("5 6 19 20", "9 10 23 24" "8 12 19 25" "3 11 17 20")
+zero_sensor_idx=("5 6 19 20" "9 10 23 24" "8 12 19 25" "3 11 17 20")
 damage_desc=("FL" "BL" "Rand1" "Rand2")
 
 for i in "${!zero_sensor_idx[@]}"; do

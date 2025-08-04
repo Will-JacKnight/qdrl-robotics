@@ -3,6 +3,10 @@ import os
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
+from matplotlib.ticker import MaxNLocator
+import matplotlib.colors as mcolors
 import numpy as np
 
 from util import load_json
@@ -14,12 +18,15 @@ baseline_colors = [
     "#4292c6",  # strong blue
     "#2171b5",  # dark blue
     "#084594",  # very dark blue
+    "#9b59b6",  # medium-light purple
 ]
 
 main_colors = [
     "#ffcc00",  # vivid yellow
     "#f1c40f",  # golden yellow 
     "#d62728", # highlight red
+    "#2ecc71",  # mint green
+    "#e67e22",  # "Carrot Orange"
 ]
 
 # set the parameters
@@ -35,43 +42,53 @@ params = {
 
 mpl.rcParams.update(params)
 
+def adjust_color(color, amount=1.1):
+    """
+    Darken or lighten a color by a given factor.
+    Args:
+        - amount: > 1 lighter, < 1 darker
+    """
+    c = mcolors.to_rgb(color)
+    return tuple(min(1, max(0, channel * amount)) for channel in c)
+
 def eval_single_model_metrics(
     model_path: str,
     model_desc: str,
-) -> None:
+    model_color: str,
+    ax: Optional[Axes] = None,
+) -> Tuple[Optional[Figure], Axes]:
     """
     args: 
         - model_path: model base directory
         - model_desc: model description
     """
-    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(10, 10))
-    axes = axes.flatten()
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = None
 
-    axes[0].set_xlabel("Adaptation steps")
-    axes[0].set_ylabel("Performance (m/s)")
-    axes[0].set_title("Performance distribution during ITE adaptation")
+    # ax.set_xlabel("Adaptation steps")
+    # ax.set_ylabel("Performance (m/s)")
+    # ax.set_title("Performance distribution during ITE adaptation")
 
     # speeds boxplot for every adaptation step
-    eval_metrics = load_json(model_path, "eval_metrics.json")
-    num_steps = len(eval_metrics["iterative"]["step_speeds"])
-    blues = mpl.colormaps.get_cmap("blues", num_steps)
-    colors = [blues(i) for i in range(num_steps)]
-    for i, step in enumerate(eval_metrics["iterative"]["step_speeds"]):
-        axes[0].boxplot(
-            step, 
-            positions=[i], 
-            boxprops=dict(facecolor=colors[i])
-        )
+    damage_path = model_path + "/physical_damage/FL_loose" 
+    eval_metrics = load_json(damage_path, "eval_metrics.json")
 
-    fig.legend(loc='lower center', ncol=len(model_desc))
-    plt.savefig("evaluations/eval_single_model_metrics.png")
-    plt.close()
-    
+    bp = ax.boxplot(eval_metrics["iterative"]["step_speeds"], patch_artist=True)
+    num_steps = len(eval_metrics["iterative"]["step_speeds"])
+    ax.set_xticks(np.arange(0, num_steps))
+    ax.set_xticklabels(np.arange(0, num_steps))
+    for box in bp['boxes']:
+        box.set_facecolor(model_color)
+
+    return fig, ax
 
 
 def eval_multi_model_metrics(
     model_paths: List[str],
     model_desc: List[str],
+    model_desc_abbr: List[str],
     model_colors: List[str],
 ) -> None:
     """
@@ -101,16 +118,26 @@ def eval_multi_model_metrics(
     axes[3].set_title("Best behavioural performance after ITE adaptation")    
 
     axes[4].set_xlabel("ITE Variants")
+    # axes[4].xaxis.set_major_locator(MaxNLocator(integer=True))
+    axes[4].set_xticks(np.arange(len(model_desc_abbr)))
+    axes[4].set_xticklabels(model_desc_abbr)
     ax5_secondary = axes[4].twinx()
     axes[4].set_ylabel("Number of trials")
     ax5_secondary.set_ylabel("Adaptation time (s)")
-    axes[4].set_title("Number of ITE trials")
-    ax5_secondary.tick_params(axis='y', colors=main_colors[1])
+    axes[4].set_title("Number of ITE trials / Adaptation time (s)")
+    # axes[4].tick_params(axis='y', colors=baseline_colors[3])
+    # ax5_secondary.tick_params(axis='y', colors=main_colors[1])
+
+    width = 0.25
 
     # axes[5].set_xlabel("ITE Variants")
     # axes[5].set_ylabel("Best k Performances (m/s)")
     # axes[5].set_title("Top k behavioural performance after ITE adaptation")  
+    axes[5].set_xlabel("Adaptation steps")
+    axes[5].set_ylabel("Performance (m/s)")
+    axes[5].set_title("Performance distribution during ITE adaptation (FL loose)")
 
+    list_step_speeds = []
     # algo comparison
     for i, model_path in enumerate(model_paths):
         # eval training results
@@ -123,15 +150,20 @@ def eval_multi_model_metrics(
         axes[2].plot(env_steps, metrics["qd_score"], color=model_colors[i])
 
         # eval final adaptation results
-        eval_metrics = load_json(model_path, "eval_metrics.json")
-        axes[3].boxplot(eval_metrics["iterative"]["step_speeds"][-1], label=model_desc[i], color=model_colors[i])
+        damage_path = model_path + "/physical_damage/FL_loose" 
+        eval_metrics = load_json(damage_path, "eval_metrics.json")
+        list_step_speeds.append(eval_metrics["iterative"]["step_speeds"][-1])
 
-        axes[4].scatter(model_desc, eval_metrics["global"]["adaptation_steps"], color=baseline_colors[2])
-        ax5_secondary.scatter(model_desc, eval_metrics["global"]["adaptation_time"], color=main_colors[1])
+        axes[4].bar(i - width / 2, eval_metrics["global"]["adaptation_steps"], width=width, color=model_colors[i])
+        ax5_secondary.bar(i + width / 2, eval_metrics["global"]["adaptation_time"], width=width, color=adjust_color(model_colors[i]))
 
-        # axes[5].boxplot()
+    bp = axes[3].boxplot(list_step_speeds, labels=model_desc_abbr, patch_artist=True)
+    for i, box in enumerate(bp['boxes']):
+        box.set_facecolor(model_colors[i])
 
-    fig.legend(loc='lower center', ncol=len(model_desc))
+    _, axes[5] = eval_single_model_metrics(model_paths[2], model_desc[2], model_colors[2], ax=axes[5])
+
+    fig.legend(loc='lower center') # , ncol=len(model_desc)
     plt.savefig("evaluations/eval_multi_model_metrics.png")
     plt.close()
 
@@ -143,22 +175,33 @@ if __name__ == "__main__":
         "outputs/hpc/dcrl_20250727_210952",
         "outputs/hpc/dcrl_20250728_180401",
         "outputs/hpc/dcrl_20250731_153529",
+        "outputs/hpc/dcrl_20250801_171556",
     ]
 
     model_desc = [
-        "no dropouts",
-        "dropout_rate=0.2",
-        "random physical damage injection, trainiong_damage_rate=0.1",
-        "random damage injection, training_damage_rate=0.05"
+        "original ITE: no dropouts",
+        "variant 1: dropout_rate=0.2",
+        "variant 2: variant 1 + random physical damage injection, trainiong_damage_rate=0.1",
+        "variant 3: variant 1 + random damage injection, training_damage_rate=0.05 (high intensity)",
+        "variant 4: variant 1 + random damage injection, training_damage_rate=0.05 (medium intensity)"
+    ]
+
+    model_desc_abbr = [
+        "original ITE",
+        "variant 1",
+        "variant 2",
+        "variant 3",
+        "variant 4",
     ]
 
     model_colors = [
         baseline_colors[2],
         baseline_colors[4],
-        main_colors[0],
-        main_colors[2],
+        main_colors[3],
+        main_colors[1],
+        main_colors[4],
     ]
 
-    model_paths = [path + "/physical_damage/FL_loose" for path in model_paths]
-    eval_single_model_metrics(model_paths[2], model_desc[2])
-    eval_multi_model_metrics(model_paths, model_desc, model_colors)
+    # model_paths = [path + "/physical_damage/FL_loose" for path in model_paths]
+    # eval_single_model_metrics(model_paths[2], model_desc[2])
+    eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors)

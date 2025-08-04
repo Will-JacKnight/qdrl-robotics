@@ -52,26 +52,17 @@ def log_metrics(
 
     def convert_to_json_serializable(obj):
         if isinstance(obj, (jnp.ndarray, np.ndarray)):
-            # Preserve integer types when converting to list
-            if jnp.issubdtype(obj.dtype, jnp.integer):
-                return [int(x) for x in obj.tolist()]
-            else:
-                return obj.tolist()
+            return obj.tolist()
         elif isinstance(obj, dict):
             return {k: convert_to_json_serializable(v) for k, v in obj.items()}
         elif isinstance(obj, (list, tuple)):
             return [convert_to_json_serializable(v) for v in obj]
         elif isinstance(obj, (jnp.generic, np.generic)):  # scalars like jnp.float32
-            # Preserve integer types for scalars
-            if jnp.issubdtype(obj.dtype, jnp.integer):
-                return int(obj.item())
-            else:
-                return obj.item()
+            return obj.item()
         else:
             return obj
     
     serializable_metrics = convert_to_json_serializable(metrics)
-
     # all_metrics.append(serializable_metrics)
 
     with open(path, "w") as f:

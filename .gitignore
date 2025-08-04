@@ -20,6 +20,8 @@
 **/*.csv
 **/logs
 evaluations/
+**/*metrics.json
+
 
 # affliates
 /sample_code

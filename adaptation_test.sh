@@ -1,3 +1,9 @@
+#!/bin/bash
+#PBS -lwalltime=00:10:00
+#PBS -lselect=1:ncpus=1:mem=16gb:ngpus=1
+
+cd $PBS_O_WORKDIR
+source qdax050/bin/activate
 
 output_path="outputs/hpc/dcrl_20250723_160932"
 
@@ -5,9 +11,9 @@ exp_path="${output_path}/physical_damage"
 mkdir -p "$exp_path"
 
 # damage rotation
-damaged_joint_idx=("4 5")
+damaged_joint_idx=("0 1")
 damaged_joint_action=("0 0")
-damage_desc=("BL_loose")
+damage_desc=("FL_loose")
 
 echo "Experiment ${damage_desc}:"
 
