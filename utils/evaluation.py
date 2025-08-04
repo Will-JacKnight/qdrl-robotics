@@ -1,6 +1,7 @@
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Literal
 import os
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -20,6 +21,19 @@ main_colors = [
     "#f1c40f",  # golden yellow 
     "#d62728", # highlight red
 ]
+
+# set the parameters
+font_size = 14
+params = {
+    "axes.labelsize": font_size,
+    "legend.fontsize": font_size,
+    "xtick.labelsize": font_size,
+    "ytick.labelsize": font_size,
+    "text.usetex": False,
+    "figure.figsize": [10, 10],
+}
+
+mpl.rcParams.update(params)
 
 def box_plot_performace(
     exp_paths: List[str],
@@ -61,7 +75,7 @@ def eval_training_metrics(
     axes[2].set_title("QD Score evolution during training")
 
     for i, exp_path in enumerate(exp_paths):
-        metrics = load_json(exp_path, "metrics.json")[0]
+        metrics = load_json(exp_path, "metrics.json")
         args = load_json(exp_path, "running_args.json")
         env_steps = np.arange(args["num_iterations"] + 1) * args["episode_length"] * args["batch_size"]
         

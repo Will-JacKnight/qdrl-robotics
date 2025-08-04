@@ -12,7 +12,7 @@ def load_repertoire_and_metrics(
     with open(output_path + "/repertoire.pkl", "rb") as f:
         repertoire = pickle.load(f)
 
-    metrics = load_json(output_path, "metrics.json")[0]
+    metrics = load_json(output_path, "metrics.json")
     return repertoire, metrics
 
 
@@ -44,11 +44,11 @@ def log_metrics(
 ):
     path = os.path.join(exp_path, filename)
 
-    if os.path.exists(path):
-        with open(path, "r") as f:
-            all_metrics = json.load(f)
-    else:
-        all_metrics = []
+    # if os.path.exists(path):
+    #     with open(path, "r") as f:
+    #         all_metrics = json.load(f)
+    # else:
+    #     all_metrics = []
 
     def convert_to_json_serializable(obj):
         if isinstance(obj, (jnp.ndarray, np.ndarray)):
@@ -71,10 +71,11 @@ def log_metrics(
             return obj
     
     serializable_metrics = convert_to_json_serializable(metrics)
-    all_metrics.append(serializable_metrics)
+
+    # all_metrics.append(serializable_metrics)
 
     with open(path, "w") as f:
-        json.dump(all_metrics, f, indent=2)
+        json.dump(serializable_metrics, f, indent=2)
 
 def load_json(
     exp_path: str,

@@ -110,7 +110,7 @@ def run_online_adaptation(
 
     # init eval_metrics
     eval_metrics = {
-        "iterative": {key: [] for key in ["tested_indices", "tested_fitnesses", "tested_behaviours"]},
+        "iterative": {key: [] for key in ["tested_indices", "tested_fitnesses", "tested_behaviours", "step_speeds"]},
         "global": {
             "adaptation_time": 0.0,
             "adaptation_steps": 0,
@@ -152,14 +152,17 @@ def run_online_adaptation(
         eval_metrics["iterative"]["tested_behaviours"].append(next_goal)
 
         # # op1: re-evaluate on the real robot
-        # params = jax.tree.map(lambda x: x[next_idx], repertoire.genotypes)
-        # key, subkey = jax.random.split(key)
-        # rollout = run_single_rollout(env, policy_network, params, subkey, 
-        #                              damage_joint_idx, damage_joint_action, zero_sensor_idx)
-        # real_fitness = rollout['rewards'].sum()
+        params = jax.tree.map(lambda x: x[next_idx], repertoire.genotypes)
+        key, subkey = jax.random.split(key)
+        rollout = run_single_rollout(env, policy_network, params, subkey, 
+                                     damage_joint_idx, damage_joint_action, zero_sensor_idx)
+        real_fitness = rollout["rewards"].sum()
+
 
         # op2: sample from real fitness grid
-        real_fitness = batched_rewards[next_idx]
+        # real_fitness = batched_rewards[next_idx]
+        
+        eval_metrics["iterative"]["step_speeds"] = rollout["rewards"]
         
         obs_dataset = gpx.Dataset(
             X=jnp.expand_dims(next_goal, axis=0),
