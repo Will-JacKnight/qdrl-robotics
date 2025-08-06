@@ -72,8 +72,10 @@ def run_dcrl_map_elites(env_name,  #
         
         "random damage intensity"
         key, key_num_phy, key_num_sen, key_mask = jax.random.split(key, 4)
-        num_phy_damage = jax.random.choice(key_num_phy, jnp.array([1, 2]), p=jnp.array([0.95, 0.05]))
-        num_sen_damage = jax.random.choice(key_num_sen, jnp.array([1, 2, 3, 4]), p=jnp.array([0.5, 0.3, 0.15, 0.05]))
+        num_damage = jnp.arange(1, 5)
+        prob = jnp.array([0.5, 0.3, 0.15, 0.05])
+        num_phy_damage = jax.random.choice(key_num_phy, num_damage, p=prob)
+        num_sen_damage = jax.random.choice(key_num_sen, num_damage, p=prob)
 
         damage_mask = (jax.random.uniform(key_mask) < training_damage_rate).astype(jnp.float32)
 

@@ -77,7 +77,7 @@ def eval_single_model_metrics(
 
     bp = ax.boxplot(eval_metrics["iterative"]["step_speeds"], patch_artist=True)
     num_steps = len(eval_metrics["iterative"]["step_speeds"])
-    ax.set_xticks(np.arange(0, num_steps))
+    ax.set_xticks(np.arange(1, num_steps + 1))
     ax.set_xticklabels(np.arange(0, num_steps))
     for box in bp['boxes']:
         box.set_facecolor(model_color)
@@ -90,6 +90,7 @@ def eval_multi_model_metrics(
     model_desc: List[str],
     model_desc_abbr: List[str],
     model_colors: List[str],
+    damage_folders: List[str],
 ) -> None:
     """
     args: 
@@ -127,7 +128,6 @@ def eval_multi_model_metrics(
     axes[4].set_title("Number of ITE trials / Adaptation time (s)")
     # axes[4].tick_params(axis='y', colors=baseline_colors[3])
     # ax5_secondary.tick_params(axis='y', colors=main_colors[1])
-
     width = 0.25
 
     # axes[5].set_xlabel("ITE Variants")
@@ -202,6 +202,17 @@ if __name__ == "__main__":
         main_colors[4],
     ]
 
+    damage_folders = [
+        "/physical_damage/FL_loose",
+        "/physical_damage/BL_loose",
+        "/physical_damage/BL_BR_loose",
+        "/physical_damage/FL_BR_loose",
+        "/sensory_damage/BL",
+        "/sensory_damage/FL",
+        "/sensory_damage/Rand1",
+        "/sensory_damage/Rand2",
+    ]
+
     # model_paths = [path + "/physical_damage/FL_loose" for path in model_paths]
     # eval_single_model_metrics(model_paths[2], model_desc[2])
-    eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors)
+    eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_folders)
