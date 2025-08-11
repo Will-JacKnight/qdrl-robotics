@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple
 import os
 import functools
 
@@ -15,10 +15,15 @@ from qdax.tasks.brax.v1.wrappers.init_state_wrapper import FixedInitialStateWrap
 from utils.reward_wrapper import ForwardStepRewardWrapper
 # from utils.util import load_repertoire_and_metrics
 # from utils.new_plot import plot_grid_results
-from utils.networks import CustomMLP, CustomMLPDC
+from utils.networks import ResMLP, ResMLPDC, DropoutMLP, DropoutMLPDC
 
 
-def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes, dropout_rate):
+def init_env_and_policy_network(
+    env_name: str, 
+    episode_length: int, 
+    policy_hidden_layer_sizes: Tuple[int, ...], 
+    dropout_rate: float,
+):
     """
     init environment and policy network
     """
@@ -33,14 +38,14 @@ def init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_si
 
     # Init policy network
     policy_layer_sizes = policy_hidden_layer_sizes + (env.action_size,)
-    policy_network = CustomMLP(
+    policy_network = ResMLP(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
         dropout_rate=dropout_rate
     )
     
-    actor_dc_network = CustomMLPDC(
+    actor_dc_network = ResMLPDC(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,

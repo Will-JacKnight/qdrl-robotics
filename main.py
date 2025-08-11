@@ -19,9 +19,9 @@ from utils.new_plot import plot_map_elites_results
 def main(
          mode: Literal["training", "adaptation"],
          algo_type,
-         episode_length, 
-         seed, 
-         batch_size, 
+         episode_length: int, 
+         seed: int, 
+         batch_size: int, 
          num_iterations: int, 
          grid_shape: Tuple[int, ...],
          policy_hidden_layer_sizes: Tuple[int, ...],
@@ -55,7 +55,7 @@ def main(
          log_period: int,
          max_iters: int, 
          performance_threshold,
-         dropout_rate,
+         dropout_rate: float,
          training_damage_rate,
 ):
     

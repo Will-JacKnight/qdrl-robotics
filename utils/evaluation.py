@@ -173,17 +173,17 @@ if __name__ == "__main__":
     model_paths = [
         "outputs/hpc/dcrl_20250723_160932",
         "outputs/hpc/dcrl_20250727_210952",
-        "outputs/hpc/dcrl_20250728_180401",
-        "outputs/hpc/dcrl_20250731_153529",
-        "outputs/hpc/dcrl_20250801_171556",
+        # "outputs/hpc/dcrl_20250728_180401",
+        # "outputs/hpc/dcrl_20250731_153529",
+        # "outputs/hpc/dcrl_20250801_171556",
     ]
 
     model_desc = [
         "original ITE: no dropouts",
         "variant 1: dropout_rate=0.2",
-        "variant 2: variant 1 + random physical damage injection, trainiong_damage_rate=0.1",
-        "variant 3: variant 1 + random damage injection, training_damage_rate=0.05 (high intensity)",
-        "variant 4: variant 1 + random damage injection, training_damage_rate=0.05 (medium intensity)"
+        # "variant 2: variant 1 + random physical damage injection, trainiong_damage_rate=0.1",
+        # "variant 3: variant 1 + random damage injection, training_damage_rate=0.05 (high intensity)",
+        # "variant 4: variant 1 + random damage injection, training_damage_rate=0.05 (medium intensity)"
     ]
 
     model_desc_abbr = [
@@ -197,9 +197,9 @@ if __name__ == "__main__":
     model_colors = [
         baseline_colors[2],
         baseline_colors[4],
-        main_colors[3],
-        main_colors[1],
-        main_colors[4],
+        # main_colors[3],
+        # main_colors[1],
+        # main_colors[4],
     ]
 
     damage_folders = [
