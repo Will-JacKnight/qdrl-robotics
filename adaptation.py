@@ -116,6 +116,7 @@ def run_online_adaptation(
             "adaptation_steps": 0,
             "best_real_index": best_real_idx,
             "best_real_behaviour": repertoire.descriptors[best_real_idx],
+            "real_fitness": batched_rewards,
             "best_real_fitness": jnp.max(batched_rewards),
             "top_k_real_fitness_index": sorted_top_indices,
             "best_tested_index": 0,

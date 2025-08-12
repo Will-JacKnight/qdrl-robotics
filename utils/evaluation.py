@@ -1,3 +1,4 @@
+import enum
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Literal
 import os
 
@@ -8,6 +9,8 @@ from matplotlib.axes import Axes
 from matplotlib.ticker import MaxNLocator
 import matplotlib.colors as mcolors
 import numpy as np
+import jax.numpy as jnp
+from sklearn.utils.extmath import density
 
 from util import load_json
 
@@ -165,56 +168,103 @@ def eval_multi_model_metrics(
     plt.savefig("evaluations/eval_multi_model_metrics.png")
     plt.close()
 
+def plot_real_fitness_histograms(
+    model_paths: List[str],
+    damage_paths: List[str],
+    model_desc: List[str],
+    model_colors: List[str],
+    num_bins: int = 2000,
+) -> None:
+    num_models = len(model_paths)
+    num_damages = len(damage_paths)
+    fig, axes = plt.subplots(nrows=num_models, ncols=num_damages, figsize=(10 * num_damages, 10 * num_models))
+    axes = np.atleast_2d(axes)
+
+    fig.supxlabel("Real Fitness (m/s)")
+    fig.supylabel("Frequency")
+    fig.suptitle("Real Fitness Distribution")
+
+    def filter_bins(data: List, top_k: float = 0.5, lower_bound: Optional[float] = None, upper_bound: Optional[float] = None) -> List:
+        new_data = []
+        if lower_bound is None:
+             lower_bound = min(data)
+        if upper_bound is None:
+            upper_bound = max(data)
+        sorted_data = sorted(data, reverse=True)
+        k_count = max(1, int(len(sorted_data) * top_k))
+
+        for dat in sorted_data[:k_count]:
+            if dat >= lower_bound and dat <= upper_bound:
+                new_data.append(dat)
+        return new_data
+
+    for i, model_path in enumerate(model_paths):
+        for j, damage_path in enumerate(damage_paths):
+            eval_metrics = load_json(model_path + damage_path, "eval_metrics.json")
+            real_fitness = eval_metrics["global"]["real_fitness"]
+            # real_fitness = filter_bins(eval_metrics["global"]["real_fitness"], top_k=0.2, lower_bound=0)
+            label = model_desc[i] if j == 0 else None
+            axes[i][j].hist(
+                real_fitness, 
+                bins=num_bins, 
+                range=(0, 2000),
+                color=model_colors[i], 
+                label=label,
+                density=True
+            )
+            axes[i][j].set_title(damage_paths[j])
+
+    fig.legend(loc='lower center')
+    plt.savefig("evaluations/real_fitness_histogram.png")
+    plt.close()
+
 
 if __name__ == "__main__":
 
     model_paths = [
-        "outputs/hpc/dcrl_20250723_160932",
-        "outputs/hpc/dcrl_20250727_210952",
-        "outputs/hpc/dcrl_20250811_152438",
-        "outputs/hpc/dcrl_20250811_174154",
-        # "outputs/hpc/dcrl_20250728_180401",
-        # "outputs/hpc/dcrl_20250731_153529",
-        # "outputs/hpc/dcrl_20250801_171556",
+        "outputs/hpc/dcrl_20250723_160932/",
+        "outputs/hpc/dcrl_20250727_210952/",
+        # "outputs/hpc/dcrl_20250811_152438/",
+        # "outputs/hpc/dcrl_20250811_174154/",
     ]
 
+    # for legends
     model_desc = [
         "original ITE: no dropouts",
         "variant 1: dropout_rate=0.2",
-        "variant 2: variant 1 + ResNet",
-        "variant 3: variant 2 + LayerNorm"
-        # "variant 2: variant 1 + random physical damage injection, trainiong_damage_rate=0.1",
-        # "variant 3: variant 1 + random damage injection, training_damage_rate=0.05 (high intensity)",
-        # "variant 4: variant 1 + random damage injection, training_damage_rate=0.05 (medium intensity)"
+        # "variant 2: variant 1 + ResNet",
+        # "variant 3: variant 2 + LayerNorm",
     ]
 
+    # for x/y ticks
     model_desc_abbr = [
         "original ITE",
         "variant 1",
-        "variant 2",
-        "variant 3",
+        # "variant 2",
+        # "variant 3",
         # "variant 4",
     ]
 
     model_colors = [
         baseline_colors[2],
         baseline_colors[4],
-        main_colors[3],
-        main_colors[1],
+        # main_colors[3],
+        # main_colors[1],
         # main_colors[4],
     ]
 
     damage_paths = [
-        "/physical_damage/FL_loose",
-        "/physical_damage/BL_loose",
-        "/physical_damage/BL_BR_loose",
-        "/physical_damage/FL_BR_loose",
-        "/sensory_damage/BL",
-        "/sensory_damage/FL",
-        "/sensory_damage/Rand1",
-        "/sensory_damage/Rand2",
+        "physical_damage/FL_loose",
+        "physical_damage/BL_loose",
+        # "physical_damage/BL_BR_loose",
+        # "physical_damage/FL_BR_loose",
+        "sensory_damage/BL",
+        # "sensory_damage/FL",
+        # "sensory_damage/Rand1",
+        "sensory_damage/Rand2",
     ]
 
-    # model_paths = [path + "/physical_damage/FL_loose" for path in model_paths]
     # eval_single_model_metrics(model_paths[2], model_desc[2])
-    eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
+    # eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
+
+    plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=100)

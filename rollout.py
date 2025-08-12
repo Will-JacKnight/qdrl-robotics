@@ -38,14 +38,14 @@ def init_env_and_policy_network(
 
     # Init policy network
     policy_layer_sizes = policy_hidden_layer_sizes + (env.action_size,)
-    policy_network = ResMLP(
+    policy_network = DropoutMLP(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
         dropout_rate=dropout_rate
     )
     
-    actor_dc_network = ResMLPDC(
+    actor_dc_network = DropoutMLP(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,
