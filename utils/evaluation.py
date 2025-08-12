@@ -52,7 +52,7 @@ def adjust_color(color, amount=1.1):
     return tuple(min(1, max(0, channel * amount)) for channel in c)
 
 def eval_single_model_metrics(
-    model_path: str,
+    damage_path: str,
     model_desc: str,
     model_color: str,
     ax: Optional[Axes] = None,
@@ -72,7 +72,6 @@ def eval_single_model_metrics(
     # ax.set_title("Performance distribution during ITE adaptation")
 
     # speeds boxplot for every adaptation step
-    damage_path = model_path + "/physical_damage/FL_loose" 
     eval_metrics = load_json(damage_path, "eval_metrics.json")
 
     bp = ax.boxplot(eval_metrics["iterative"]["step_speeds"], patch_artist=True)
@@ -90,7 +89,7 @@ def eval_multi_model_metrics(
     model_desc: List[str],
     model_desc_abbr: List[str],
     model_colors: List[str],
-    damage_folders: List[str],
+    damage_path: str,
 ) -> None:
     """
     args: 
@@ -150,8 +149,7 @@ def eval_multi_model_metrics(
         axes[2].plot(env_steps, metrics["qd_score"], color=model_colors[i])
 
         # eval final adaptation results
-        damage_path = model_path + "/physical_damage/FL_loose" 
-        eval_metrics = load_json(damage_path, "eval_metrics.json")
+        eval_metrics = load_json(model_path + damage_path, "eval_metrics.json")
         list_step_speeds.append(eval_metrics["iterative"]["step_speeds"][-1])
 
         axes[4].bar(i - width / 2, eval_metrics["global"]["adaptation_steps"], width=width, color=model_colors[i])
@@ -161,7 +159,7 @@ def eval_multi_model_metrics(
     for i, box in enumerate(bp['boxes']):
         box.set_facecolor(model_colors[i])
 
-    _, axes[5] = eval_single_model_metrics(model_paths[2], model_desc[2], model_colors[2], ax=axes[5])
+    _, axes[5] = eval_single_model_metrics(model_paths[2] + damage_path, model_desc[2], model_colors[2], ax=axes[5])
 
     fig.legend(loc='lower center') # , ncol=len(model_desc)
     plt.savefig("evaluations/eval_multi_model_metrics.png")
@@ -173,6 +171,8 @@ if __name__ == "__main__":
     model_paths = [
         "outputs/hpc/dcrl_20250723_160932",
         "outputs/hpc/dcrl_20250727_210952",
+        "outputs/hpc/dcrl_20250811_152438",
+        "outputs/hpc/dcrl_20250811_174154",
         # "outputs/hpc/dcrl_20250728_180401",
         # "outputs/hpc/dcrl_20250731_153529",
         # "outputs/hpc/dcrl_20250801_171556",
@@ -181,6 +181,8 @@ if __name__ == "__main__":
     model_desc = [
         "original ITE: no dropouts",
         "variant 1: dropout_rate=0.2",
+        "variant 2: variant 1 + ResNet",
+        "variant 3: variant 2 + LayerNorm"
         # "variant 2: variant 1 + random physical damage injection, trainiong_damage_rate=0.1",
         # "variant 3: variant 1 + random damage injection, training_damage_rate=0.05 (high intensity)",
         # "variant 4: variant 1 + random damage injection, training_damage_rate=0.05 (medium intensity)"
@@ -191,18 +193,18 @@ if __name__ == "__main__":
         "variant 1",
         "variant 2",
         "variant 3",
-        "variant 4",
+        # "variant 4",
     ]
 
     model_colors = [
         baseline_colors[2],
         baseline_colors[4],
-        # main_colors[3],
-        # main_colors[1],
+        main_colors[3],
+        main_colors[1],
         # main_colors[4],
     ]
 
-    damage_folders = [
+    damage_paths = [
         "/physical_damage/FL_loose",
         "/physical_damage/BL_loose",
         "/physical_damage/BL_BR_loose",
@@ -215,4 +217,4 @@ if __name__ == "__main__":
 
     # model_paths = [path + "/physical_damage/FL_loose" for path in model_paths]
     # eval_single_model_metrics(model_paths[2], model_desc[2])
-    eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_folders)
+    eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])

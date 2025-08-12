@@ -36,3 +36,8 @@ Correct implementation and ones trained on forward reward:
 - hpc/dcrl_20250728_180401 (physical damage only, with training_damage_rate:0.1, dropout_rate: 0.2)
 - hpc/dcrl_20250731_153529 (random damage injection (including resets, noise, intensity) at training_damage_rate=0.05: dropout_rate: 0.2)
 - (curriculum based learning: increasing training_damage_rate from 0.05 to 0.85, seldom 100% failure episodes)
+
+## ResNet + residuals Dropout Policies
+ - hpc/dcrl_20250811_152438 (ai-emitter projection layer + 2 Res layers + action projection layer, dropouts applied on every layer)
+ - hpc/dcrl_20250811_174154 (ai-emitter projection layer + layerNorm layer + 1 Res layer + action projection layer, dropouts applied on every layer)
+ 

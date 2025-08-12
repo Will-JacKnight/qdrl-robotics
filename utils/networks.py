@@ -18,6 +18,7 @@ class ResMLP(MLP):
                     kernel_init=self.kernel_init,
                     use_bias=self.bias,
         )(hidden)
+        # hidden = nn.LayerNorm()(hidden)
         if self.dropout_rate > 0.0:
             hidden = nn.Dropout(rate=self.dropout_rate, deterministic=not train)(hidden)
 
@@ -70,6 +71,7 @@ class ResMLPDC(MLPDC):
                     kernel_init=self.kernel_init,
                     use_bias=self.bias,
         )(hidden)
+        # hidden = nn.LayerNorm()(hidden)
         if self.dropout_rate > 0.0:
             hidden = nn.Dropout(rate=self.dropout_rate, deterministic=not train)(hidden)
 
