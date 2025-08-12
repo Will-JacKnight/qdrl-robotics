@@ -175,46 +175,37 @@ def plot_real_fitness_histograms(
     model_colors: List[str],
     num_bins: int = 2000,
 ) -> None:
-    num_models = len(model_paths)
     num_damages = len(damage_paths)
-    fig, axes = plt.subplots(nrows=num_models, ncols=num_damages, figsize=(10 * num_damages, 10 * num_models))
+    fig, axes = plt.subplots(nrows=1, ncols=num_damages, figsize=(10 * num_damages, 10))
     axes = np.atleast_2d(axes)
 
     fig.supxlabel("Real Fitness (m/s)")
-    fig.supylabel("Frequency")
+    fig.supylabel("Frequency Density")
     fig.suptitle("Real Fitness Distribution")
 
-    def filter_bins(data: List, top_k: float = 0.5, lower_bound: Optional[float] = None, upper_bound: Optional[float] = None) -> List:
-        new_data = []
-        if lower_bound is None:
-             lower_bound = min(data)
-        if upper_bound is None:
-            upper_bound = max(data)
+    def filter_top_k_list(data: List, top_k: float = 0.5) -> List:
         sorted_data = sorted(data, reverse=True)
         k_count = max(1, int(len(sorted_data) * top_k))
-
-        for dat in sorted_data[:k_count]:
-            if dat >= lower_bound and dat <= upper_bound:
-                new_data.append(dat)
-        return new_data
+        return sorted_data[:k_count]
 
     for i, model_path in enumerate(model_paths):
         for j, damage_path in enumerate(damage_paths):
             eval_metrics = load_json(model_path + damage_path, "eval_metrics.json")
             real_fitness = eval_metrics["global"]["real_fitness"]
-            # real_fitness = filter_bins(eval_metrics["global"]["real_fitness"], top_k=0.2, lower_bound=0)
+            # real_fitness = filter_top_k_list(eval_metrics["global"]["real_fitness"], top_k=0.2)
             label = model_desc[i] if j == 0 else None
-            axes[i][j].hist(
+            axes[0][j].hist(
                 real_fitness, 
                 bins=num_bins, 
-                range=(0, 2000),
+                range=(1000, 2500),
                 color=model_colors[i], 
+                alpha=0.8,
                 label=label,
                 density=True
             )
-            axes[i][j].set_title(damage_paths[j])
+            axes[0][j].set_title(damage_paths[j])
 
-    fig.legend(loc='lower center')
+    fig.legend(loc='right')
     plt.savefig("evaluations/real_fitness_histogram.png")
     plt.close()
 
@@ -247,9 +238,9 @@ if __name__ == "__main__":
 
     model_colors = [
         baseline_colors[2],
-        baseline_colors[4],
+        # baseline_colors[4],
         # main_colors[3],
-        # main_colors[1],
+        main_colors[1],
         # main_colors[4],
     ]
 
