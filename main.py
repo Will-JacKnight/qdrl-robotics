@@ -57,6 +57,7 @@ def main(
          performance_threshold,
          dropout_rate: float,
          training_damage_rate,
+         num_evals: int,
 ):
     
 
@@ -77,7 +78,7 @@ def main(
                                                 dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
                                                 num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
                                                 actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
-                                                policy_delay, log_period, subkey, dropout_rate, training_damage_rate)
+                                                policy_delay, log_period, subkey, dropout_rate, training_damage_rate, num_evals)
             case _:
                 raise ValueError(f"Unknown algo_type: {algo_type}")
 
@@ -225,6 +226,7 @@ if __name__ == "__main__":
         args.performance_threshold,
         args.dropout_rate,
         args.training_damage_rate,
+        args.num_evals,
     )
 
 

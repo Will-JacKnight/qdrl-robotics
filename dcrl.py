@@ -51,6 +51,7 @@ def run_dcrl_map_elites(env_name,  #
              key,
              dropout_rate,
              training_damage_rate,
+             num_evals,
 ):
     
     env, policy_network, actor_dc_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes, dropout_rate)
@@ -92,13 +93,31 @@ def run_dcrl_map_elites(env_name,  #
 
         return next_state, policy_params, key, transition
     
+    def multi_eval_play_step_fn(
+        env_state: EnvState, policy_params: Params, key: RNGKey, num_evals: int
+    ) -> Tuple[EnvState, Params, RNGKey, DCRLTransition]:
+        "eval and average the transition"
+        keys = jax.random.split(key, num_evals)
+        batched_play_step_fn = jax.vmap(lambda k: play_step_fn(env_state, policy_params, k))
+        next_states, batched_policy_params, keys, transitions = batched_play_step_fn(keys)
+
+        # get the first out of the batched results
+        next_state = jax.tree.map(lambda x:x[0], next_states)
+        policy_params = jax.tree.map(lambda x:x[0], batched_policy_params)
+        # average the rewards
+        final_transition = jax.tree.map(lambda x:x[0], transitions)
+        final_transition = final_transition.replace(rewards=jnp.mean(transitions.rewards))
+        return next_state, policy_params, keys[0], final_transition
+    
+    avg_eval_fn = functools.partial(multi_eval_play_step_fn, num_evals=num_evals)
+    
     # Prepare the scoring function
     descriptor_extraction_fn = descriptor_extractor[env_name]
     scoring_fn = functools.partial(
         scoring_function_brax_envs,
         episode_length=episode_length,
         play_reset_fn=reset_fn,
-        play_step_fn=play_step_fn,
+        play_step_fn=avg_eval_fn,       # play_step_fn
         descriptor_extractor=descriptor_extraction_fn,
     )
 

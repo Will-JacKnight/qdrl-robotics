@@ -45,7 +45,7 @@ def init_env_and_policy_network(
         dropout_rate=dropout_rate
     )
     
-    actor_dc_network = DropoutMLP(
+    actor_dc_network = DropoutMLPDC(
         layer_sizes=policy_layer_sizes,
         kernel_init=jax.nn.initializers.lecun_uniform(),
         final_activation=jnp.tanh,

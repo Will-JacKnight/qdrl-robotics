@@ -134,8 +134,6 @@ class DropoutMLP(MLP):
                     use_bias=self.bias,
                 )(hidden)
                 hidden = self.activation(hidden)  # type: ignore
-                if self.dropout_rate > 0.0:
-                    hidden = nn.Dropout(rate=self.dropout_rate, deterministic=not train)(hidden)
 
             else:
                 if self.kernel_init_final is not None:
@@ -151,6 +149,9 @@ class DropoutMLP(MLP):
 
                 if self.final_activation is not None:
                     hidden = self.final_activation(hidden)
+            
+            if self.dropout_rate > 0.0:
+                hidden = nn.Dropout(rate=self.dropout_rate, deterministic=not train)(hidden)
 
         return hidden
 
@@ -177,8 +178,7 @@ class DropoutMLPDC(MLPDC):
                     use_bias=self.bias,
                 )(hidden)
                 hidden = self.activation(hidden)  # type: ignore
-                if self.dropout_rate > 0.0:
-                    hidden = nn.Dropout(rate=self.dropout_rate, deterministic=not train)(hidden)
+                
 
             else:
                 if self.kernel_init_final is not None:
@@ -194,5 +194,8 @@ class DropoutMLPDC(MLPDC):
 
                 if self.final_activation is not None:
                     hidden = self.final_activation(hidden)
+
+            if self.dropout_rate > 0.0:
+                hidden = nn.Dropout(rate=self.dropout_rate, deterministic=not train)(hidden)
 
         return hidden
