@@ -7,7 +7,7 @@ cd $PBS_O_WORKDIR
 source qdax050/bin/activate
 
 # adaptation inspection
-output_path="outputs/hpc/dcrl_20250727_210952"
+output_path="outputs/hpc/dcrl_20250814_111147"
 
 echo "model path=$output_path"
 

@@ -42,9 +42,9 @@ Correct implementation and ones trained on forward reward:
  - hpc/dcrl_20250811_174154 (ai-emitter projection layer + layerNorm layer + 1 Res layer + action projection layer, dropouts applied on every layer)
 
  ## Multi-evaluations to solve ME training stochasticity
-- hpc/dcrl_20250723_160932 (1/10 of total eval steps, no dropouts)
+- hpc/dcrl_20250723_160932 (no dropouts)
 - hpc/dcrl_20250727_210952 (single eval, dropouts except for the output layer)
-- hpc/dcrl_20250813_212529 (10 parallel evals and averagging on reward, dropouts on every layer)
 - hpc/dcrl_20250813_213310 (single eval, dropouts on every layer)
-
+- hpc/dcrl_20250813_212529 (10 parallel evals and averagging on reward, dropouts on every layer)
+- hpc/dcrl_20250814_111147 (1/10 env_steps, 10 parallel evals and averagging on reward, dropouts on every layer)
  

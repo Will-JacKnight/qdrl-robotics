@@ -1,12 +1,12 @@
 {
     "config": "config.json",
     "mode": "training",
-    "output_path": "outputs/dcrl_20250723_160932",
-    "exp_path": null,
+    "output_path": "outputs/hpc/dcrl_20250814_111147",
+    "exp_path": "outputs/hpc/dcrl_20250814_111147",
     "algo_type": "dcrl",
     "episode_length": 1000,
     "batch_size": 4096,
-    "num_iterations": 3000,
+    "num_iterations": 500,
     "grid_shape": [
         10,
         10,
@@ -23,7 +23,7 @@
     ],
     "damage_joint_action": [
         0,
-        0.9
+        0
     ],
     "zero_sensor_idx": [
         5,
@@ -61,5 +61,7 @@
     "policy_delay": 2,
     "max_iters": 20,
     "performance_threshold": 0.9,
-    "num_evals": 1
+    "dropout_rate": 0.2,
+    "training_damage_rate": 0.05,
+    "num_evals": 10
 }

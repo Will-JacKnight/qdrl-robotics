@@ -1,6 +1,7 @@
 import enum
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Literal
 import os
+from scipy.stats import gaussian_kde
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -10,7 +11,6 @@ from matplotlib.ticker import MaxNLocator
 import matplotlib.colors as mcolors
 import numpy as np
 import jax.numpy as jnp
-from sklearn.utils.extmath import density
 
 from util import load_json
 
@@ -145,7 +145,7 @@ def eval_multi_model_metrics(
         # eval training results
         metrics = load_json(model_path, "metrics.json")
         args = load_json(model_path, "running_args.json")
-        env_steps = np.arange(args["num_iterations"] + 1) * args["episode_length"] * args["batch_size"]
+        env_steps = np.arange(args["num_iterations"] + 1) * args["episode_length"] * args["batch_size"] * args["num_evals"]
         
         axes[0].plot(env_steps, metrics["coverage"], label=model_desc[i], color=model_colors[i])
         axes[1].plot(env_steps, metrics["max_fitness"], color=model_colors[i])
@@ -174,7 +174,10 @@ def plot_real_fitness_histograms(
     model_desc: List[str],
     model_colors: List[str],
     num_bins: int = 2000,
+    lower_bound: Optional[int] = 100,
+    upper_bound: Optional[int] = 2300,
 ) -> None:
+    # num_models = len(model_paths)
     num_damages = len(damage_paths)
     fig, axes = plt.subplots(nrows=1, ncols=num_damages, figsize=(10 * num_damages, 10))
     axes = np.atleast_2d(axes)
@@ -197,13 +200,17 @@ def plot_real_fitness_histograms(
             axes[0][j].hist(
                 real_fitness, 
                 bins=num_bins, 
-                range=(1000, 2500),
+                # range=(lower_bound, upper_bound),
                 color=model_colors[i], 
                 alpha=0.8,
                 label=label,
                 density=True
             )
             axes[0][j].set_title(damage_paths[j])
+
+            # kde = gaussian_kde(real_fitness)
+            # x_vals = np.linspace(lower_bound, upper_bound, 500)
+            # axes[0][j].plot(x_vals, kde(x_vals), color=model_colors[i], linewidth=2)
 
     fig.legend(loc='right')
     plt.savefig("evaluations/real_fitness_histogram.png")
@@ -214,34 +221,38 @@ if __name__ == "__main__":
 
     model_paths = [
         "outputs/hpc/dcrl_20250723_160932/",
-        "outputs/hpc/dcrl_20250727_210952/",
-        # "outputs/hpc/dcrl_20250811_152438/",
-        # "outputs/hpc/dcrl_20250811_174154/",
+        # "outputs/hpc/dcrl_20250727_210952/",
+        "outputs/hpc/dcrl_20250813_213310/",
+        "outputs/hpc/dcrl_20250814_111147/",
+        # "outputs/hpc/dcrl_20250813_212529/",
     ]
 
     # for legends
     model_desc = [
         "original ITE: no dropouts",
-        "variant 1: dropout_rate=0.2",
-        # "variant 2: variant 1 + ResNet",
-        # "variant 3: variant 2 + LayerNorm",
+        "variant 1: dropouts",
+        "variant 2: variant 1 + eval denoising (same evaluation steps)",
+        # "variant 3: variant 1 + eval denoising (same addition steps)",
     ]
 
     # for x/y ticks
     model_desc_abbr = [
         "original ITE",
         "variant 1",
-        # "variant 2",
+        "variant 2",
         # "variant 3",
         # "variant 4",
     ]
 
     model_colors = [
-        baseline_colors[2],
-        # baseline_colors[4],
-        # main_colors[3],
-        main_colors[1],
-        # main_colors[4],
+        baseline_colors[4],
+        "#f05d4d",
+        "#fec126",
+        # "#90EE90",
+        # # baseline_colors[2],
+        # "#ff7f0e",
+        # main_colors[1],
+        # # main_colors[4],
     ]
 
     damage_paths = [
@@ -251,11 +262,11 @@ if __name__ == "__main__":
         # "physical_damage/FL_BR_loose",
         "sensory_damage/BL",
         # "sensory_damage/FL",
-        # "sensory_damage/Rand1",
-        "sensory_damage/Rand2",
+        "sensory_damage/Rand1",
+        # "sensory_damage/Rand2",
     ]
 
     # eval_single_model_metrics(model_paths[2], model_desc[2])
-    # eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
+    eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
 
-    plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=100)
+    plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=100, lower_bound=500, upper_bound=2300)
