@@ -7,10 +7,10 @@ from jax.lax import fori_loop
 import jax.numpy as jnp
 
 import qdax.tasks.brax.v1 as environments
-from qdax.core.containers.mapelites_repertoire import compute_cvt_centroids, compute_euclidean_centroids
+from qdax.core.containers.mapelites_repertoire import compute_euclidean_centroids
 from qdax.core.emitters.dcrl_me_emitter import DCRLMEConfig, DCRLMEEmitter
 from qdax.core.emitters.mutation_operators import isoline_variation
-from qdax.core.map_elites import MAPElites
+# from qdax.core.map_elites import MAPElites
 from qdax.core.neuroevolution.buffers.buffer import DCRLTransition
 from qdax.core.neuroevolution.networks.networks import MLP, MLPDC
 from qdax.custom_types import EnvState, Params, RNGKey
@@ -18,7 +18,9 @@ from qdax.tasks.brax.v1 import descriptor_extractor
 from qdax.tasks.brax.v1.wrappers.reward_wrappers import OffsetRewardWrapper, ClipRewardWrapper
 from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs
 from qdax.utils.metrics import default_qd_metrics, CSVLogger
+
 from rollout import init_env_and_policy_network
+from utils.core.map_elites import MAPElites
 
 def run_dcrl_map_elites(env_name,  #
              episode_length, #
@@ -97,9 +99,10 @@ def run_dcrl_map_elites(env_name,  #
         env_state: EnvState, policy_params: Params, key: RNGKey, num_evals: int
     ) -> Tuple[EnvState, Params, RNGKey, DCRLTransition]:
         "eval and average the transition"
-        keys = jax.random.split(key, num_evals)
+        key, subkey = jax.random.split(key)
+        keys = jax.random.split(subkey, num_evals)
         batched_play_step_fn = jax.vmap(lambda k: play_step_fn(env_state, policy_params, k))
-        next_states, batched_policy_params, keys, transitions = batched_play_step_fn(keys)
+        next_states, batched_policy_params, _, transitions = batched_play_step_fn(keys)
 
         # get the first out of the batched results
         next_state = jax.tree.map(lambda x:x[0], next_states)
@@ -107,7 +110,7 @@ def run_dcrl_map_elites(env_name,  #
         # average the rewards
         final_transition = jax.tree.map(lambda x:x[0], transitions)
         final_transition = final_transition.replace(rewards=jnp.mean(transitions.rewards))
-        return next_state, policy_params, keys[0], final_transition
+        return next_state, policy_params, key, final_transition
     
     avg_eval_fn = functools.partial(multi_eval_play_step_fn, num_evals=num_evals)
     
@@ -117,7 +120,7 @@ def run_dcrl_map_elites(env_name,  #
         scoring_function_brax_envs,
         episode_length=episode_length,
         play_reset_fn=reset_fn,
-        play_step_fn=avg_eval_fn,       # play_step_fn
+        play_step_fn=play_step_fn,       # avg_eval_fn
         descriptor_extractor=descriptor_extraction_fn,
     )
 
@@ -166,6 +169,7 @@ def run_dcrl_map_elites(env_name,  #
 
     # Instantiate MAP Elites
     map_elites = MAPElites(
+        num_evals=num_evals,
         scoring_function=scoring_fn,
         emitter=dcrl_emitter,
         metrics_function=metrics_fn,
@@ -173,14 +177,6 @@ def run_dcrl_map_elites(env_name,  #
 
     # Compute the centroids
     key, subkey = jax.random.split(key)
-    # centroids = compute_cvt_centroids(
-    #     num_descriptors=env.descriptor_length,
-    #     num_init_cvt_samples=num_init_cvt_samples,
-    #     num_centroids=num_centroids,
-    #     minval=min_descriptor,
-    #     maxval=max_descriptor,
-    #     key=subkey,
-    # )
     centroids = compute_euclidean_centroids(
         grid_shape=grid_shape,
         minval=min_descriptor,
