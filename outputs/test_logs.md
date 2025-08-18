@@ -52,4 +52,4 @@ Correct implementation and ones trained on forward reward:
 - hpc/dcrl_20250723_160932 (no dropouts)
 - hpc/dcrl_20250813_213310 (single eval)
 - hpc/dcrl_20250816_104912 (10 parallel evals and averaging on policy fitness and BD desc, same eval_steps)
- 
+- hpc/dcrl_20250816_154412 (10 parallel evals and averaging on policy fitness and BD desc, same addition_steps)
