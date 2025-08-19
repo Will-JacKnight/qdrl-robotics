@@ -109,10 +109,12 @@ def plot_recovered_performance(
     data = []
     color_indices = []
     width = 0.25
+    group_spacing = 1.5
+    
     for i, model_path in enumerate(model_paths):
         for j, damage_path in enumerate(damage_paths):
             eval_metrics = load_json(model_path + damage_path, "eval_metrics.json")
-            positions.append(j + i * width)
+            positions.append(j * group_spacing + i * width)
             data.append(eval_metrics["iterative"]["step_speeds"][-1])
             color_indices.append(i)
 
@@ -123,13 +125,13 @@ def plot_recovered_performance(
 
     # center xticks for each damage case
     num_models = len(model_paths)
-    centers = [j + (num_models - 1) * width / 2 for j in range(len(damage_paths))]
+    centers = [j * group_spacing + (num_models - 1) * width / 2 for j in range(len(damage_paths))]
     ax.set_xticks(centers)
     ax.set_xticklabels(damage_paths)
 
     # ax.set_xticks()
-    handles = [plt.Line2D([0], [0], color=model_colors[i], lw=5) for i in range(len(model_desc_abbr))]
-    ax.legend(handles, model_desc_abbr, loc="upper right")
+    handles = [plt.Line2D([0], [0], color=model_colors[i], lw=5) for i in range(len(model_desc))]
+    ax.legend(handles, model_desc, loc="upper left")
     plt.savefig("evaluations/final_performances.png")
     plt.close()
 
@@ -193,7 +195,7 @@ def eval_multi_model_metrics(
         # eval training results
         metrics = load_json(model_path, "metrics.json")
         args = load_json(model_path, "running_args.json")
-        env_steps = np.arange(args["num_iterations"] + 1) * args["episode_length"] * args["batch_size"] # * args["num_evals"]
+        env_steps = np.arange(args["num_iterations"] + 1) * args["episode_length"] * args["batch_size"] * args["num_evals"]
         
         axes[0].plot(env_steps, metrics["coverage"], label=model_desc[i], color=model_colors[i])
         axes[1].plot(env_steps, metrics["max_fitness"], color=model_colors[i])
@@ -212,7 +214,12 @@ def eval_multi_model_metrics(
 
     _, axes[5] = eval_single_model_metrics(model_paths[2] + damage_path, model_desc[2], model_colors[2], ax=axes[5])
 
-    fig.legend(loc='lower center') # , ncol=len(model_desc)
+    axes[3].set_visible(False)
+    axes[4].set_visible(False)
+    axes[5].set_visible(False)
+    ax5_secondary.set_visible(False)
+
+    fig.legend(loc='upper center') # , ncol=len(model_desc)
     plt.savefig("evaluations/eval_multi_model_metrics.png")
     plt.close()
 
@@ -222,15 +229,15 @@ def plot_real_fitness_histograms(
     model_desc: List[str],
     model_colors: List[str],
     num_bins: int = 2000,
-    lower_bound: Optional[int] = 50,
-    upper_bound: Optional[int] = 100,
+    lower_bound: Optional[int] = None,
+    upper_bound: Optional[int] = None,
     ) -> None:
     # num_models = len(model_paths)
     num_damages = len(damage_paths)
     fig, axes = plt.subplots(nrows=1, ncols=num_damages, figsize=(10 * num_damages, 10))
     axes = np.atleast_2d(axes)
 
-    fig.supxlabel("Real Fitness Percentage (%)")
+    fig.supxlabel("Real Fitness (m/s)")
     fig.supylabel("Frequency Density")
     fig.suptitle("Real Fitness Distribution")
 
@@ -246,9 +253,9 @@ def plot_real_fitness_histograms(
             real_fitnesses = np.array(eval_metrics["global"]["real_fitness"])
             # real_fitnesses = filter_top_k_list(eval_metrics["global"]["real_fitness"], top_k=0.2)
             
-            min_fitness = np.min(real_fitnesses)
-            max_fitness = np.max(real_fitnesses)
-            real_fitnesses = (real_fitnesses - min_fitness) / (max_fitness - min_fitness) * 100 + 0.0
+            # min_fitness = np.min(real_fitnesses)
+            # max_fitness = np.max(real_fitnesses)
+            # real_fitnesses = (real_fitnesses - min_fitness) / (max_fitness - min_fitness) * 100 + 0.0
 
             label = model_desc[i] if j == 0 else None
             axes[0][j].hist(
@@ -277,7 +284,7 @@ if __name__ == "__main__":
         "outputs/hpc/dcrl_20250723_160932/",
         "outputs/hpc/dcrl_20250813_213310/",
         "outputs/hpc/dcrl_20250816_104912/",
-        # "outputs/hpc/dcrl_20250816_154412/",
+        "outputs/hpc/dcrl_20250816_154412/",
         
     ]
 
@@ -285,20 +292,20 @@ if __name__ == "__main__":
     model_desc = [
         "original ITE: no dropouts",
         "variant 1: dropouts",
-        # "variant 2: variant 1 + eval denoising (same evaluation steps)",
-        "variant 3: variant 1 + eval denoising (same addition steps)",
+        "variant 2: variant 1 + re-eval (same evaluation steps)",
+        "variant 3: variant 1 + re-eval (same addition steps)",
     ]
 
     # for x/y ticks
     model_desc_abbr = [
         "original ITE",
         "variant 1",
-        # "variant 2",
+        "variant 2",
         "variant 3",
-        # "variant 4",
     ]
 
     model_colors = [
+        "#9b59b6",
         baseline_colors[4],
         "#f05d4d",
         "#fec126",
@@ -320,6 +327,6 @@ if __name__ == "__main__":
         # "sensory_damage/Rand2",
     ]
 
-    plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
-    # eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
-    # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=100, lower_bound=0)
+    # plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
+    eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
+    # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=250, lower_bound=-200, upper_bound=2300)

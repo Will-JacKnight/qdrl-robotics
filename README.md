@@ -1,4 +1,6 @@
-# Intelligent Trial and Error
+# Quality-Diversity Damage recovery with Intelligent Trial and Error (ITE)
+This repository is built on top of [QDax library](https://github.com/adaptive-intelligent-robotics/QDax).
+
 <img src="docs/images/intact_walking.gif" height="150"/><img src="docs/images/recovery_demo.gif" height="150"/>
 
 The goal for the agent is to run as fast as possible, even when it's damaged.
@@ -20,7 +22,7 @@ The goal for the agent is to run as fast as possible, even when it's damaged.
     export JAX_PLATFORMS=cpu
     python main.py
     ```
-- For batched jobs, it's advised to run on gpu servers using shell commands, please refer to <hpc_jobs.sh> and <slurm_job.sh>.
+- For batched jobs, it's advised to run on gpu servers using shell commands, please refer to <hpc_train.sh> and <hpc_adapt.sh>.
 
 ## Branches
 - Branch ```main``` is compatible with qdax==0.5.0 (up to date)
