@@ -9,12 +9,12 @@ from brax.v1.io import html
 
 import qdax.tasks.brax.v1 as environments
 # from qdax.core.neuroevolution.networks.networks import MLP, MLPDC
+from qdax.core.neuroevolution.buffers.buffer import DCRLTransition
 from qdax.tasks.brax.v1.wrappers.reward_wrappers import OffsetRewardWrapper, ClipRewardWrapper
 from qdax.tasks.brax.v1.wrappers.init_state_wrapper import FixedInitialStateWrapper
+from qdax.custom_types import EnvState, Params, RNGKey
 
 from utils.reward_wrapper import ForwardStepRewardWrapper
-# from utils.util import load_repertoire_and_metrics
-# from utils.new_plot import plot_grid_results
 from utils.networks import ResMLP, ResMLPDC, DropoutMLP, DropoutMLPDC
 
 
@@ -168,3 +168,45 @@ def jit_rollout_fn(
         return total_rewards
 
     return _jit_fitness_rollout
+
+
+def play_damage_step_fn(
+    env_state: EnvState, 
+    policy_params: Params, 
+    key: RNGKey,
+    env,
+    policy_network,
+    damage_joint_idx: jnp.ndarray, 
+    damage_joint_action: jnp.ndarray,
+    zero_sensor_idx: jnp.ndarray,
+) -> Tuple[EnvState, Params, RNGKey, DCRLTransition]:
+
+    damaged_obs = env_state.obs.at[zero_sensor_idx].set(0.0)
+    env_state = env_state.replace(obs=damaged_obs)
+
+    actions = policy_network.apply(policy_params, env_state.obs)
+    actions = actions.at[damage_joint_idx].set(damage_joint_action)
+
+    state_desc = env_state.info["state_descriptor"]
+    next_state = env.step(env_state, actions)
+
+    transition = DCRLTransition(
+        obs=env_state.obs,
+        next_obs=next_state.obs,
+        rewards=next_state.reward,
+        dones=next_state.done,
+        truncations=next_state.info["truncation"],
+        actions=actions,
+        state_desc=state_desc,
+        next_state_desc=next_state.info["state_descriptor"],
+        desc=jnp.zeros(
+            env.descriptor_length,
+        )
+        * jnp.nan,
+        desc_prime=jnp.zeros(
+            env.descriptor_length,
+        )
+        * jnp.nan,
+    )
+
+    return next_state, policy_params, key, transition

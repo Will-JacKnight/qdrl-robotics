@@ -116,7 +116,8 @@ def main(
     render_rollout_to_html(rollout['states'], env, exp_path + "/pre_adaptation_with_damage.html")
 
     key, subkey = jax.random.split(key)
-    run_online_adaptation(repertoire, env, policy_network, subkey, exp_path, min_descriptor, max_descriptor, grid_shape, 
+    run_online_adaptation(env_name, repertoire, env, policy_network, subkey, exp_path, 
+                          min_descriptor, max_descriptor, grid_shape, 
                           damage_joint_idx, damage_joint_action, zero_sensor_idx,
                           episode_length, max_iters, performance_threshold)
 

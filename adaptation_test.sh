@@ -5,9 +5,9 @@
 cd $PBS_O_WORKDIR
 source qdax050/bin/activate
 
-output_path="outputs/hpc/dcrl_20250723_160932"
+output_path="outputs/hpc/dcrl_20250816_104912"
 
-exp_path="${output_path}/physical_damage"
+exp_path="${output_path}/test"
 mkdir -p "$exp_path"
 
 # damage rotation
