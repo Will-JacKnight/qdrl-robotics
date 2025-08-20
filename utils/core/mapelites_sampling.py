@@ -3,7 +3,7 @@ from typing import Optional, Callable, Tuple, override
 import jax
 import jax.numpy as jnp
 
-from qdax.core.map_elites import MAPElites as OriginalMAPElites
+from qdax.core.map_elites import MAPElites
 from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
 from qdax.core.emitters.emitter import Emitter, EmitterState
 from qdax.custom_types import (
@@ -16,7 +16,7 @@ from qdax.custom_types import (
     RNGKey,
 )
 
-class MAPElites(OriginalMAPElites):
+class ReevalMAPElites(MAPElites):
     "Custom MAPElites with re-evaluations"
     def __init__(
         self,

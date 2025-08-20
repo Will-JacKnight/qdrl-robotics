@@ -8,7 +8,6 @@ import jax
 import jax.numpy as jnp
 
 from adaptation import run_online_adaptation
-# from adaptation_tgp import run_online_adaptation
 from map_elites import run_map_elites
 from dcrl import run_dcrl_map_elites
 from rollout import run_single_rollout, init_env_and_policy_network, render_rollout_to_html

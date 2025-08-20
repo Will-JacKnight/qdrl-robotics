@@ -20,7 +20,7 @@ from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs
 from qdax.utils.metrics import default_qd_metrics, CSVLogger
 
 from rollout import init_env_and_policy_network
-from utils.core.map_elites import MAPElites
+from utils.core.mapelites_sampling import ReevalMAPElites
 
 def run_dcrl_map_elites(env_name,  #
              episode_length, #
@@ -168,7 +168,7 @@ def run_dcrl_map_elites(env_name,  #
     )
 
     # Instantiate MAP Elites
-    map_elites = MAPElites(
+    map_elites = ReevalMAPElites(
         num_evals=num_evals,
         scoring_function=scoring_fn,
         emitter=dcrl_emitter,

@@ -1,5 +1,5 @@
 # Quality-Diversity Damage recovery with Intelligent Trial and Error (ITE)
-This repository is built on top of [QDax library](https://github.com/adaptive-intelligent-robotics/QDax).
+This repository is built on top of [QDax library](https://github.com/adaptive-intelligent-robotics/QDax) and [Uncertain Quality Diversity](https://github.com/adaptive-intelligent-robotics/Uncertain_Quality_Diversity).
 
 <img src="docs/images/intact_walking.gif" height="150"/><img src="docs/images/recovery_demo.gif" height="150"/>
 
