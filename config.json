@@ -37,7 +37,5 @@
     "damage_joint_idx": [0, 1],
     "damage_joint_action": [0, 0],
     "zero_sensor_idx": [5, 6, 19, 20],
-    "dropout_rate": 0.2,
-    "training_damage_rate": 0.05,
-    "num_evals": 10
+    "dropout_rate": 0.2
 }

@@ -62,7 +62,6 @@ def main(
     max_iters: int, 
     performance_threshold,
     dropout_rate: float,
-    training_damage_rate,
     num_evals: int,
     depth: int,
     max_number_evals: int,
@@ -86,14 +85,14 @@ def main(
             case "mapelites":
                 repertoire, metrics = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
                                                 grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey, 
-                                                dropout_rate, training_damage_rate)
+                                                dropout_rate)
             case "dcrl":
                 repertoire, metrics = run_dcrl_map_elites(env_name, container_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
                                                 grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
                                                 dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
                                                 num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
                                                 actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
-                                                policy_delay, log_period, subkey, dropout_rate, training_damage_rate, 
+                                                policy_delay, log_period, subkey, dropout_rate, 
                                                 num_evals, depth, max_number_evals, fitness_extractor, fitness_reproducibility_extractor, 
                                                 descriptor_extractor, descriptor_reproducibility_extractor,
                                                 as_repertoire_num_samples, extract_type, sampling_size)
@@ -164,6 +163,7 @@ def get_args():
     parser.add_argument("--num_iterations", type=int, help="Number of training iterations")
 
     # UQD configs
+    parser.add_argument("--num-evals", default=1, type=int, help="number of first evaluations per genotype")
     parser.add_argument("--sampling-size", default=4096, type=int, help="number of evaluations per generation")
     parser.add_argument("--depth", default=1, type=int)
     parser.add_argument("--fitness-extractor", default="Average", type=str)
@@ -172,7 +172,7 @@ def get_args():
     parser.add_argument("--descriptor-reproducibility-extractor", default="STD", type=str)
     parser.add_argument(
         "--max-number-evals", 
-        default=50, 
+        default=10, 
         type=int, 
         help="capacity of resamples stored for each genotype (jax-compatible)"
     )
@@ -283,7 +283,6 @@ if __name__ == "__main__":
         args.max_iters, 
         args.performance_threshold,
         args.dropout_rate,
-        args.training_damage_rate,
         args.num_evals,
         args.depth,
         args.max_number_evals,

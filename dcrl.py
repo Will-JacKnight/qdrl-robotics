@@ -55,7 +55,6 @@ def run_dcrl_map_elites(
     log_period, 
     key,
     dropout_rate,
-    training_damage_rate,
     num_evals,
     depth: int,
     max_number_evals: int,
