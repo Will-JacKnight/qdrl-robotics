@@ -20,40 +20,52 @@ from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs
 from qdax.utils.metrics import default_qd_metrics, CSVLogger
 
 from rollout import init_env_and_policy_network
+from setup_containers import setup_container
 from core.mapelites_sampling import ReevalMAPElites
 
-def run_dcrl_map_elites(env_name,  #
-             episode_length, #
-             policy_hidden_layer_sizes,
-             batch_size, #
-             num_iterations, #
-             grid_shape, #
-             min_descriptor, #
-             max_descriptor, #
-             iso_sigma, #
-             line_sigma, #
-             ga_batch_size, #
-             dcrl_batch_size, #
-             ai_batch_size, #
-             lengthscale, #
-             critic_hidden_layer_size,
-             num_critic_training_steps,
-             num_pg_training_steps,
-             replay_buffer_size,
-             discount,
-             reward_scaling, 
-             critic_learning_rate,
-             actor_learning_rate,
-             policy_learning_rate,
-             noise_clip,
-             policy_noise,
-             soft_tau_update,
-             policy_delay,
-             log_period, 
-             key,
-             dropout_rate,
-             training_damage_rate,
-             num_evals,
+def run_dcrl_map_elites(
+    env_name: str,
+    container_name: str,
+    episode_length: int,
+    policy_hidden_layer_sizes: Tuple[int, ...],
+    batch_size: int,
+    num_iterations: int, #
+    grid_shape: Tuple[int, ...],
+    min_descriptor, 
+    max_descriptor, 
+    iso_sigma, #
+    line_sigma, #
+    ga_batch_size, #
+    dcrl_batch_size, #
+    ai_batch_size, #
+    lengthscale, #
+    critic_hidden_layer_size,
+    num_critic_training_steps,
+    num_pg_training_steps,
+    replay_buffer_size,
+    discount,
+    reward_scaling, 
+    critic_learning_rate,
+    actor_learning_rate,
+    policy_learning_rate,
+    noise_clip,
+    policy_noise,
+    soft_tau_update,
+    policy_delay,
+    log_period, 
+    key,
+    dropout_rate,
+    training_damage_rate,
+    num_evals,
+    depth: int,
+    max_number_evals: int,
+    fitness_extractor_method: str, 
+    fitness_reproducibility_extractor_method: str, 
+    descriptor_extractor_method: str, 
+    descriptor_reproducibility_extractor_method: str,
+    as_repertoire_num_samples: int,
+    extract_type: str,
+    sampling_size: int,
 ):
     
     env, policy_network, actor_dc_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes, dropout_rate)
@@ -168,11 +180,29 @@ def run_dcrl_map_elites(env_name,  #
     )
 
     # Instantiate MAP Elites
-    map_elites = ReevalMAPElites(
-        num_evals=num_evals,
-        scoring_function=scoring_fn,
+    # map_elites = ReevalMAPElites(
+    #     num_evals=num_evals,
+    #     scoring_function=scoring_fn,
+    #     emitter=dcrl_emitter,
+    #     metrics_function=metrics_fn,
+    # )
+    key, subkey = jax.random.split(key)
+    map_elites, key = setup_container(
+        container_name=container_name,
         emitter=dcrl_emitter,
+        num_samples=num_evals,
+        depth=depth,
+        scoring_function=scoring_fn,
         metrics_function=metrics_fn,
+        sampling_size=sampling_size,
+        max_number_evals=max_number_evals,
+        as_repertoire_num_samples=as_repertoire_num_samples,
+        fitness_extractor=fitness_extractor_method, 
+        fitness_reproducibility_extractor=fitness_reproducibility_extractor_method, 
+        descriptor_extractor=descriptor_extractor_method, 
+        descriptor_reproducibility_extractor=descriptor_reproducibility_extractor_method,
+        extract_type=extract_type,
+        key = subkey,
     )
 
     # Compute the centroids

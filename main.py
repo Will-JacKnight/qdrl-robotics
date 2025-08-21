@@ -5,6 +5,7 @@ import sys
 from datetime import datetime
 
 import jax
+from jax._src.interpreters.partial_eval import Val
 import jax.numpy as jnp
 
 from adaptation import run_online_adaptation
@@ -14,49 +15,64 @@ from rollout import run_single_rollout, init_env_and_policy_network, render_roll
 from utils.util import load_repertoire_and_metrics, save_repertoire_and_metrics, save_args
 from utils.new_plot import plot_map_elites_results
 
+SUPPORTED_CONTAINERS = [
+    "mapelites_sampling",
+    "archive_sampling",
+    "extract_mapelites",
+]
 
 def main(
-         mode: Literal["training", "adaptation"],
-         algo_type,
-         episode_length: int, 
-         seed: int, 
-         batch_size: int, 
-         num_iterations: int, 
-         grid_shape: Tuple[int, ...],
-         policy_hidden_layer_sizes: Tuple[int, ...],
-         damage_joint_idx: jnp.ndarray, 
-         damage_joint_action: jnp.ndarray,
-         zero_sensor_idx: jnp.ndarray, 
-         ga_batch_size,
-         dcrl_batch_size,
-         ai_batch_size,
-         lengthscale,
-         critic_hidden_layer_size: Tuple[int, ...],
-         num_critic_training_steps,
-         num_pg_training_steps,
-         replay_buffer_size,
-         discount,
-         reward_scaling,
-         critic_learning_rate,
-         actor_learning_rate,
-         policy_learning_rate,
-         noise_clip,
-         policy_noise,
-         soft_tau_update,
-         policy_delay,
-         output_path: str,
-         exp_path: str,
-         env_name: str,
-         min_descriptor, 
-         max_descriptor, 
-         iso_sigma: int, 
-         line_sigma: int, 
-         log_period: int,
-         max_iters: int, 
-         performance_threshold,
-         dropout_rate: float,
-         training_damage_rate,
-         num_evals: int,
+    mode: Literal["training", "adaptation"],
+    container_name: str,
+    algo_type,
+    episode_length: int, 
+    seed: int, 
+    batch_size: int, 
+    num_iterations: int, 
+    grid_shape: Tuple[int, ...],
+    policy_hidden_layer_sizes: Tuple[int, ...],
+    damage_joint_idx: jnp.ndarray, 
+    damage_joint_action: jnp.ndarray,
+    zero_sensor_idx: jnp.ndarray, 
+    ga_batch_size,
+    dcrl_batch_size,
+    ai_batch_size,
+    lengthscale,
+    critic_hidden_layer_size: Tuple[int, ...],
+    num_critic_training_steps,
+    num_pg_training_steps,
+    replay_buffer_size,
+    discount,
+    reward_scaling,
+    critic_learning_rate,
+    actor_learning_rate,
+    policy_learning_rate,
+    noise_clip,
+    policy_noise,
+    soft_tau_update,
+    policy_delay,
+    output_path: str,
+    exp_path: str,
+    env_name: str,
+    min_descriptor, 
+    max_descriptor, 
+    iso_sigma: int, 
+    line_sigma: int, 
+    log_period: int,
+    max_iters: int, 
+    performance_threshold,
+    dropout_rate: float,
+    training_damage_rate,
+    num_evals: int,
+    depth: int,
+    max_number_evals: int,
+    fitness_extractor: str,
+    fitness_reproducibility_extractor: str,
+    descriptor_extractor: str,
+    descriptor_reproducibility_extractor: str,
+    as_repertoire_num_samples: int,
+    extract_type: str,
+    sampling_size: int,
 ):
     
 
@@ -72,12 +88,15 @@ def main(
                                                 grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey, 
                                                 dropout_rate, training_damage_rate)
             case "dcrl":
-                repertoire, metrics = run_dcrl_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
+                repertoire, metrics = run_dcrl_map_elites(env_name, container_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
                                                 grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
                                                 dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
                                                 num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
                                                 actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
-                                                policy_delay, log_period, subkey, dropout_rate, training_damage_rate, num_evals)
+                                                policy_delay, log_period, subkey, dropout_rate, training_damage_rate, 
+                                                num_evals, depth, max_number_evals, fitness_extractor, fitness_reproducibility_extractor, 
+                                                descriptor_extractor, descriptor_reproducibility_extractor,
+                                                as_repertoire_num_samples, extract_type, sampling_size)
             case _:
                 raise ValueError(f"Unknown algo_type: {algo_type}")
 
@@ -125,31 +144,64 @@ def main(
 def get_args():
     parser = argparse.ArgumentParser(description="ITE Adaptation")
     parser.add_argument("--config", type=str, default="./config.json",help='Path to config.json (default parameter file)')
-    args, remaining_args = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
+    # default configs
     with open(args.config, 'r') as f:
         config_args = json.load(f)
 
     parser.set_defaults(**config_args)
     parser.add_argument("--mode", type=str, help="run mode: training || adaptation (default)")
+
+    # directory configs
     parser.add_argument("--output_path", type=str, help="relative path to the MAP")
     parser.add_argument("--exp_path", type=str, help="relative path to specific damage runs")
     parser.add_argument("--algo_type", type=str, help="choose from: mapelites || dcrl")
+
+    # evaluation step configs
     parser.add_argument("--episode_length", type=int, help="Maximum rollout length")
-    parser.add_argument("--batch_size", type=int, help="Training batch size")
+    parser.add_argument("--batch_size", type=int, help="Parallel training batch size")
     parser.add_argument("--num_iterations", type=int, help="Number of training iterations")
-    parser.add_argument("--grid_shape", type=int, nargs='+', help="Shape of the MAP grid, use format: --grid_shape 10 10 10 10")
-    parser.add_argument("--policy_hidden_layer_sizes", type=int, nargs='+', help="Hidden layer size of controller policy")
+
+    # UQD configs
+    parser.add_argument("--sampling-size", default=4096, type=int, help="number of evaluations per generation")
+    parser.add_argument("--depth", default=1, type=int)
+    parser.add_argument("--fitness-extractor", default="Average", type=str)
+    parser.add_argument("--fitness-reproducibility-extractor", default="STD", type=str)
+    parser.add_argument("--descriptor-extractor", default="Average", type=str)
+    parser.add_argument("--descriptor-reproducibility-extractor", default="STD", type=str)
+    parser.add_argument(
+        "--max-number-evals", 
+        default=50, 
+        type=int, 
+        help="capacity of resamples stored for each genotype (jax-compatible)"
+    )
+
+    # archive sampling configs
+    parser.add_argument(
+        "--as-repertoire-num-samples", 
+        default=1, 
+        type=int,
+        help="number of re-evaluations of extracted genotype from repertoire"
+    )
+
+    # extract-QD configs
+    parser.add_argument("--extract-type", default="proportional", type=str)
+
+    # damage configs
+    parser.add_argument("--damage_type", type=str, help="Damage type: physical | sensory")
     parser.add_argument("--damage_joint_idx", type=int, nargs='+', help="Index of the damaged joint")
     parser.add_argument("--damage_joint_action", type=float, nargs='+', help="Action value of the damaged joint")
     parser.add_argument("--zero_sensor_idx", type=int, nargs='+', help="Index of the zero sensor")
-    parser.add_argument("--damage_type", type=str, help="Damage type: physical | sensory")
+
     args = parser.parse_args()
 
+    # format transformation
     args.grid_shape = tuple(args.grid_shape)
     args.policy_hidden_layer_sizes = tuple(args.policy_hidden_layer_sizes)
     args.critic_hidden_layer_size = tuple(args.critic_hidden_layer_size)
 
+    # value check
     if len(args.damage_joint_idx) != len(args.damage_joint_action):
         raise ValueError("Number of damage joint actions need to match the number of damage joint indices.")
 
@@ -164,6 +216,11 @@ def get_args():
 
         if "--algo_type" not in sys.argv:
             raise ValueError("You must specify --algo_type explicitly from the command line.")
+
+        if args.container_name not in SUPPORTED_CONTAINERS:
+            raise ValueError(f"container currently not supported, choose between: {SUPPORTED_CONTAINERS}")
+
+        assert args.as_repertoire_num_samples > 0, "!!!ERROR!!! Invalid repertoire_num_samples."
 
         save_args(args)
 
@@ -187,6 +244,7 @@ if __name__ == "__main__":
 
     main(
         args.mode,
+        args.container_name,
         args.algo_type,
         args.episode_length, 
         args.seed, 
@@ -227,8 +285,13 @@ if __name__ == "__main__":
         args.dropout_rate,
         args.training_damage_rate,
         args.num_evals,
+        args.depth,
+        args.max_number_evals,
+        args.fitness_extractor,
+        args.fitness_reproducibility_extractor,
+        args.descriptor_extractor,
+        args.descriptor_reproducibility_extractor,
+        args.as_repertoire_num_samples,
+        args.extract_type,
+        args.sampling_size,
     )
-
-
-
-    

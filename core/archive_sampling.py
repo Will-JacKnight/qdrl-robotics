@@ -392,8 +392,9 @@ class ArchiveSampling:
             lambda x: x.at[:, 0].get(),
             emit_extra_scores,
         )
-        emitter_state, random_key = self._emitter.init(
-            random_key=random_key,
+        random_key, subkey = jax.random.split(random_key)
+        emitter_state = self._emitter.init(
+            key=subkey,
             repertoire=repertoire,
             genotypes=emit_genotypes,
             fitnesses=emit_fitnesses,

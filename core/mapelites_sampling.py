@@ -17,7 +17,9 @@ from qdax.custom_types import (
 )
 
 class ReevalMAPElites(MAPElites):
-    "Custom MAPElites with re-evaluations"
+    """
+    MAPElites with re-evaluations (mapelites sampling), no depth structure
+    """
     def __init__(
         self,
         num_evals: int,

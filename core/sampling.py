@@ -161,7 +161,7 @@ def multi_sample_scoring_function(
         # output is shape (batch_size, num_samples, ...)
         out_axes=1,
     )
-    all_fitnesses, all_descriptors, all_extra_scores, _ = sample_scoring_fn(
+    all_fitnesses, all_descriptors, all_extra_scores = sample_scoring_fn(
         policies_params, keys
     )
 
