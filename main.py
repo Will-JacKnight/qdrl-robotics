@@ -18,7 +18,7 @@ from utils.new_plot import plot_map_elites_results
 SUPPORTED_CONTAINERS = [
     "mapelites_sampling",
     "archive_sampling",
-    "extract_mapelites",
+    # "extract_mapelites",
 ]
 
 def main(
@@ -163,6 +163,7 @@ def get_args():
     parser.add_argument("--num_iterations", type=int, help="Number of training iterations")
 
     # UQD configs
+    parser.add_argument("--container-name", type=str, help=f"supported containers: {SUPPORTED_CONTAINERS}")
     parser.add_argument("--num-evals", default=1, type=int, help="number of first evaluations per genotype")
     parser.add_argument("--sampling-size", default=4096, type=int, help="number of evaluations per generation")
     parser.add_argument("--depth", default=1, type=int)

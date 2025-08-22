@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Optional
 
 import flax
 import jax
 import jax.numpy as jnp
 from jax.flatten_util import ravel_pytree
 from qdax.core.containers.mapelites_repertoire import get_cells_indices
+from qdax.core.containers.repertoire import Repertoire, Selector
 from qdax.custom_types import (
     Centroid,
     Descriptor,
@@ -18,7 +19,7 @@ from qdax.custom_types import (
 )
 
 
-class ArchiveSamplingRepertoire(flax.struct.PyTreeNode):
+class ArchiveSamplingRepertoire(Repertoire):
     """
     Class for the deep repertoire with any estimator.
 
@@ -188,6 +189,37 @@ class ArchiveSamplingRepertoire(flax.struct.PyTreeNode):
         )
 
         return samples, descriptors, random_key
+    
+    def select(
+        self,
+        key: RNGKey,
+        num_samples: int,
+        selector: Optional[Selector] = None,
+    ) -> ArchiveSamplingRepertoire:
+        """
+        Select individuals using the same logic as sample_with_descs but return a sub-repertoire.
+        """
+        # Reuse the sampling logic from sample_with_descs
+        repertoire_empty = self.fitnesses == -jnp.inf
+        p = (1.0 - repertoire_empty) / jnp.sum(1.0 - repertoire_empty)
+
+        key, subkey = jax.random.split(key)
+        selected_indices = jax.random.choice(
+            subkey, jnp.arange(self.fitnesses.shape[0]), shape=(num_samples,), p=p, replace=True
+        )
+        
+        # Create sub-repertoire with selected individuals
+        return ArchiveSamplingRepertoire(
+            genotypes=jax.tree.map(lambda x: x[selected_indices], self.genotypes),
+            genotypes_depth=jax.tree.map(lambda x: x[selected_indices], self.genotypes_depth),
+            fitnesses=self.fitnesses[selected_indices],
+            fitnesses_depth=self.fitnesses_depth[selected_indices],
+            fitnesses_depth_all=self.fitnesses_depth_all[selected_indices],
+            descriptors=self.descriptors[selected_indices],
+            descriptors_depth=self.descriptors_depth[selected_indices],
+            descriptors_depth_all=self.descriptors_depth_all[selected_indices],
+            centroids=self.centroids[selected_indices],
+        )
 
     @partial(
         jax.jit,

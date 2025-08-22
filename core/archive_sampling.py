@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -203,12 +203,12 @@ class ArchiveSampling:
         )
 
         # Evaluate num_samples times
+        random_key, subkey = jax.random.split(random_key)
         (
             new_fitnesses,
             new_descriptors,
             extra_scores,
-            random_key,
-        ) = self._scoring_function(evaluation_genotypes, random_key)
+        ) = self._scoring_function(evaluation_genotypes, subkey)
 
         # Get fitness for emit in correct shape
         new_emit_fitnesses = new_fitnesses[-self._emitter.batch_size * num_samples :]
@@ -323,7 +323,7 @@ class ArchiveSampling:
         genotypes: Genotype,
         centroids: Centroid,
         random_key: RNGKey,
-    ) -> Tuple[Repertoire, Optional[EmitterState], RNGKey]:
+    ) -> Tuple[Repertoire, Optional[EmitterState], Metrics]:
         """
         Initialize a Map-Elites grid with an initial population of genotypes. Requires
         the definition of centroids that can be computed with any method such as
@@ -402,7 +402,8 @@ class ArchiveSampling:
             extra_scores=emit_extra_scores,
         )
 
-        return repertoire, emitter_state, random_key
+        init_metrics = self._metrics_function(repertoire)
+        return repertoire, emitter_state, init_metrics
 
     @partial(jax.jit, static_argnames=("self",))
     def update(
@@ -410,7 +411,7 @@ class ArchiveSampling:
         repertoire: Repertoire,
         emitter_state: Optional[EmitterState],
         random_key: RNGKey,
-    ) -> Tuple[Repertoire, Optional[EmitterState], Metrics, RNGKey]:
+    ) -> Tuple[Repertoire, Optional[EmitterState], Metrics]:
         """
         Performs one iteration of the Archive-Sampling algorithm, re-evaluating
         the content of the repertoire before each generation.
@@ -428,8 +429,9 @@ class ArchiveSampling:
         """
 
         # Generate offsprings with the emitter
-        emit_genotypes, extra_info, random_key = self._emitter.emit(
-            repertoire, emitter_state, random_key
+        random_key, subkey = jax.random.split(random_key)
+        emit_genotypes, extra_info = self._emitter.emit(
+            repertoire, emitter_state, subkey
         )
 
         # Extract from the repertoire
@@ -483,4 +485,34 @@ class ArchiveSampling:
         # Update the metrics
         metrics = self._metrics_function(repertoire)
 
-        return repertoire, emitter_state, metrics, random_key
+        return repertoire, emitter_state, metrics
+
+    def scan_update(
+        self,
+        carry: Tuple[Repertoire, Optional[EmitterState], RNGKey],
+        _: Any,
+    ) -> Tuple[Tuple[Repertoire, Optional[EmitterState], RNGKey], Metrics]:
+        """Rewrites the update function in a way that makes it compatible with the
+        jax.lax.scan primitive.
+
+        Args:
+            carry: a tuple containing the repertoire, the emitter state and a
+                random key.
+            _: unused element, necessary to respect jax.lax.scan API.
+
+        Returns:
+            The updated repertoire and emitter state, with a new random key and metrics.
+        """
+        repertoire, emitter_state, key = carry
+        key, subkey = jax.random.split(key)
+        (
+            repertoire,
+            emitter_state,
+            metrics,
+        ) = self.update(
+            repertoire,
+            emitter_state,
+            subkey,
+        )
+
+        return (repertoire, emitter_state, key), metrics

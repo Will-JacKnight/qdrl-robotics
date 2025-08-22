@@ -7,6 +7,19 @@ cd $PBS_O_WORKDIR
 source qdax050/bin/activate
 
 # map training
-python main.py --config config.json --algo_type dcrl --output_path outputs/hpc --mode training
+## mapelite-sampling 
+
+# python main.py --config config.json --algo_type dcrl --output_path outputs/hpc --mode training \
+#     --container-name mapelites_sampling
+
+## mapelite-sampling 
+
+python main.py --config config.json --algo_type dcrl --output_path outputs/hpc --mode training \
+    --container-name archive_sampling --num-evals 2 --depth 2
+
+
+## mapelite-sampling 
+# python main.py --config config.json --algo_type dcrl --output_path outputs/hpc --mode training \
+#     --container-name extract_mapelites --num-evals 2 --depth 8
 
 echo "%%%%%%%%%%%%%%%Running Complete%%%%%%%%%%%%%%%"
