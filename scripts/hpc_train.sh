@@ -5,7 +5,7 @@
 # PBS_O_WORKDIR is where the job's submitted
 cd $PBS_O_WORKDIR
 
-source ../qdax050/bin/activate
+source qdax050/bin/activate
 
 # map training
 ## mapelite-sampling 
