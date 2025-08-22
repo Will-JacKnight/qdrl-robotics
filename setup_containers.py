@@ -189,7 +189,7 @@ def get_sampling_size(
     return sampling_size, init_batch_size, effective_batch_size, real_evals_per_iter
 
 def setup_container(
-    container_name: str,
+    container: str,
     emitter: Emitter,
     num_samples: int,
     depth: int,
@@ -209,7 +209,7 @@ def setup_container(
 
     extract_proportion = 0.25
 
-    match container_name:
+    match container:
         case "mapelites_sampling":
             map_elites = ReevalMAPElites(
                 num_samples=num_samples,

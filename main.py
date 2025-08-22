@@ -29,7 +29,7 @@ SUPPORTED_DAMAGES = [
 
 def main(
     mode: Literal["training", "adaptation"],
-    container_name: str,
+    container: str,
     algo_type: str,
     episode_length: int, 
     seed: int, 
@@ -97,7 +97,7 @@ def main(
                 )
             case "dcrl":
                 repertoire, metrics = run_dcrl_map_elites(
-                    env_name, container_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
+                    env_name, container, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
                     grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
                     dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
                     num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
@@ -174,7 +174,7 @@ def get_args():
     parser.add_argument("--num_iterations", type=int, help="Number of training iterations")
 
     # UQD configs
-    parser.add_argument("--container-name", type=str, help=f"supported containers: {SUPPORTED_CONTAINERS}")
+    parser.add_argument("--container", type=str, help=f"supported containers: {SUPPORTED_CONTAINERS}")
     parser.add_argument("--num-samples", default=1, type=int, help="number of first evaluations per genotype")
     parser.add_argument("--sampling-size", default=4096, type=int, help="number of evaluations per generation")
     parser.add_argument("--depth", default=1, type=int)
@@ -232,7 +232,7 @@ def get_args():
         if "--algo_type" not in sys.argv:
             raise ValueError("You must specify --algo_type explicitly from the command line.")
 
-        if args.container_name not in SUPPORTED_CONTAINERS:
+        if args.container not in SUPPORTED_CONTAINERS:
             raise ValueError(f"container currently not supported, choose between: {SUPPORTED_CONTAINERS}")
 
         assert args.as_repertoire_num_samples > 0, "!!!ERROR!!! Invalid repertoire_num_samples."
@@ -254,9 +254,9 @@ def get_args():
     if args.sampling_size != 0:
         # Compute batch_size from sampling_size
         (
-            args.batch_size,
-            args.init_batch_size,
-            args.effective_batch_size,
+            args.sample_batch_size,
+            args.init_sample_batch_size,
+            args.emit_batch_size,
             args.real_evals_per_iter,
         ) = get_batch_size(
             sampling_size=args.sampling_size,
@@ -266,16 +266,16 @@ def get_args():
     else:
         # Compute sampling_size from batch_size
         (
-            args.sampling_size,
-            args.init_batch_size,
-            args.effective_batch_size,
+            args.sample_batch_size,
+            args.init_sample_batch_size,
+            args.emit_batch_size,
             args.real_evals_per_iter,
         ) = get_sampling_size(
             batch_size=args.batch_size,
             evals_per_offspring=evals_per_offspring,
             args=args,
         )
-    print(f"Using batch-size: {args.batch_size} and sampling-size: {args.sampling_size}.")
+    print(f"Using sample-batch-size: {args.sample_batch_size} and sampling-size: {args.sampling_size}.")
     print(f"With real_evals_per_iter: {args.real_evals_per_iter}")
 
     return args
@@ -288,7 +288,7 @@ if __name__ == "__main__":
 
     main(
         args.mode,
-        args.container_name,
+        args.container,
         args.algo_type,
         args.episode_length, 
         args.seed, 

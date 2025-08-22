@@ -1,6 +1,6 @@
 {
     "mode": "adaptation",
-    "container_name": "archive_sampling",
+    "container": "archive_sampling",
     "seed": 42,
     "output_path": "./outputs",
     "log_period": 10,

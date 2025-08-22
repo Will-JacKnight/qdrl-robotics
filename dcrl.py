@@ -25,7 +25,7 @@ from core.mapelites_sampling import ReevalMAPElites
 
 def run_dcrl_map_elites(
     env_name: str,
-    container_name: str,
+    container: str,
     episode_length: int,
     policy_hidden_layer_sizes: Tuple[int, ...],
     batch_size: int,
@@ -188,7 +188,7 @@ def run_dcrl_map_elites(
     # )
     key, subkey = jax.random.split(key)
     map_elites, key = setup_container(
-        container_name=container_name,
+        container=container,
         emitter=dcrl_emitter,
         num_samples=num_samples,
         depth=depth,
