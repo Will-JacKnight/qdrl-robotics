@@ -22,7 +22,7 @@ class ReevalMAPElites(MAPElites):
     """
     def __init__(
         self,
-        num_evals: int,
+        num_samples: int,
         scoring_function: Optional[
             Callable[[Genotype, RNGKey], Tuple[Fitness, Descriptor, ExtraScores]]
         ],
@@ -36,7 +36,7 @@ class ReevalMAPElites(MAPElites):
     ) -> None:
         super().__init__(scoring_function, emitter, metrics_function, repertoire_init)
         
-        self._num_evals = num_evals
+        self._num_samples = num_samples
 
     def update(
         self,
@@ -72,7 +72,7 @@ class ReevalMAPElites(MAPElites):
 
         # scores the offsprings
         key, subkey = jax.random.split(key)
-        keys = jax.random.split(subkey, self._num_evals)
+        keys = jax.random.split(subkey, self._num_samples)
         batched_scoring_fn = jax.vmap(lambda k: self._scoring_function(genotypes, k))
 
         (fitnesses, descriptors, extra_scores) = batched_scoring_fn(keys)

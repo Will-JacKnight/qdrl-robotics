@@ -14,17 +14,23 @@ from dcrl import run_dcrl_map_elites
 from rollout import run_single_rollout, init_env_and_policy_network, render_rollout_to_html
 from utils.util import load_repertoire_and_metrics, save_repertoire_and_metrics, save_args
 from utils.new_plot import plot_map_elites_results
+from setup_containers import get_evals_per_offspring, get_batch_size, get_sampling_size
 
 SUPPORTED_CONTAINERS = [
     "mapelites_sampling",
     "archive_sampling",
-    # "extract_mapelites",
+    "extract_mapelites",
+]
+
+SUPPORTED_DAMAGES = [
+    "physical",
+    "sensory",
 ]
 
 def main(
     mode: Literal["training", "adaptation"],
     container_name: str,
-    algo_type,
+    algo_type: str,
     episode_length: int, 
     seed: int, 
     batch_size: int, 
@@ -34,22 +40,22 @@ def main(
     damage_joint_idx: jnp.ndarray, 
     damage_joint_action: jnp.ndarray,
     zero_sensor_idx: jnp.ndarray, 
-    ga_batch_size,
-    dcrl_batch_size,
-    ai_batch_size,
-    lengthscale,
+    ga_batch_size: int,
+    dcrl_batch_size: int,
+    ai_batch_size: int,
+    lengthscale: float,
     critic_hidden_layer_size: Tuple[int, ...],
-    num_critic_training_steps,
-    num_pg_training_steps,
-    replay_buffer_size,
-    discount,
-    reward_scaling,
-    critic_learning_rate,
-    actor_learning_rate,
-    policy_learning_rate,
-    noise_clip,
-    policy_noise,
-    soft_tau_update,
+    num_critic_training_steps: int,
+    num_pg_training_steps: int,
+    replay_buffer_size: int,
+    discount: float,
+    reward_scaling: float,
+    critic_learning_rate: float,
+    actor_learning_rate: float,
+    policy_learning_rate: float,
+    noise_clip: float,
+    policy_noise: float,
+    soft_tau_update: float,
     policy_delay,
     output_path: str,
     exp_path: str,
@@ -62,7 +68,7 @@ def main(
     max_iters: int, 
     performance_threshold,
     dropout_rate: float,
-    num_evals: int,
+    num_samples: int,
     depth: int,
     max_number_evals: int,
     fitness_extractor: str,
@@ -71,7 +77,8 @@ def main(
     descriptor_reproducibility_extractor: str,
     as_repertoire_num_samples: int,
     extract_type: str,
-    sampling_size: int,
+    sample_batch_size: int,
+    emit_batch_size: int,
 ):
     
 
@@ -83,19 +90,23 @@ def main(
     if mode == "training":
         match algo_type:
             case "mapelites":
-                repertoire, metrics = run_map_elites(env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
-                                                grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey, 
-                                                dropout_rate)
+                repertoire, metrics = run_map_elites(
+                    env_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
+                    grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, log_period, subkey, 
+                    dropout_rate
+                )
             case "dcrl":
-                repertoire, metrics = run_dcrl_map_elites(env_name, container_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
-                                                grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
-                                                dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
-                                                num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
-                                                actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
-                                                policy_delay, log_period, subkey, dropout_rate, 
-                                                num_evals, depth, max_number_evals, fitness_extractor, fitness_reproducibility_extractor, 
-                                                descriptor_extractor, descriptor_reproducibility_extractor,
-                                                as_repertoire_num_samples, extract_type, sampling_size)
+                repertoire, metrics = run_dcrl_map_elites(
+                    env_name, container_name, episode_length, policy_hidden_layer_sizes, batch_size, num_iterations, 
+                    grid_shape, min_descriptor, max_descriptor, iso_sigma, line_sigma, ga_batch_size, 
+                    dcrl_batch_size, ai_batch_size, lengthscale, critic_hidden_layer_size, num_critic_training_steps,
+                    num_pg_training_steps, replay_buffer_size, discount, reward_scaling, critic_learning_rate,
+                    actor_learning_rate, policy_learning_rate, noise_clip, policy_noise, soft_tau_update,
+                    policy_delay, log_period, subkey, dropout_rate, 
+                    num_samples, depth, max_number_evals, fitness_extractor, fitness_reproducibility_extractor, 
+                    descriptor_extractor, descriptor_reproducibility_extractor,
+                    as_repertoire_num_samples, extract_type, sample_batch_size, emit_batch_size,
+                )
             case _:
                 raise ValueError(f"Unknown algo_type: {algo_type}")
 
@@ -164,7 +175,7 @@ def get_args():
 
     # UQD configs
     parser.add_argument("--container-name", type=str, help=f"supported containers: {SUPPORTED_CONTAINERS}")
-    parser.add_argument("--num-evals", default=1, type=int, help="number of first evaluations per genotype")
+    parser.add_argument("--num-samples", default=1, type=int, help="number of first evaluations per genotype")
     parser.add_argument("--sampling-size", default=4096, type=int, help="number of evaluations per generation")
     parser.add_argument("--depth", default=1, type=int)
     parser.add_argument("--fitness-extractor", default="Average", type=str)
@@ -188,9 +199,12 @@ def get_args():
 
     # extract-QD configs
     parser.add_argument("--extract-type", default="proportional", type=str)
+    parser.add_argument("--sample-batch-size", type=int)
+    parser.add_argument("--extract-proportion-resample", default=0.25, type=float)
+    parser.add_argument("--extract-cap-resample", default=2048, type=int)
 
     # damage configs
-    parser.add_argument("--damage_type", type=str, help="Damage type: physical | sensory")
+    parser.add_argument("--damage_type", type=str, help=f"Damage type: {SUPPORTED_DAMAGES}")
     parser.add_argument("--damage_joint_idx", type=int, nargs='+', help="Index of the damaged joint")
     parser.add_argument("--damage_joint_action", type=float, nargs='+', help="Action value of the damaged joint")
     parser.add_argument("--zero_sensor_idx", type=int, nargs='+', help="Index of the zero sensor")
@@ -235,6 +249,35 @@ def get_args():
         args.zero_sensor_idx = jnp.array(args.zero_sensor_idx)
     else:
         raise ValueError("Unsupported damage type, please set between physical | sensory")
+
+    evals_per_offspring = get_evals_per_offspring(args=args)
+    if args.sampling_size != 0:
+        # Compute batch_size from sampling_size
+        (
+            args.batch_size,
+            args.init_batch_size,
+            args.effective_batch_size,
+            args.real_evals_per_iter,
+        ) = get_batch_size(
+            sampling_size=args.sampling_size,
+            evals_per_offspring=evals_per_offspring,
+            args=args,
+        )
+    else:
+        # Compute sampling_size from batch_size
+        (
+            args.sampling_size,
+            args.init_batch_size,
+            args.effective_batch_size,
+            args.real_evals_per_iter,
+        ) = get_sampling_size(
+            batch_size=args.batch_size,
+            evals_per_offspring=evals_per_offspring,
+            args=args,
+        )
+    print(f"Using batch-size: {args.batch_size} and sampling-size: {args.sampling_size}.")
+    print(f"With real_evals_per_iter: {args.real_evals_per_iter}")
+
     return args
 
 
@@ -284,7 +327,7 @@ if __name__ == "__main__":
         args.max_iters, 
         args.performance_threshold,
         args.dropout_rate,
-        args.num_evals,
+        args.num_samples,
         args.depth,
         args.max_number_evals,
         args.fitness_extractor,
@@ -293,5 +336,6 @@ if __name__ == "__main__":
         args.descriptor_reproducibility_extractor,
         args.as_repertoire_num_samples,
         args.extract_type,
-        args.sampling_size,
+        args.sample_batch_size,
+        args.emit_batch_size,
     )

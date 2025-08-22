@@ -61,5 +61,5 @@
     "policy_delay": 2,
     "max_iters": 20,
     "performance_threshold": 0.9,
-    "num_evals": 1
+    "num_samples": 1
 }

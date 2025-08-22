@@ -95,7 +95,7 @@ class ArchiveSampling:
             extra_scores=extra_scores,
             centroids=centroids,
             depth=self._depth,
-            num_evals=self._max_number_evals,
+            num_samples=self._max_number_evals,
             fitness_extractor=self._fitness_extractor,
             fitness_reproducibility_extractor=self._fitness_reproducibility_extractor,
             descriptor_extractor=self._descriptor_extractor,

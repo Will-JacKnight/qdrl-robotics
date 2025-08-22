@@ -39,7 +39,7 @@ class ArchiveSamplingRepertoire(Repertoire):
             is (num_centroids, depth).
         fitnesses_depth_all: an array that contains the fitness of all solutions in each
             cell of the repertoire, ordered by centroids. The array shape
-            is (num_centroids, depth, num_evals).
+            is (num_centroids, depth, num_samples).
         descriptors: an array that contains the descriptors of best solutions in each
             cell of the repertoire, ordered by centroids. The array shape
             is (num_centroids, num_descriptors).
@@ -48,7 +48,7 @@ class ArchiveSamplingRepertoire(Repertoire):
             is (num_centroids, depth, num_descriptors).
         descriptors_depth_all: an array that contains the descriptors of all solutions in
             each cell of the repertoire, ordered by centroids. The array shape
-            is (num_centroids, depth, num_evals, num_descriptors).
+            is (num_centroids, depth, num_samples, num_descriptors).
         centroids: an array the contains the centroids of the tesselation. The array
             shape is (num_centroids, num_descriptors).
     """
@@ -244,7 +244,7 @@ class ArchiveSamplingRepertoire(Repertoire):
         """
         Add a batch of elements to the repertoire.
         WARNING: This addition makes the hypothesis that batch_of_all_descriptors
-        and batch_of_all_fitnesses are already dimensions num_evals.
+        and batch_of_all_fitnesses are already dimensions num_samples.
 
         Args:
             batch_of_genotypes: a batch of genotypes to be added to the repertoire.
@@ -443,7 +443,7 @@ class ArchiveSamplingRepertoire(Repertoire):
         extra_scores: ExtraScores,
         centroids: Centroid,
         depth: int,
-        num_evals: int,
+        num_samples: int,
         fitness_extractor: Callable[[jnp.ndarray], jnp.ndarray],
         fitness_reproducibility_extractor: Callable[[jnp.ndarray], jnp.ndarray],
         descriptor_extractor: Callable[[jnp.ndarray], jnp.ndarray],
@@ -466,7 +466,7 @@ class ArchiveSamplingRepertoire(Repertoire):
             extra_scores: unused extra_scores of the initial genotypes
             centroids: tesselation centroids of shape (batch_size, num_descriptors)
             depth
-            num_evals
+            num_samples
 
         Returns:
             an initialized MAP-Elite repertoire
@@ -477,7 +477,7 @@ class ArchiveSamplingRepertoire(Repertoire):
         default_fitnesses = -jnp.inf * jnp.ones(shape=num_centroids)
         default_fitnesses_depth = -jnp.inf * jnp.ones(shape=(num_centroids, depth))
         default_fitnesses_depth_all = jnp.nan * jnp.ones(
-            shape=(num_centroids, depth, num_evals)
+            shape=(num_centroids, depth, num_samples)
         )
         default_genotypes = jax.tree_map(
             lambda x: jnp.zeros(shape=(num_centroids,) + x.shape[1:]),
@@ -498,7 +498,7 @@ class ArchiveSamplingRepertoire(Repertoire):
             shape=(num_centroids, depth, centroids.shape[-1])
         )
         default_descriptors_depth_all = jnp.nan * jnp.ones(
-            shape=(num_centroids, depth, num_evals, centroids.shape[-1])
+            shape=(num_centroids, depth, num_samples, centroids.shape[-1])
         )
 
         repertoire = ArchiveSamplingRepertoire(

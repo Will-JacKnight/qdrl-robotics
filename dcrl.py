@@ -55,7 +55,7 @@ def run_dcrl_map_elites(
     log_period, 
     key,
     dropout_rate,
-    num_evals,
+    num_samples,
     depth: int,
     max_number_evals: int,
     fitness_extractor_method: str, 
@@ -64,7 +64,8 @@ def run_dcrl_map_elites(
     descriptor_reproducibility_extractor_method: str,
     as_repertoire_num_samples: int,
     extract_type: str,
-    sampling_size: int,
+    sample_batch_size: int,
+    emit_batch_size: int,
 ):
     
     env, policy_network, actor_dc_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes, dropout_rate)
@@ -107,11 +108,11 @@ def run_dcrl_map_elites(
         return next_state, policy_params, key, transition
     
     def multi_eval_play_step_fn(
-        env_state: EnvState, policy_params: Params, key: RNGKey, num_evals: int
+        env_state: EnvState, policy_params: Params, key: RNGKey, num_samples: int
     ) -> Tuple[EnvState, Params, RNGKey, DCRLTransition]:
         "eval and average the transition"
         key, subkey = jax.random.split(key)
-        keys = jax.random.split(subkey, num_evals)
+        keys = jax.random.split(subkey, num_samples)
         batched_play_step_fn = jax.vmap(lambda k: play_step_fn(env_state, policy_params, k))
         next_states, batched_policy_params, _, transitions = batched_play_step_fn(keys)
 
@@ -123,7 +124,7 @@ def run_dcrl_map_elites(
         final_transition = final_transition.replace(rewards=jnp.mean(transitions.rewards))
         return next_state, policy_params, key, final_transition
     
-    avg_eval_fn = functools.partial(multi_eval_play_step_fn, num_evals=num_evals)
+    avg_eval_fn = functools.partial(multi_eval_play_step_fn, num_samples=num_samples)
     
     # Prepare the scoring function
     descriptor_extraction_fn = descriptor_extractor[env_name]
@@ -180,7 +181,7 @@ def run_dcrl_map_elites(
 
     # Instantiate MAP Elites
     # map_elites = ReevalMAPElites(
-    #     num_evals=num_evals,
+    #     num_samples=num_samples,
     #     scoring_function=scoring_fn,
     #     emitter=dcrl_emitter,
     #     metrics_function=metrics_fn,
@@ -189,11 +190,12 @@ def run_dcrl_map_elites(
     map_elites, key = setup_container(
         container_name=container_name,
         emitter=dcrl_emitter,
-        num_samples=num_evals,
+        num_samples=num_samples,
         depth=depth,
         scoring_function=scoring_fn,
         metrics_function=metrics_fn,
-        sampling_size=sampling_size,
+        sample_batch_size=sample_batch_size,
+        emit_batch_size=emit_batch_size,
         max_number_evals=max_number_evals,
         as_repertoire_num_samples=as_repertoire_num_samples,
         fitness_extractor=fitness_extractor_method, 

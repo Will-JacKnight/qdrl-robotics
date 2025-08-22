@@ -195,7 +195,7 @@ def eval_multi_model_metrics(
         # eval training results
         metrics = load_json(model_path, "metrics.json")
         args = load_json(model_path, "running_args.json")
-        env_steps = np.arange(args["num_iterations"] + 1) * args["episode_length"] * args["batch_size"] * args["num_evals"]
+        env_steps = np.arange(args["num_iterations"] + 1) * args["episode_length"] * args["batch_size"] * args["num_samples"]
         
         axes[0].plot(env_steps, metrics["coverage"], label=model_desc[i], color=model_colors[i])
         axes[1].plot(env_steps, metrics["max_fitness"], color=model_colors[i])
