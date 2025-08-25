@@ -47,9 +47,13 @@ Correct implementation and ones trained on forward reward:
 - hpc/dcrl_20250727_210952 (single eval, dropouts except for the output layer)
 - hpc/dcrl_20250813_212529 (10 parallel evals and averaging on step reward, dropouts on every layer)
 - hpc/dcrl_20250814_111147 (1/10 env_steps, 10 parallel evals and averagging on step reward, dropouts on every layer)
+- hpc/dcrl_20250825_173012 (dropout + AS, 2000 iterations)
 
 ### in-use
 - hpc/dcrl_20250723_160932 (no dropouts)
-- hpc/dcrl_20250813_213310 (single eval)
-- hpc/dcrl_20250816_104912 (10 parallel evals and averaging on policy fitness and BD desc, same eval_steps)
-- hpc/dcrl_20250816_154412 (10 parallel evals and averaging on policy fitness and BD desc, same addition_steps)
+- hpc/dcrl_20250813_213310 (dropouts, single eval)
+- hpc/dcrl_20250816_104912 (dropputs + 10 parallel evals and averaging on policy fitness and BD desc, same eval_steps)
+- hpc/dcrl_20250816_154412 (dropouts + 10 parallel evals and averaging on policy fitness and BD desc, same addition_steps)
+- hpc/dcrl_20250825_173441 (dropouts + EME, same eval_steps)
+
+- hpc/dcrl_20250822_154718 (dropout + AS)

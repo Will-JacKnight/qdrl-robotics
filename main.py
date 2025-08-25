@@ -209,6 +209,36 @@ def get_args():
 
     args = parser.parse_args()
 
+    evals_per_offspring = get_evals_per_offspring(args=args)
+    if args.sampling_size != 0:
+        # Compute batch_size from sampling_size
+        (
+            args.batch_size,
+            args.init_batch_size,
+            args.emit_batch_size,
+            args.real_evals_per_iter,
+        ) = get_batch_size(
+            sampling_size=args.sampling_size,
+            evals_per_offspring=evals_per_offspring,
+            args=args,
+        )
+    else:
+        # Compute sampling_size from batch_size
+        (
+            args.batch_size,
+            args.init_batch_size,
+            args.emit_batch_size,
+            args.real_evals_per_iter,
+        ) = get_sampling_size(
+            batch_size=args.batch_size,
+            evals_per_offspring=evals_per_offspring,
+            args=args,
+        )
+
+    print(f"Using batch-size: {args.batch_size} and sampling-size: {args.sampling_size}.")
+    print(f"With real_evals_per_iter: {args.real_evals_per_iter}")
+
+
     # format transformation
     args.grid_shape = tuple(args.grid_shape)
     args.policy_hidden_layer_sizes = tuple(args.policy_hidden_layer_sizes)
@@ -218,6 +248,7 @@ def get_args():
     if len(args.damage_joint_idx) != len(args.damage_joint_action):
         raise ValueError("Number of damage joint actions need to match the number of damage joint indices.")
 
+    # save args in training mode
     print(f"algo type: {args.algo_type}")
     run_mode = args.mode
     print(f"Running on: {run_mode} mode")
@@ -235,37 +266,7 @@ def get_args():
 
         assert args.as_repertoire_num_samples > 0, "!!!ERROR!!! Invalid repertoire_num_samples."
 
-
-        evals_per_offspring = get_evals_per_offspring(args=args)
-        if args.sampling_size != 0:
-            # Compute batch_size from sampling_size
-            (
-                args.batch_size,
-                args.init_batch_size,
-                args.emit_batch_size,
-                args.real_evals_per_iter,
-            ) = get_batch_size(
-                sampling_size=args.sampling_size,
-                evals_per_offspring=evals_per_offspring,
-                args=args,
-            )
-        else:
-            # Compute sampling_size from batch_size
-            (
-                args.batch_size,
-                args.init_batch_size,
-                args.emit_batch_size,
-                args.real_evals_per_iter,
-            ) = get_sampling_size(
-                batch_size=args.batch_size,
-                evals_per_offspring=evals_per_offspring,
-                args=args,
-            )
-
-        print(f"Using batch-size: {args.batch_size} and sampling-size: {args.sampling_size}.")
-        print(f"With real_evals_per_iter: {args.real_evals_per_iter}")
-
-        save_args(args)
+        save_args(args, "running_args.json")
 
     if args.damage_type == "physical":
         args.damage_joint_idx = jnp.array(args.damage_joint_idx)

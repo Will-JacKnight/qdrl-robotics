@@ -72,7 +72,7 @@ def get_batch_size(
         evals_per_offspring
     Returns:
         batch_size: the overall sample batch size
-        init_batch_size: the batch size of the first iteration
+        init_sample_batch_size: the sample batch size of the first iteration
         emit_batch_size: the effective batch size of the
             emitter for the following iterations
         real_evals_per_iter: the number of evaluations per iteration
@@ -92,8 +92,8 @@ def get_batch_size(
     )
     left_sampling_size = sampling_size - add_evals_per_iter
 
-    # Infer init_batch_size
-    init_batch_size = sampling_size // evals_per_offspring
+    # Infer init_sample_batch_size
+    init_sample_batch_size = sampling_size // evals_per_offspring
 
     # Infer batch_size, real_evals_per_iter and emit_batch_size
     if args.container in CONTAINER_EXTRACT_PROPORTION_RESAMPLE:
@@ -139,7 +139,7 @@ def get_batch_size(
         emit_batch_size = batch_size
         real_evals_per_iter = batch_size * evals_per_offspring + add_evals_per_iter
 
-    return batch_size, init_batch_size, emit_batch_size, real_evals_per_iter
+    return batch_size, init_sample_batch_size, emit_batch_size, real_evals_per_iter
 
 def get_sampling_size(
     args: Any, batch_size: int, evals_per_offspring: int

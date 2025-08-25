@@ -1,22 +1,26 @@
 {
     "config": "config.json",
     "mode": "training",
-    "output_path": "outputs/hpc/dcrl_20250816_154412",
-    "exp_path": "outputs/hpc/dcrl_20250816_154412",
+    "output_path": "outputs/hpc/dcrl_20250825_173441",
+    "exp_path": "outputs/hpc/dcrl_20250825_173441",
     "algo_type": "dcrl",
     "episode_length": 1000,
-    "batch_size": 4096,
+    "batch_size": 256,
     "num_iterations": 5000,
-    "grid_shape": [
-        10,
-        10,
-        10,
-        10
-    ],
-    "policy_hidden_layer_sizes": [
-        32,
-        32
-    ],
+    "container": "extract_mapelites",
+    "num_samples": 2,
+    "sampling_size": 4096,
+    "depth": 8,
+    "fitness_extractor": "Average",
+    "fitness_reproducibility_extractor": "STD",
+    "descriptor_extractor": "Average",
+    "descriptor_reproducibility_extractor": "STD",
+    "max_number_evals": 10,
+    "as_repertoire_num_samples": 1,
+    "extract_type": "proportional",
+    "extract_proportion_resample": 0.25,
+    "extract_cap_resample": 2048,
+    "damage_type": "physical",
     "damage_joint_idx": [
         0,
         1
@@ -31,12 +35,21 @@
         19,
         20
     ],
-    "damage_type": "physical",
     "seed": 42,
     "log_period": 10,
     "env_name": "ant_uni",
     "min_descriptor": 0.0,
     "max_descriptor": 1.0,
+    "policy_hidden_layer_sizes": [
+        32,
+        32
+    ],
+    "grid_shape": [
+        10,
+        10,
+        10,
+        10
+    ],
     "iso_sigma": 0.005,
     "line_sigma": 0.05,
     "ga_batch_size": 128,
@@ -62,7 +75,7 @@
     "max_iters": 20,
     "performance_threshold": 0.9,
     "dropout_rate": 0.2,
-    "training_damage_rate": 0.05,
-    "num_samples": 10,
-    "real_evals_per_iter": 40960
+    "init_batch_size": 256,
+    "emit_batch_size": 256,
+    "real_evals_per_iter": 4096
 }

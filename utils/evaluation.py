@@ -2,6 +2,7 @@ import enum
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Literal
 import os
 from scipy.stats import gaussian_kde
+from dataclasses import dataclass
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -195,7 +196,7 @@ def eval_multi_model_metrics(
         # eval training results
         metrics = load_json(model_path, "metrics.json")
         args = load_json(model_path, "running_args.json")
-        env_steps = np.arange(args["num_iterations"] + 1) * args["episode_length"] * args["batch_size"] * args["num_samples"]
+        env_steps = np.arange(args["num_iterations"] + 1) * args["episode_length"] * args["real_evals_per_iter"]
         
         axes[0].plot(env_steps, metrics["coverage"], label=model_desc[i], color=model_colors[i])
         axes[1].plot(env_steps, metrics["max_fitness"], color=model_colors[i])
@@ -280,42 +281,51 @@ def plot_real_fitness_histograms(
 
 if __name__ == "__main__":
 
-    model_paths = [
-        "outputs/hpc/dcrl_20250723_160932/",
-        "outputs/hpc/dcrl_20250813_213310/",
-        # "outputs/hpc/dcrl_20250816_104912/",
-        "outputs/hpc/dcrl_20250816_154412/",
-        "outputs/hpc/dcrl_20250822_153136/",
-    ]
+    @dataclass
+    class ModelInfo:
+        model_path: str
+        model_desc: str
+        model_desc_abbr: str
+        color: str
 
-    # for legends
-    model_desc = [
-        "original ITE: no dropouts",
-        "variant 1: dropouts",
-        # "variant 2: variant 1 + re-eval (same evaluation steps)",
-        "variant 3: dropout + mapelites-sampling",
-        "variant 4: dropout + extract-map-elites",
-    ]
+    def extract_model_attributes(models: List[ModelInfo]):
+        model_paths  = [m.model_path for m in models]
+        model_desc   = [m.model_desc for m in models]
+        model_abbr   = [m.model_desc_abbr for m in models]
+        model_colors = [m.color for m in models]
+        return model_paths, model_desc, model_abbr, model_colors
 
-    # for x/y ticks
-    model_desc_abbr = [
-        "original ITE",
-        "variant 1",
-        # "variant 2",
-        "variant 3",
-        "variant 4",
-    ]
-
-    model_colors = [
-        "#9b59b6",
-        baseline_colors[4],
-        "#f05d4d",
-        "#fec126",
-        # "#90EE90",
-        # # baseline_colors[2],
-        # "#ff7f0e",
-        # main_colors[1],
-        # # main_colors[4],
+    models = [
+        ModelInfo(
+            model_path="outputs/hpc/dcrl_20250723_160932/", 
+            model_desc="original ITE: no dropouts", 
+            model_desc_abbr="original ITE", 
+            color="#9b59b6"
+        ),
+        ModelInfo(
+            model_path="outputs/hpc/dcrl_20250813_213310/", 
+            model_desc="variant 1: dropouts", 
+            model_desc_abbr="variant 1", 
+            color="#2171b5"
+        ),
+        # ModelInfo(
+        #     model_path="outputs/hpc/dcrl_20250816_104912/", 
+        #     model_desc="variant 2: dropouts + mapelites-sampling (same evaluation steps)", 
+        #     model_desc_abbr="variant 2", 
+        #     color="#90EE90"
+        # ),
+        ModelInfo(
+            model_path="outputs/hpc/dcrl_20250816_154412/", 
+            model_desc="variant 3: dropouts + mapelites-sampling (same addition steps)", 
+            model_desc_abbr="variant 3",
+            color="#f05d4d"
+        ),
+        ModelInfo(
+            model_path="outputs/hpc/dcrl_20250825_173441/", 
+            model_desc="variant 4: dropouts + extract-map-elites",
+            model_desc_abbr="variant 4", 
+            color="#fec126"
+        ),
     ]
 
     damage_paths = [
@@ -328,6 +338,8 @@ if __name__ == "__main__":
         "sensory_damage/Rand1",
         # "sensory_damage/Rand2",
     ]
+    
+    model_paths, model_desc, model_desc_abbr, model_colors = extract_model_attributes(models)
 
     plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
     eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])

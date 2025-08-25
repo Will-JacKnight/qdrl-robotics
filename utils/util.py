@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Any, Optional
 import os
 import pickle
 import json
@@ -28,13 +28,16 @@ def save_repertoire_and_metrics(
     
     log_metrics(output_path, "metrics.json", metrics)
 
-def save_args(args):
+def save_args(
+    args: Any,
+    filename: Optional[str] = "running_args.json",
+):
     os.makedirs(args.output_path, exist_ok=True) 
 
     # Convert argparse.Namespace to a plain dictionary
     args_dict = vars(args)
 
-    with open(os.path.join(args.output_path, "running_args.json"), "w") as f:
+    with open(os.path.join(args.output_path, filename), "w") as f:
         json.dump(args_dict, f, indent=4)
 
 def log_metrics(
@@ -69,10 +72,10 @@ def log_metrics(
         json.dump(serializable_metrics, f, indent=2)
 
 def load_json(
-    exp_path: str,
+    path: str,
     filename: str,
 ):
-    path = os.path.join(exp_path, filename)
+    path = os.path.join(path, filename)
     with open(path, "r") as f:
         return json.load(f)
 

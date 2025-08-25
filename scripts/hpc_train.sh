@@ -15,12 +15,12 @@ source qdax050/bin/activate
 
 ## mapelite-sampling 
 
-python main.py --config config.json --algo_type dcrl --output_path outputs/hpc --mode training \
-    --container archive_sampling --num-samples 2 --depth 2
+# python main.py --config config.json --algo_type dcrl --output_path outputs/hpc --mode training \
+#     --container archive_sampling --num-samples 2 --depth 2
 
 
 ## mapelite-sampling 
-# python main.py --config config.json --algo_type dcrl --output_path outputs/hpc --mode training \
-#     --container extract_mapelites --num-samples 2 --depth 8
+python main.py --config config.json --algo_type dcrl --output_path outputs/hpc --mode training \
+    --container extract_mapelites --num-samples 2 --depth 8
 
 echo "%%%%%%%%%%%%%%%Running Complete%%%%%%%%%%%%%%%"

@@ -63,5 +63,6 @@
     "performance_threshold": 0.9,
     "dropout_rate": 0.2,
     "training_damage_rate": 0.05,
-    "num_samples": 1
+    "num_samples": 1,
+    "real_evals_per_iter": 4096
 }
