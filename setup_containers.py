@@ -207,8 +207,6 @@ def setup_container(
     key: RNGKey,
 ) -> Tuple[MAPElites, RNGKey]:
 
-    extract_proportion = 0.25
-
     match container:
         case "mapelites_sampling":
             map_elites = ReevalMAPElites(

@@ -283,25 +283,27 @@ if __name__ == "__main__":
     model_paths = [
         "outputs/hpc/dcrl_20250723_160932/",
         "outputs/hpc/dcrl_20250813_213310/",
-        "outputs/hpc/dcrl_20250816_104912/",
+        # "outputs/hpc/dcrl_20250816_104912/",
         "outputs/hpc/dcrl_20250816_154412/",
-        
+        "outputs/hpc/dcrl_20250822_153136/",
     ]
 
     # for legends
     model_desc = [
         "original ITE: no dropouts",
         "variant 1: dropouts",
-        "variant 2: variant 1 + re-eval (same evaluation steps)",
-        "variant 3: variant 1 + re-eval (same addition steps)",
+        # "variant 2: variant 1 + re-eval (same evaluation steps)",
+        "variant 3: dropout + mapelites-sampling",
+        "variant 4: dropout + extract-map-elites",
     ]
 
     # for x/y ticks
     model_desc_abbr = [
         "original ITE",
         "variant 1",
-        "variant 2",
+        # "variant 2",
         "variant 3",
+        "variant 4",
     ]
 
     model_colors = [
@@ -327,6 +329,6 @@ if __name__ == "__main__":
         # "sensory_damage/Rand2",
     ]
 
-    # plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
+    plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
     eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
-    # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=250, lower_bound=-200, upper_bound=2300)
+    plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=210, lower_bound=200, upper_bound=2300)

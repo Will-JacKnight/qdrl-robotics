@@ -71,6 +71,9 @@ def run_online_adaptation(
 
     # select the most promising behavior from MAP
     fitnesses = repertoire.fitnesses
+    if fitnesses.ndim == 1:
+        fitnesses = jnp.expand_dims(fitnesses, axis=1)
+        
     next_idx = jnp.argmax(fitnesses)
     print("next_idx: ", next_idx)
     
