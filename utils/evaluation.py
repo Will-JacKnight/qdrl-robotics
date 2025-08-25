@@ -343,4 +343,4 @@ if __name__ == "__main__":
 
     plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
     eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
-    plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=210, lower_bound=200, upper_bound=2300)
+    plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)

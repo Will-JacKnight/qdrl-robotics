@@ -20,7 +20,7 @@
 **/*.csv
 **/logs
 evaluations/
-**/*metrics.json
+# **/*metrics.json
 
 
 # affliates
