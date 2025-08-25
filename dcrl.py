@@ -64,7 +64,6 @@ def run_dcrl_map_elites(
     descriptor_reproducibility_extractor_method: str,
     as_repertoire_num_samples: int,
     extract_type: str,
-    sample_batch_size: int,
     emit_batch_size: int,
 ):
     
@@ -194,7 +193,7 @@ def run_dcrl_map_elites(
         depth=depth,
         scoring_function=scoring_fn,
         metrics_function=metrics_fn,
-        sample_batch_size=sample_batch_size,
+        batch_size=batch_size,
         emit_batch_size=emit_batch_size,
         max_number_evals=max_number_evals,
         as_repertoire_num_samples=as_repertoire_num_samples,

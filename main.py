@@ -77,7 +77,6 @@ def main(
     descriptor_reproducibility_extractor: str,
     as_repertoire_num_samples: int,
     extract_type: str,
-    sample_batch_size: int,
     emit_batch_size: int,
 ):
     
@@ -105,7 +104,7 @@ def main(
                     policy_delay, log_period, subkey, dropout_rate, 
                     num_samples, depth, max_number_evals, fitness_extractor, fitness_reproducibility_extractor, 
                     descriptor_extractor, descriptor_reproducibility_extractor,
-                    as_repertoire_num_samples, extract_type, sample_batch_size, emit_batch_size,
+                    as_repertoire_num_samples, extract_type, emit_batch_size,
                 )
             case _:
                 raise ValueError(f"Unknown algo_type: {algo_type}")
@@ -199,7 +198,6 @@ def get_args():
 
     # extract-QD configs
     parser.add_argument("--extract-type", default="proportional", type=str)
-    parser.add_argument("--sample-batch-size", type=int)
     parser.add_argument("--extract-proportion-resample", default=0.25, type=float)
     parser.add_argument("--extract-cap-resample", default=2048, type=int)
 
@@ -237,6 +235,36 @@ def get_args():
 
         assert args.as_repertoire_num_samples > 0, "!!!ERROR!!! Invalid repertoire_num_samples."
 
+
+        evals_per_offspring = get_evals_per_offspring(args=args)
+        if args.sampling_size != 0:
+            # Compute batch_size from sampling_size
+            (
+                args.batch_size,
+                args.init_batch_size,
+                args.emit_batch_size,
+                args.real_evals_per_iter,
+            ) = get_batch_size(
+                sampling_size=args.sampling_size,
+                evals_per_offspring=evals_per_offspring,
+                args=args,
+            )
+        else:
+            # Compute sampling_size from batch_size
+            (
+                args.batch_size,
+                args.init_batch_size,
+                args.emit_batch_size,
+                args.real_evals_per_iter,
+            ) = get_sampling_size(
+                batch_size=args.batch_size,
+                evals_per_offspring=evals_per_offspring,
+                args=args,
+            )
+
+        print(f"Using batch-size: {args.batch_size} and sampling-size: {args.sampling_size}.")
+        print(f"With real_evals_per_iter: {args.real_evals_per_iter}")
+
         save_args(args)
 
     if args.damage_type == "physical":
@@ -249,34 +277,6 @@ def get_args():
         args.zero_sensor_idx = jnp.array(args.zero_sensor_idx)
     else:
         raise ValueError("Unsupported damage type, please set between physical | sensory")
-
-    evals_per_offspring = get_evals_per_offspring(args=args)
-    if args.sampling_size != 0:
-        # Compute batch_size from sampling_size
-        (
-            args.sample_batch_size,
-            args.init_sample_batch_size,
-            args.emit_batch_size,
-            args.real_evals_per_iter,
-        ) = get_batch_size(
-            sampling_size=args.sampling_size,
-            evals_per_offspring=evals_per_offspring,
-            args=args,
-        )
-    else:
-        # Compute sampling_size from batch_size
-        (
-            args.sample_batch_size,
-            args.init_sample_batch_size,
-            args.emit_batch_size,
-            args.real_evals_per_iter,
-        ) = get_sampling_size(
-            batch_size=args.batch_size,
-            evals_per_offspring=evals_per_offspring,
-            args=args,
-        )
-    print(f"Using sample-batch-size: {args.sample_batch_size} and sampling-size: {args.sampling_size}.")
-    print(f"With real_evals_per_iter: {args.real_evals_per_iter}")
 
     return args
 
@@ -336,6 +336,5 @@ if __name__ == "__main__":
         args.descriptor_reproducibility_extractor,
         args.as_repertoire_num_samples,
         args.extract_type,
-        args.sample_batch_size,
         args.emit_batch_size,
     )
