@@ -1,10 +1,8 @@
 import functools
-import random
 import time
 from typing import Any, Tuple
 
 import jax
-from jax.lax import fori_loop
 import jax.numpy as jnp
 
 import qdax.tasks.brax.v1 as environments
@@ -13,12 +11,11 @@ from qdax.core.emitters.dcrl_me_emitter import DCRLMEConfig, DCRLMEEmitter
 from qdax.core.emitters.mutation_operators import isoline_variation
 # from qdax.core.map_elites import MAPElites
 from qdax.core.neuroevolution.buffers.buffer import DCRLTransition
-from qdax.core.neuroevolution.networks.networks import MLP, MLPDC
 from qdax.custom_types import EnvState, Params, RNGKey
 from qdax.tasks.brax.v1 import descriptor_extractor
-from qdax.tasks.brax.v1.wrappers.reward_wrappers import OffsetRewardWrapper, ClipRewardWrapper
 from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs
 from qdax.utils.metrics import default_qd_metrics, CSVLogger
+from core.containers.mapelites_repertoire import MapElitesRepertoire
 
 from rollout import init_env_and_policy_network
 from setup_containers import setup_container, EXTRACTOR_LIST
@@ -38,8 +35,8 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
     
     # Init population of controllers
     key, subkey = jax.random.split(key)
-    keys = jax.random.split(subkey, num=args.batch_size)
-    fake_batch_obs = jnp.zeros(shape=(args.batch_size, env.observation_size))
+    keys = jax.random.split(subkey, num=args.init_batch_size)
+    fake_batch_obs = jnp.zeros(shape=(args.init_batch_size, env.observation_size))
     init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs)
 
     def play_step_fn(
@@ -156,10 +153,10 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
         emit_batch_size=args.emit_batch_size,
         max_number_evals=args.max_number_evals,
         as_repertoire_num_samples=args.as_repertoire_num_samples,
-        fitness_extractor=args.fitness_extractor_method, 
-        fitness_reproducibility_extractor=args.fitness_reproducibility_extractor_method, 
-        descriptor_extractor=args.descriptor_extractor_method, 
-        descriptor_reproducibility_extractor=args.descriptor_reproducibility_extractor_method,
+        fitness_extractor=args.fitness_extractor, 
+        fitness_reproducibility_extractor=args.fitness_reproducibility_extractor, 
+        descriptor_extractor=args.descriptor_extractor, 
+        descriptor_reproducibility_extractor=args.descriptor_reproducibility_extractor,
         extract_type=args.extract_type,
         key = subkey,
     )
@@ -190,6 +187,15 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
     # Initialise CSV logger
     # csv_logger = CSVLogger("repertoire_metrics.csv", header=list(metrics.keys()))
 
+    # Create an empty standard MapElitesRepertoire for metrics
+    metrics_repertoire = MapElitesRepertoire.init(
+        genotypes=init_params,
+        fitnesses=jnp.zeros(args.init_batch_size),
+        descriptors=jnp.zeros((args.init_batch_size, centroids.shape[-1])),
+        extra_scores={},
+        centroids=centroids,
+    )
+
     # Main loop
     map_elites_scan_update = map_elites.scan_update
     num_loops = args.num_iterations // args.log_period
@@ -208,22 +214,27 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
         timelapse = time.time() - start_time
 
 
-        key, subkey = jax.random.split(key)
-        corrected_repertoire, _, _, _, _, _, _, key = reevaluation_function(
+        key, subkey = jax.random.split(key)        
+        corrected_repertoire, key = reevaluation_function(
             repertoire=repertoire,
             random_key=subkey,
+            metric_repertoire=metrics_repertoire,
             scoring_fn=scoring_fn,
             num_reevals=args.num_reevals,
-            fitness_extractor=args.fitness_extractor_method,
-            descriptor_extractor=args.descriptor_extractor_method,
+            scan_size=args.reeval_scan_size,
+            fitness_extractor=EXTRACTOR_LIST[args.reeval_fitness_extractor],
+            fitness_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_fitness_reproducibility_extractor],
+            descriptor_extractor=EXTRACTOR_LIST[args.reeval_descriptor_extractor],
+            descriptor_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_descriptor_reproducibility_extractor],
         )
 
         corrected_metrics = metrics_fn(corrected_repertoire)
-
+        corrected_metrics = jax.tree.map(lambda x: jnp.array([x]) if x.shape == () else x, corrected_metrics)
+        breakpoint()
         # Metrics
-        current_metrics["iteration"] = jnp.arange(1+args.log_period*i, 1+args.log_period*(i+1), dtype=jnp.int32)
-        current_metrics["time"] = jnp.repeat(timelapse, args.log_period)
-        metrics = jax.tree.map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
+        corrected_metrics["iteration"] = jnp.arange(1+args.log_period*i, 1+args.log_period*(i+1), dtype=jnp.int32)
+        corrected_metrics["time"] = jnp.repeat(timelapse, args.log_period)
+        metrics = jax.tree.map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, corrected_metrics)
 
         # Log
         # csv_logger.log(jax.tree.map(lambda x:x[-1], metrics))

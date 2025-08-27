@@ -51,6 +51,7 @@ if args.mode == "training":
     config_args = load_json(".", "config.json")
 else:
     config_args = load_json(args.output_path, "running_args.json")
+    config_args["mode"] = "adaptation"
 
 parser.set_defaults(**config_args)
 
@@ -102,10 +103,8 @@ parser.add_argument("--damage_joint_action", type=float, nargs='+', help="Action
 parser.add_argument("--zero_sensor_idx", type=int, nargs='+', help="Index of the zero sensor")
 
 # Corrected Metrics Configs
-parser.add_argument("--log-period", default=50, type=int)
-parser.add_argument("--archive-log-period", default=500, type=int)
-parser.add_argument("--size-log-period", action="store_true")
-parser.add_argument("--num-reevals", default=64, type=int)
+parser.add_argument("--log-period", default=10, type=int)
+parser.add_argument("--num-reevals", default=4, type=int)
 parser.add_argument("--reeval-scan-size", default=0, type=int, help="Not used if 0.")
 parser.add_argument("--reeval-fitness-extractor", default="Average", type=str)
 parser.add_argument("--reeval-lighter", action="store_true")
@@ -159,14 +158,8 @@ if len(args.damage_joint_idx) != len(args.damage_joint_action):
     raise ValueError("Number of damage joint actions need to match the number of damage joint indices.")
 
 # save args in training mode
-print(f"algo type: {args.algo_type}")
-print(f"Running on: {args.mode} mode")
 if args.mode == "training":
     # args.exp_path = args.output_path
-
-    if "--algo_type" not in sys.argv:
-        raise ValueError("You must specify --algo_type explicitly from the command line.")
-
     if args.container not in SUPPORTED_CONTAINERS:
         raise ValueError(f"container currently not supported, choose between: {SUPPORTED_CONTAINERS}")
 

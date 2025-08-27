@@ -23,6 +23,13 @@ echo "Output model to path: $output_path"
 python main.py --algo_type dcrl --output_path $output_path --mode training \
     --container Extract-MAP-Elites --num-samples 2 --depth 8
 
+
+# Check if the training failed and exit if so
+if [ $? -ne 0 ]; then
+    echo "Training failed with an internal error. Exiting script."
+    exit 1
+fi
+
 echo "%%%%%%%%%%%%%%%Training Complete%%%%%%%%%%%%%%%"
 
 # physical damage configs

@@ -13,7 +13,7 @@ import matplotlib.colors as mcolors
 import numpy as np
 import jax.numpy as jnp
 
-from util import load_json
+from utils.util import load_json
 
 baseline_colors = [
     "#c6dbef",  # light blue
@@ -308,12 +308,12 @@ if __name__ == "__main__":
             model_desc_abbr="variant 1", 
             color="#2171b5"
         ),
-        ModelInfo(
-            model_path="outputs/hpc/dcrl_20250816_104912/", 
-            model_desc="variant 2: dropouts + mapelites-sampling", # (same evaluation steps)
-            model_desc_abbr="variant 2", 
-            color="#f05d4d"
-        ),
+        # ModelInfo(
+        #     model_path="outputs/hpc/dcrl_20250816_104912/", 
+        #     model_desc="variant 2: dropouts + mapelites-sampling", # (same evaluation steps)
+        #     model_desc_abbr="variant 2", 
+        #     color="#f05d4d"
+        # ),
         # ModelInfo(
         #     model_path="outputs/hpc/dcrl_20250816_154412/", 
         #     model_desc="variant 3: dropouts + mapelites-sampling", #  (same addition steps)
@@ -327,7 +327,7 @@ if __name__ == "__main__":
         #     color="#fec126"
         # ),
         ModelInfo(
-            model_path="outputs/hpc/dcrl_20250826_170423/", 
+            model_path="outputs/hpc/dcrl_20250827_170158/", 
             model_desc="variant 4: dropouts + extract-map-elites",
             model_desc_abbr="variant 4", 
             color="#fec126"
@@ -338,16 +338,16 @@ if __name__ == "__main__":
     damage_paths = [
         "physical_damage/FL_loose",
         "physical_damage/BL_loose",
-        # "physical_damage/BL_BR_loose",
-        # "physical_damage/FL_BR_loose",
+        "physical_damage/BL_BR_loose",
+        "physical_damage/FL_BR_loose",
         "sensory_damage/BL",
-        # "sensory_damage/FL",
+        "sensory_damage/FL",
         "sensory_damage/Rand1",
-        # "sensory_damage/Rand2",
+        "sensory_damage/Rand2",
     ]
     
     model_paths, model_desc, model_desc_abbr, model_colors = extract_model_attributes(models)
 
     plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
     # eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
-    # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)
+    plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)

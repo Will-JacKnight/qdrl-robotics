@@ -40,7 +40,6 @@ For damage recovery, our method implements [Intelligent Trial and Error](https:/
 - Default parameters are stored in `./config.json`
 - Shell command will override default parameters
 - Must specify running algo by setting the flag `--algo_type <op>`, `<op>` currently only supports mapelites or dcrl
-- Run mode is set to `adaptation` by default. during training, one has to 
 
 ### Running the code
 Before executing any code, make sure one's under the project directory:
@@ -67,6 +66,12 @@ The plot results will be presented under `evaluations/`.
 ```bash
 python utils/evaluations.py
 ```
+
+#### Parameters for Result Evaluations
+- Vanilla MAP-Elites: ```--container MAP-Elites_Sampling --dropout-rate 0```
+- MAP-Elites Sampling: ```--container MAP-Elites_Sampling --num-samples 10```
+- Archive Sampling: ```--container Archive-Sampling  --num-samples 2 --depth 2```
+- Extract MAP-Elites: ```--container Extract-MAP-Elites --num-samples 2 --depth 8```
 
 ## Notes
 - batched_rewards: evaluates all cells in the archive, without any inf/nan values

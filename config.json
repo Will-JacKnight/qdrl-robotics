@@ -1,13 +1,11 @@
 {
-    "container": "archive_sampling",
     "seed": 42,
-    "log_period": 10,
     "env_name": "ant_uni",
     "episode_length": 1000,
     "min_descriptor": 0.0,
     "max_descriptor": 1.0,
     "batch_size": 4096,
-    "num_iterations": 5000,
+    "num_iterations": 10,
     "policy_hidden_layer_sizes": [32, 32],
     "grid_shape": [10, 10, 10, 10],
     "iso_sigma": 0.005,
@@ -34,6 +32,5 @@
     "damage_type": "physical",
     "damage_joint_idx": [0, 1],
     "damage_joint_action": [0, 0],
-    "zero_sensor_idx": [5, 6, 19, 20],
-    "dropout_rate": 0.2
+    "zero_sensor_idx": [5, 6, 19, 20]
 }
