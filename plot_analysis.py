@@ -156,16 +156,16 @@ def eval_multi_model_metrics(
     axes = axes.flatten()
 
     axes[0].set_xlabel("Environment steps")
-    axes[0].set_ylabel("Coverage in %")
-    axes[0].set_title("Coverage evolution during training")
+    axes[0].set_ylabel("Corrected Coverage in %")
+    # axes[0].set_title("Coverage evolution during training")
 
     axes[1].set_xlabel("Environment steps")
-    axes[1].set_ylabel("Maximum fitness")
-    axes[1].set_title("Maximum fitness evolution during training")
+    axes[1].set_ylabel("Corrected Maximum fitness")
+    # axes[1].set_title("Maximum fitness evolution during training")
 
     axes[2].set_xlabel("Environment steps")
-    axes[2].set_ylabel("QD Score")
-    axes[2].set_title("QD Score evolution during training")
+    axes[2].set_ylabel("Corrected QD Score")
+    # axes[2].set_title("QD Score evolution during training")
 
     axes[3].set_xlabel("ITE Variants")
     axes[3].set_ylabel("Performance (m/s)")

@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -lwalltime=06:00:00
+#PBS -lwalltime=08:00:00
 #PBS -lselect=1:ncpus=2:mem=32gb:ngpus=1:gpu_type=L40S
 
 # PBS_O_WORKDIR is where the job's submitted
@@ -13,7 +13,7 @@ echo "Output model to path: $output_path"
 
 ## mapelite-sampling 
 # python main.py --algo_type dcrl --output_path $output_path --mode training \
-#     --container MAP-Elites_Sampling
+#     --container MAP-Elites_Sampling --num-samples 10
 
 ## archive-sampling 
 # python main.py --algo_type dcrl --output_path $output_path --mode training \

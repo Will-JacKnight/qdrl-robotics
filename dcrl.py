@@ -196,25 +196,24 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
         centroids=centroids,
     )
 
-    # Main loop
-    map_elites_scan_update = map_elites.scan_update
-    num_loops = args.num_iterations // args.log_period
-    for i in range(num_loops):
-        start_time = time.time()
-        (
-            repertoire,
-            emitter_state,
-            key,
-        ), current_metrics = jax.lax.scan(
-            map_elites_scan_update,
-            (repertoire, emitter_state, key),
-            (),
-            length=args.log_period,
+
+    def corrected_scan_update(
+        carry: Tuple[Any, Any, RNGKey],
+        _: Any,
+    ) -> Tuple[Tuple[Any, Any, RNGKey], Any]:
+        """
+        Custom scan update that performs both regular update and correction at each step.
+        """
+        repertoire, emitter_state, key = carry
+        
+        # Perform regular MAP-Elites update
+        key, subkey = jax.random.split(key)
+        repertoire, emitter_state, regular_metrics = map_elites.update(
+            repertoire, emitter_state, subkey
         )
-        timelapse = time.time() - start_time
-
-
-        key, subkey = jax.random.split(key)        
+        
+        # Perform reevaluation and correction
+        key, subkey = jax.random.split(key)
         corrected_repertoire, key = reevaluation_function(
             repertoire=repertoire,
             random_key=subkey,
@@ -227,10 +226,33 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
             descriptor_extractor=EXTRACTOR_LIST[args.reeval_descriptor_extractor],
             descriptor_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_descriptor_reproducibility_extractor],
         )
-
+        
+        # Compute corrected metrics
         corrected_metrics = metrics_fn(corrected_repertoire)
         corrected_metrics = jax.tree.map(lambda x: jnp.array([x]) if x.shape == () else x, corrected_metrics)
-        breakpoint()
+        
+        
+        return (repertoire, emitter_state, key), corrected_metrics
+
+
+    # Main loop
+    num_loops = args.num_iterations // args.log_period
+    for i in range(num_loops):
+        start_time = time.time()
+        (
+            repertoire,
+            emitter_state,
+            key,
+        ), corrected_metrics = jax.lax.scan(
+            # map_elites.scan_update
+            corrected_scan_update,      
+            (repertoire, emitter_state, key),
+            (),
+            length=args.log_period,
+        )
+        timelapse = time.time() - start_time
+
+        corrected_metrics = jax.tree.map(lambda x: jnp.flatten(x), corrected_metrics)
         # Metrics
         corrected_metrics["iteration"] = jnp.arange(1+args.log_period*i, 1+args.log_period*(i+1), dtype=jnp.int32)
         corrected_metrics["time"] = jnp.repeat(timelapse, args.log_period)

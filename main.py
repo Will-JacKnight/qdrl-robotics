@@ -103,8 +103,8 @@ parser.add_argument("--damage_joint_action", type=float, nargs='+', help="Action
 parser.add_argument("--zero_sensor_idx", type=int, nargs='+', help="Index of the zero sensor")
 
 # Corrected Metrics Configs
-parser.add_argument("--log-period", default=10, type=int)
-parser.add_argument("--num-reevals", default=4, type=int)
+parser.add_argument("--log-period", default=50, type=int)
+parser.add_argument("--num-reevals", default=64, type=int)
 parser.add_argument("--reeval-scan-size", default=0, type=int, help="Not used if 0.")
 parser.add_argument("--reeval-fitness-extractor", default="Average", type=str)
 parser.add_argument("--reeval-lighter", action="store_true")
