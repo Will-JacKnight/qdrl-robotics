@@ -1,4 +1,5 @@
 import functools
+import random
 import time
 from typing import Any, Tuple
 
@@ -20,61 +21,25 @@ from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs
 from qdax.utils.metrics import default_qd_metrics, CSVLogger
 
 from rollout import init_env_and_policy_network
-from setup_containers import setup_container
-from core.mapelites_sampling import ReevalMAPElites
+from setup_containers import setup_container, EXTRACTOR_LIST
+from utils.uncertainty_metrics import reevaluation_function
 
-def run_dcrl_map_elites(
-    env_name: str,
-    container: str,
-    episode_length: int,
-    policy_hidden_layer_sizes: Tuple[int, ...],
-    batch_size: int,
-    num_iterations: int, #
-    grid_shape: Tuple[int, ...],
-    min_descriptor, 
-    max_descriptor, 
-    iso_sigma, #
-    line_sigma, #
-    ga_batch_size, #
-    dcrl_batch_size, #
-    ai_batch_size, #
-    lengthscale, #
-    critic_hidden_layer_size,
-    num_critic_training_steps,
-    num_pg_training_steps,
-    replay_buffer_size,
-    discount,
-    reward_scaling, 
-    critic_learning_rate,
-    actor_learning_rate,
-    policy_learning_rate,
-    noise_clip,
-    policy_noise,
-    soft_tau_update,
-    policy_delay,
-    log_period, 
-    key,
-    dropout_rate,
-    num_samples,
-    depth: int,
-    max_number_evals: int,
-    fitness_extractor_method: str, 
-    fitness_reproducibility_extractor_method: str, 
-    descriptor_extractor_method: str, 
-    descriptor_reproducibility_extractor_method: str,
-    as_repertoire_num_samples: int,
-    extract_type: str,
-    emit_batch_size: int,
-):
+
+def run_dcrl_map_elites(args: Any, key: RNGKey):
     
-    env, policy_network, actor_dc_network = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes, dropout_rate)
+    env, policy_network, actor_dc_network = init_env_and_policy_network(
+        env_name=args.env_name, 
+        episode_length=args.episode_length, 
+        policy_hidden_layer_sizes=args.policy_hidden_layer_sizes, 
+        dropout_rate=args.dropout_rate
+    )
 
     reset_fn = jax.jit(env.reset)
     
     # Init population of controllers
     key, subkey = jax.random.split(key)
-    keys = jax.random.split(subkey, num=batch_size)
-    fake_batch_obs = jnp.zeros(shape=(batch_size, env.observation_size))
+    keys = jax.random.split(subkey, num=args.batch_size)
+    fake_batch_obs = jnp.zeros(shape=(args.batch_size, env.observation_size))
     init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs)
 
     def play_step_fn(
@@ -123,51 +88,51 @@ def run_dcrl_map_elites(
         final_transition = final_transition.replace(rewards=jnp.mean(transitions.rewards))
         return next_state, policy_params, key, final_transition
     
-    avg_eval_fn = functools.partial(multi_eval_play_step_fn, num_samples=num_samples)
+    avg_eval_fn = functools.partial(multi_eval_play_step_fn, num_samples=args.num_samples)
     
     # Prepare the scoring function
-    descriptor_extraction_fn = descriptor_extractor[env_name]
+    descriptor_extraction_fn = descriptor_extractor[args.env_name]
     scoring_fn = functools.partial(
         scoring_function_brax_envs,
-        episode_length=episode_length,
+        episode_length=args.episode_length,
         play_reset_fn=reset_fn,
         play_step_fn=play_step_fn,       # avg_eval_fn
         descriptor_extractor=descriptor_extraction_fn,
     )
 
     # Get minimum reward value to make sure qd_score are positive
-    reward_offset = environments.reward_offset[env_name]
+    reward_offset = environments.reward_offset[args.env_name]
 
     # Define a metrics function
     metrics_fn = functools.partial(
         default_qd_metrics,
-        qd_offset=reward_offset * episode_length,
+        qd_offset=reward_offset * args.episode_length,
     )
 
     dcrl_emitter_config = DCRLMEConfig(
-        ga_batch_size=ga_batch_size,
-        dcrl_batch_size=dcrl_batch_size,
-        ai_batch_size=ai_batch_size,
-        lengthscale=lengthscale,
-        critic_hidden_layer_size=critic_hidden_layer_size,
-        num_critic_training_steps=num_critic_training_steps,
-        num_pg_training_steps=num_pg_training_steps,
-        batch_size=batch_size,
-        replay_buffer_size=replay_buffer_size,
-        discount=discount,
-        reward_scaling=reward_scaling,
-        critic_learning_rate=critic_learning_rate,
-        actor_learning_rate=actor_learning_rate,
-        policy_learning_rate=policy_learning_rate,
-        noise_clip=noise_clip,
-        policy_noise=policy_noise,
-        soft_tau_update=soft_tau_update,
-        policy_delay=policy_delay,
+        ga_batch_size=args.ga_batch_size,
+        dcrl_batch_size=args.dcrl_batch_size,
+        ai_batch_size=args.ai_batch_size,
+        lengthscale=args.lengthscale,
+        critic_hidden_layer_size=args.critic_hidden_layer_size,
+        num_critic_training_steps=args.num_critic_training_steps,
+        num_pg_training_steps=args.num_pg_training_steps,
+        batch_size=args.batch_size,
+        replay_buffer_size=args.replay_buffer_size,
+        discount=args.discount,
+        reward_scaling=args.reward_scaling,
+        critic_learning_rate=args.critic_learning_rate,
+        actor_learning_rate=args.actor_learning_rate,
+        policy_learning_rate=args.policy_learning_rate,
+        noise_clip=args.noise_clip,
+        policy_noise=args.policy_noise,
+        soft_tau_update=args.soft_tau_update,
+        policy_delay=args.policy_delay,
     )
 
     # Get the emitter
     variation_fn = functools.partial(
-        isoline_variation, iso_sigma=iso_sigma, line_sigma=line_sigma
+        isoline_variation, iso_sigma=args.iso_sigma, line_sigma=args.line_sigma
     )
 
     dcrl_emitter = DCRLMEEmitter(
@@ -181,30 +146,30 @@ def run_dcrl_map_elites(
     # Instantiate MAP Elites
     key, subkey = jax.random.split(key)
     map_elites, key = setup_container(
-        container=container,
+        container=args.container,
         emitter=dcrl_emitter,
-        num_samples=num_samples,
-        depth=depth,
+        num_samples=args.num_samples,
+        depth=args.depth,
         scoring_function=scoring_fn,
         metrics_function=metrics_fn,
-        batch_size=batch_size,
-        emit_batch_size=emit_batch_size,
-        max_number_evals=max_number_evals,
-        as_repertoire_num_samples=as_repertoire_num_samples,
-        fitness_extractor=fitness_extractor_method, 
-        fitness_reproducibility_extractor=fitness_reproducibility_extractor_method, 
-        descriptor_extractor=descriptor_extractor_method, 
-        descriptor_reproducibility_extractor=descriptor_reproducibility_extractor_method,
-        extract_type=extract_type,
+        batch_size=args.batch_size,
+        emit_batch_size=args.emit_batch_size,
+        max_number_evals=args.max_number_evals,
+        as_repertoire_num_samples=args.as_repertoire_num_samples,
+        fitness_extractor=args.fitness_extractor_method, 
+        fitness_reproducibility_extractor=args.fitness_reproducibility_extractor_method, 
+        descriptor_extractor=args.descriptor_extractor_method, 
+        descriptor_reproducibility_extractor=args.descriptor_reproducibility_extractor_method,
+        extract_type=args.extract_type,
         key = subkey,
     )
 
     # Compute the centroids
     key, subkey = jax.random.split(key)
     centroids = compute_euclidean_centroids(
-        grid_shape=grid_shape,
-        minval=min_descriptor,
-        maxval=max_descriptor,
+        grid_shape=args.grid_shape,
+        minval=args.min_descriptor,
+        maxval=args.max_descriptor,
     )
 
     # compute initial repertoire
@@ -227,7 +192,7 @@ def run_dcrl_map_elites(
 
     # Main loop
     map_elites_scan_update = map_elites.scan_update
-    num_loops = num_iterations // log_period
+    num_loops = args.num_iterations // args.log_period
     for i in range(num_loops):
         start_time = time.time()
         (
@@ -238,13 +203,26 @@ def run_dcrl_map_elites(
             map_elites_scan_update,
             (repertoire, emitter_state, key),
             (),
-            length=log_period,
+            length=args.log_period,
         )
         timelapse = time.time() - start_time
 
+
+        key, subkey = jax.random.split(key)
+        corrected_repertoire, _, _, _, _, _, _, key = reevaluation_function(
+            repertoire=repertoire,
+            random_key=subkey,
+            scoring_fn=scoring_fn,
+            num_reevals=args.num_reevals,
+            fitness_extractor=args.fitness_extractor_method,
+            descriptor_extractor=args.descriptor_extractor_method,
+        )
+
+        corrected_metrics = metrics_fn(corrected_repertoire)
+
         # Metrics
-        current_metrics["iteration"] = jnp.arange(1+log_period*i, 1+log_period*(i+1), dtype=jnp.int32)
-        current_metrics["time"] = jnp.repeat(timelapse, log_period)
+        current_metrics["iteration"] = jnp.arange(1+args.log_period*i, 1+args.log_period*(i+1), dtype=jnp.int32)
+        current_metrics["time"] = jnp.repeat(timelapse, args.log_period)
         metrics = jax.tree.map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
         # Log
