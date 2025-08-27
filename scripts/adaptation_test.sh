@@ -24,7 +24,7 @@ echo "Damaged_joint_action=$action"
 
 damage_path="${exp_path}/${damage_desc}"
 mkdir -p "$damage_path"
-python main.py --config config.json --output_path $output_path --exp_path $damage_path --damage_joint_idx $idx --damage_joint_action $action --damage_type physical
+python main.py --output_path $output_path --exp_path $damage_path --damage_joint_idx $idx --damage_joint_action $action --damage_type physical
     
 
 echo "%%%%%%%%%%%%%%%Running Complete%%%%%%%%%%%%%%%"

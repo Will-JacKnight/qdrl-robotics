@@ -1,25 +1,22 @@
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Literal
 import argparse
-import json
 import sys
-from datetime import datetime
 
 import jax
-from jax._src.interpreters.partial_eval import Val
 import jax.numpy as jnp
 
 from adaptation import run_online_adaptation
 from map_elites import run_map_elites
 from dcrl import run_dcrl_map_elites
 from rollout import run_single_rollout, init_env_and_policy_network, render_rollout_to_html
-from utils.util import load_repertoire_and_metrics, save_repertoire_and_metrics, save_args
+from utils.util import load_json,load_repertoire_and_metrics, save_repertoire_and_metrics, save_args
 from utils.new_plot import plot_map_elites_results
 from setup_containers import get_evals_per_offspring, get_batch_size, get_sampling_size
 
 SUPPORTED_CONTAINERS = [
-    "mapelites_sampling",
-    "archive_sampling",
-    "extract_mapelites",
+    "MAP-Elites_Sampling",
+    "Archive-Sampling",
+    "Extract-MAP-Elites",
 ]
 
 SUPPORTED_DAMAGES = [
@@ -135,35 +132,34 @@ def main(
         key, subkey = jax.random.split(key)
         rollout = run_single_rollout(env, policy_network, params, subkey)
         render_rollout_to_html(rollout['states'], env, output_path + "/pre_adaptation_without_damage.html")
-        
+    else:
+        key, subkey = jax.random.split(key)
+        rollout = run_single_rollout(env, policy_network, params, subkey,
+                                    damage_joint_idx, damage_joint_action, zero_sensor_idx)
+        render_rollout_to_html(rollout['states'], env, exp_path + "/pre_adaptation_with_damage.html")
 
-    key, subkey = jax.random.split(key)
-    rollout = run_single_rollout(env, policy_network, params, subkey,
-                                 damage_joint_idx, damage_joint_action, zero_sensor_idx)
-    render_rollout_to_html(rollout['states'], env, exp_path + "/pre_adaptation_with_damage.html")
-
-    key, subkey = jax.random.split(key)
-    run_online_adaptation(env_name, repertoire, env, policy_network, subkey, exp_path, 
-                          min_descriptor, max_descriptor, grid_shape, 
-                          damage_joint_idx, damage_joint_action, zero_sensor_idx,
-                          episode_length, max_iters, performance_threshold)
+        key, subkey = jax.random.split(key)
+        run_online_adaptation(env_name, repertoire, env, policy_network, subkey, exp_path, 
+                            min_descriptor, max_descriptor, grid_shape, 
+                            damage_joint_idx, damage_joint_action, zero_sensor_idx,
+                            episode_length, max_iters, performance_threshold)
 
 
 
 def get_args():
     parser = argparse.ArgumentParser(description="ITE Adaptation")
-    parser.add_argument("--config", type=str, default="./config.json",help='Path to config.json (default parameter file)')
+    parser.add_argument("--mode", type=str, default="adaptation", help="run mode: training or adaptation (default)")
+    parser.add_argument("--output_path", type=str, help="relative path to the model")
     args, _ = parser.parse_known_args()
 
-    # default configs
-    with open(args.config, 'r') as f:
-        config_args = json.load(f)
+    if args.mode == "training":
+        config_args = load_json(".", "config.json")
+    else:
+        config_args = load_json(args.output_path, "running_args.json")
 
     parser.set_defaults(**config_args)
-    parser.add_argument("--mode", type=str, help="run mode: training || adaptation (default)")
-
+    
     # directory configs
-    parser.add_argument("--output_path", type=str, help="relative path to the MAP")
     parser.add_argument("--exp_path", type=str, help="relative path to specific damage runs")
     parser.add_argument("--algo_type", type=str, help="choose from: mapelites || dcrl")
 
@@ -250,13 +246,9 @@ def get_args():
 
     # save args in training mode
     print(f"algo type: {args.algo_type}")
-    run_mode = args.mode
-    print(f"Running on: {run_mode} mode")
-    if run_mode == "training":
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        args.output_path = args.output_path + f"/{args.algo_type}_{timestamp}"
-        print(f"starting time: {timestamp}")
-        args.exp_path = args.output_path
+    print(f"Running on: {args.mode} mode")
+    if args.mode == "training":
+        # args.exp_path = args.output_path
 
         if "--algo_type" not in sys.argv:
             raise ValueError("You must specify --algo_type explicitly from the command line.")

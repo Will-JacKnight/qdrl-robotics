@@ -179,12 +179,6 @@ def run_dcrl_map_elites(
     )
 
     # Instantiate MAP Elites
-    # map_elites = ReevalMAPElites(
-    #     num_samples=num_samples,
-    #     scoring_function=scoring_fn,
-    #     emitter=dcrl_emitter,
-    #     metrics_function=metrics_fn,
-    # )
     key, subkey = jax.random.split(key)
     map_elites, key = setup_container(
         container=container,

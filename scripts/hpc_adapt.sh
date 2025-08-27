@@ -7,7 +7,7 @@ cd $PBS_O_WORKDIR
 source qdax050/bin/activate
 
 # adaptation inspection
-output_path="outputs/hpc/dcrl_20250825_173441"
+output_path="outputs/hpc/dcrl_20250826_170423"
 
 echo "model path=$output_path"
 
@@ -33,7 +33,8 @@ for i in "${!damaged_joint_idx[@]}"; do
 
     damage_path="${exp_path}/${damage_desc[$i]}"
     mkdir -p "$damage_path"
-    python main.py --config config.json --output_path $output_path --exp_path $damage_path --damage_joint_idx $idx --damage_joint_action $action --damage_type physical
+    python main.py --output_path $output_path --exp_path $damage_path \
+        --damage_joint_idx $idx --damage_joint_action $action --damage_type physical
     
 done
 
@@ -55,7 +56,8 @@ for i in "${!zero_sensor_idx[@]}"; do
 
     damage_path="${exp_path}/${damage_desc[$i]}"
     mkdir -p "$damage_path"
-    python main.py --config config.json --output_path $output_path --exp_path $damage_path --zero_sensor_idx $idx --damage_type sensory
+    python main.py --output_path $output_path --exp_path $damage_path \
+        --zero_sensor_idx $idx --damage_type sensory
     
 done
 

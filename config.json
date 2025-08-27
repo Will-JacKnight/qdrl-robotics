@@ -1,8 +1,6 @@
 {
-    "mode": "adaptation",
     "container": "archive_sampling",
     "seed": 42,
-    "output_path": "./outputs",
     "log_period": 10,
     "env_name": "ant_uni",
     "episode_length": 1000,

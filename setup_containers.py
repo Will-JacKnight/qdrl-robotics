@@ -208,14 +208,14 @@ def setup_container(
 ) -> Tuple[MAPElites, RNGKey]:
 
     match container:
-        case "mapelites_sampling":
+        case "MAP-Elites_Sampling":
             map_elites = ReevalMAPElites(
                 num_samples=num_samples,
                 scoring_function=scoring_function,
                 emitter=emitter,
                 metrics_function=metrics_function,
             )
-        case "archive_sampling":
+        case "Archive-Sampling":
             map_elites = ArchiveSampling(
                 scoring_function=scoring_function,
                 emitter=emitter,
@@ -233,7 +233,7 @@ def setup_container(
                     descriptor_reproducibility_extractor
                 ],
             )
-        case "extract_mapelites":
+        case "Extract-MAP-Elites":
             map_elites = ExtractMAPElites(
                 scoring_function=scoring_function,
                 emitter=emitter,
@@ -254,5 +254,4 @@ def setup_container(
                 ],
                 extract_type=extract_type,
             )
-    
     return map_elites, key

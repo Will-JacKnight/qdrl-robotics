@@ -308,24 +308,31 @@ if __name__ == "__main__":
             model_desc_abbr="variant 1", 
             color="#2171b5"
         ),
-        # ModelInfo(
-        #     model_path="outputs/hpc/dcrl_20250816_104912/", 
-        #     model_desc="variant 2: dropouts + mapelites-sampling (same evaluation steps)", 
-        #     model_desc_abbr="variant 2", 
-        #     color="#90EE90"
-        # ),
         ModelInfo(
-            model_path="outputs/hpc/dcrl_20250816_154412/", 
-            model_desc="variant 3: dropouts + mapelites-sampling (same addition steps)", 
-            model_desc_abbr="variant 3",
+            model_path="outputs/hpc/dcrl_20250816_104912/", 
+            model_desc="variant 2: dropouts + mapelites-sampling", # (same evaluation steps)
+            model_desc_abbr="variant 2", 
             color="#f05d4d"
         ),
+        # ModelInfo(
+        #     model_path="outputs/hpc/dcrl_20250816_154412/", 
+        #     model_desc="variant 3: dropouts + mapelites-sampling", #  (same addition steps)
+        #     model_desc_abbr="variant 3",
+        #     color="#f05d4d"
+        # ),
+        # ModelInfo(
+        #     model_path="outputs/hpc/dcrl_20250825_173441/", 
+        #     model_desc="variant 4: dropouts + extract-map-elites",
+        #     model_desc_abbr="variant 4", 
+        #     color="#fec126"
+        # ),
         ModelInfo(
-            model_path="outputs/hpc/dcrl_20250825_173441/", 
+            model_path="outputs/hpc/dcrl_20250826_170423/", 
             model_desc="variant 4: dropouts + extract-map-elites",
             model_desc_abbr="variant 4", 
             color="#fec126"
         ),
+        
     ]
 
     damage_paths = [
@@ -342,5 +349,5 @@ if __name__ == "__main__":
     model_paths, model_desc, model_desc_abbr, model_colors = extract_model_attributes(models)
 
     plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
-    eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
-    plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)
+    # eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
+    # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)

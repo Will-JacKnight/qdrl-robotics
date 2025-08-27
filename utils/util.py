@@ -30,8 +30,11 @@ def save_repertoire_and_metrics(
 
 def save_args(
     args: Any,
-    filename: Optional[str] = "running_args.json",
+    filename: str,
 ):
+    """
+    save args under ouput_path directory
+    """
     os.makedirs(args.output_path, exist_ok=True) 
 
     # Convert argparse.Namespace to a plain dictionary
