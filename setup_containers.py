@@ -1,17 +1,17 @@
 from typing import Any, Callable, Tuple
-
 import jax
 import jax.numpy as jnp
 from jax.lax import switch
-from qdax.core.containers.repertoire import Repertoire
+
 from qdax.core.emitters.emitter import Emitter
-from qdax.core.map_elites import MAPElites
 from qdax.core.mels import MELS
 from qdax.custom_types import Metrics, RNGKey
 
+from core.map_elites import MAPElites
 from core.mapelites_sampling import ReevalMAPElites
 from core.archive_sampling import ArchiveSampling
 from core.extract_map_elites import ExtractMAPElites
+from core.containers.mapelites_repertoire import MapElitesRepertoire
 
 from core.sampling import average, closest, iqr, mad, median, mode, std
 
@@ -208,12 +208,13 @@ def setup_container(
 ) -> Tuple[MAPElites, RNGKey]:
 
     match container:
-        case "MAP-Elites_Sampling":
+        case "MAP-Elites-Sampling":
             map_elites = ReevalMAPElites(
                 num_samples=num_samples,
                 scoring_function=scoring_function,
                 emitter=emitter,
                 metrics_function=metrics_function,
+                repertoire_init=MapElitesRepertoire.init,
             )
         case "Archive-Sampling":
             map_elites = ArchiveSampling(

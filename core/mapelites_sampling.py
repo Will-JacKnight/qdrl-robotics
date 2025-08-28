@@ -3,8 +3,8 @@ from typing import Optional, Callable, Tuple, override
 import jax
 import jax.numpy as jnp
 
-from qdax.core.map_elites import MAPElites
-from qdax.core.containers.mapelites_repertoire import MapElitesRepertoire
+from core.map_elites import MAPElites
+from core.containers.mapelites_repertoire import MapElitesRepertoire
 from qdax.core.emitters.emitter import Emitter, EmitterState
 from qdax.custom_types import (
     Centroid,

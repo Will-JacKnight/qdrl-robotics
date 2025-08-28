@@ -5,7 +5,7 @@ import jax
 import jax.numpy as jnp
 
 from qdax.custom_types import Descriptor, ExtraScores, Fitness, Genotype, RNGKey
-from qdax.utils.sampling import (
+from core.sampling import (
     dummy_extra_scores_extractor,
     median,
     multi_sample_scoring_function,
@@ -109,9 +109,10 @@ def reevaluation_function(
             all_fitnesses,
             all_descriptors,
             all_extra_scores,
+            random_key,
         ) = multi_sample_scoring_function(
             policies_params=policies_params,
-            key=random_key,
+            random_key=random_key,
             scoring_fn=scoring_fn,
             num_samples=num_reevals,
         )
@@ -127,9 +128,10 @@ def reevaluation_function(
                 all_fitnesses,
                 all_descriptors,
                 all_extra_scores,
+                random_key,
             ) = multi_sample_scoring_function(
                 policies_params=policies_params,
-                key=subkey,
+                random_key=subkey,
                 scoring_fn=scoring_fn,
                 num_samples=scan_size,
             )

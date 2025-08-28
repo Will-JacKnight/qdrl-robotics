@@ -1,6 +1,5 @@
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Literal
 import argparse
-import sys
+from functools import reduce
 
 import jax
 import jax.numpy as jnp
@@ -14,7 +13,7 @@ from utils.new_plot import plot_map_elites_results
 from setup_containers import get_evals_per_offspring, get_batch_size, get_sampling_size
 
 SUPPORTED_CONTAINERS = [
-    "MAP-Elites_Sampling",
+    "MAP-Elites-Sampling",
     "Archive-Sampling",
     "Extract-MAP-Elites",
 ]
@@ -103,8 +102,8 @@ parser.add_argument("--damage_joint_action", type=float, nargs='+', help="Action
 parser.add_argument("--zero_sensor_idx", type=int, nargs='+', help="Index of the zero sensor")
 
 # Corrected Metrics Configs
-parser.add_argument("--log-period", default=50, type=int)
-parser.add_argument("--num-reevals", default=64, type=int)
+parser.add_argument("--log-period", default=10, type=int)
+parser.add_argument("--num-reevals", default=32, type=int)
 parser.add_argument("--reeval-scan-size", default=0, type=int, help="Not used if 0.")
 parser.add_argument("--reeval-fitness-extractor", default="Average", type=str)
 parser.add_argument("--reeval-lighter", action="store_true")
@@ -117,6 +116,9 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
+
+args.grid_shape = tuple(args.grid_shape)
+args.num_centroids = reduce(lambda x, y: x * y, args.grid_shape)
 
 evals_per_offspring = get_evals_per_offspring(args=args)
 if args.sampling_size != 0:
@@ -148,8 +150,6 @@ print(f"Using batch-size: {args.batch_size} and sampling-size: {args.sampling_si
 print(f"With real_evals_per_iter: {args.real_evals_per_iter}")
 
 
-# format transformation
-args.grid_shape = tuple(args.grid_shape)
 args.policy_hidden_layer_sizes = tuple(args.policy_hidden_layer_sizes)
 args.critic_hidden_layer_size = tuple(args.critic_hidden_layer_size)
 

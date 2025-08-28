@@ -1,6 +1,6 @@
 #!/bin/bash
-#PBS -lwalltime=08:00:00
-#PBS -lselect=1:ncpus=2:mem=32gb:ngpus=1:gpu_type=L40S
+#PBS -lwalltime=05:00:00
+#PBS -lselect=1:ncpus=1:mem=32gb:ngpus=1:gpu_type=L40S
 
 # PBS_O_WORKDIR is where the job's submitted
 cd $PBS_O_WORKDIR
@@ -11,17 +11,25 @@ timestamp=$(date +"%Y%m%d_%H%M%S")
 output_path="outputs/hpc/dcrl_$timestamp"
 echo "Output model to path: $output_path"
 
+## vanilla dcrl-ME 
+python main.py --algo_type dcrl --output_path $output_path --mode training \
+    --container MAP-Elites-Sampling --dropout-rate 0
+
+## dropout dcrl-ME
+# python main.py --algo_type dcrl --output_path $output_path --mode training \
+#     --container MAP-Elites-Sampling
+
 ## mapelite-sampling 
 # python main.py --algo_type dcrl --output_path $output_path --mode training \
-#     --container MAP-Elites_Sampling --num-samples 10
+#     --container MAP-Elites-Sampling --num-samples 10
 
 ## archive-sampling 
 # python main.py --algo_type dcrl --output_path $output_path --mode training \
 #     --container Archive-Sampling --num-samples 2 --depth 2
 
 ## extract-mapelites
-python main.py --algo_type dcrl --output_path $output_path --mode training \
-    --container Extract-MAP-Elites --num-samples 2 --depth 8
+# python main.py --algo_type dcrl --output_path $output_path --mode training \
+#     --container Extract-MAP-Elites --num-samples 2 --depth 8
 
 
 # Check if the training failed and exit if so
@@ -36,10 +44,6 @@ echo "%%%%%%%%%%%%%%%Training Complete%%%%%%%%%%%%%%%"
 damaged_joint_idx=("0 1" "4 5" "4 5 6 7" "0 1 6 7")
 damaged_joint_action=("0 0" "0 0" "0 0 0 0" "0 0 0 0")
 damage_desc=("FL_loose" "BL_loose" "BL_BR_loose" "FL_BR_loose")
-
-# sensory damage configs
-zero_sensor_idx=("5 6 19 20" "9 10 23 24" "8 12 19 25" "3 11 17 20")
-damage_desc=("FL" "BL" "Rand1" "Rand2")
 
 
 exp_path="${output_path}/physical_damage"
@@ -60,6 +64,10 @@ for i in "${!damaged_joint_idx[@]}"; do
         --damage_joint_idx $idx --damage_joint_action $action --damage_type physical
     
 done
+
+# sensory damage configs
+zero_sensor_idx=("5 6 19 20" "9 10 23 24" "8 12 19 25" "3 11 17 20")
+damage_desc=("FL" "BL" "Rand1" "Rand2")
 
 exp_path="${output_path}/sensory_damage"
 mkdir -p "$exp_path"
