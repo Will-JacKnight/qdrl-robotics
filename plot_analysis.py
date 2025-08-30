@@ -216,11 +216,11 @@ def eval_multi_model_metrics(
     _, axes[5] = eval_single_model_metrics(model_paths[2] + damage_path, model_desc[2], model_colors[2], ax=axes[5])
 
     axes[3].set_visible(False)
-    axes[4].set_visible(False)
+    # axes[4].set_visible(False)
     axes[5].set_visible(False)
-    ax5_secondary.set_visible(False)
+    # ax5_secondary.set_visible(False)
 
-    fig.legend(loc='upper center') # , ncol=len(model_desc)
+    fig.legend(loc='lower center') # , ncol=len(model_desc)
     plt.savefig("evaluations/eval_multi_model_metrics.png")
     plt.close()
 
@@ -327,8 +327,7 @@ if __name__ == "__main__":
         #     color="#fec126"
         # ),
         ModelInfo(
-            # model_path="outputs/hpc/dcrl_20250827_170158/", 
-            model_path="outputs/hpc/dcrl_20250828_104351/", 
+            model_path="outputs/hpc/dcrl_20250827_170158/", 
             model_desc="variant 4: dropouts + extract-map-elites",
             model_desc_abbr="variant 4", 
             color="#f05d4d"
@@ -349,6 +348,6 @@ if __name__ == "__main__":
     
     model_paths, model_desc, model_desc_abbr, model_colors = extract_model_attributes(models)
 
-    plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
-    # eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
+    # plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
+    eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
     # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)

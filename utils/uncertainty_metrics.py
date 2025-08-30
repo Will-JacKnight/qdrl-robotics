@@ -152,6 +152,8 @@ def reevaluation_function(
     # Extract the final scores
     extra_scores = extra_scores_extractor(all_extra_scores, num_reevals)
     fitnesses = fitness_extractor(all_fitnesses)
+    fitnesses = fitnesses.reshape(-1, 1)  # Convert (grid_shape,) to (grid_shape, 1)
+
     fitnesses_reproducibility = fitness_reproducibility_extractor(all_fitnesses)
     descriptors = descriptor_extractor(all_descriptors)
     descriptors_reproducibility = descriptor_reproducibility_extractor(all_descriptors)
