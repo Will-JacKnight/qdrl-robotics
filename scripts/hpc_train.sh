@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -lwalltime=05:00:00
+#PBS -lwalltime=10:00:00
 #PBS -lselect=1:ncpus=1:mem=32gb:ngpus=1:gpu_type=L40S
 
 # PBS_O_WORKDIR is where the job's submitted
