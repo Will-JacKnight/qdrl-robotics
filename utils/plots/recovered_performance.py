@@ -9,6 +9,12 @@ import matplotlib.colors as mcolors
 import numpy as np
 import jax.numpy as jnp
 
+from utils.util import load_json
+from utils.plots.config import apply_plot_style
+
+# Apply shared plotting style
+apply_plot_style()
+
 
 def plot_recovered_performance(
     model_paths: List[str],

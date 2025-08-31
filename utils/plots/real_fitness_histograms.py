@@ -8,6 +8,11 @@ from matplotlib.ticker import MaxNLocator
 import matplotlib.colors as mcolors
 import numpy as np
 import jax.numpy as jnp
+from utils.util import load_json
+from utils.plots.config import apply_plot_style
+
+# Apply shared plotting style
+apply_plot_style()
 
 # change to multigrid
 def plot_real_fitness_histograms(
@@ -21,12 +26,12 @@ def plot_real_fitness_histograms(
     ) -> None:
     # num_models = len(model_paths)
     num_damages = len(damage_paths)
-    fig, axes = plt.subplots(nrows=1, ncols=num_damages, figsize=(10 * num_damages, 10))
+    fig, axes = plt.subplots(nrows=2, ncols=num_damages // 2, figsize=(10 * (num_damages // 2), 10))
     axes = np.atleast_2d(axes)
 
     fig.supxlabel("Real Fitness (m/s)")
     fig.supylabel("Frequency Density")
-    fig.suptitle("Real Fitness Distribution")
+    # fig.suptitle("Real Fitness Distribution")
 
     def filter_top_k_list(data: List, top_k: float = 0.5) -> List:
         sorted_data = sorted(data, reverse=True)
@@ -43,9 +48,10 @@ def plot_real_fitness_histograms(
             # min_fitness = np.min(real_fitnesses)
             # max_fitness = np.max(real_fitnesses)
             # real_fitnesses = (real_fitnesses - min_fitness) / (max_fitness - min_fitness) * 100 + 0.0
-
+            row = 0 if j < len(damage_paths) // 2 else 1
+            col = j if row == 0 else j - len(damage_paths) // 2
             label = model_desc[i] if j == 0 else None
-            axes[0][j].hist(
+            axes[row][col].hist(
                 real_fitnesses, 
                 bins=num_bins, 
                 range=(lower_bound, upper_bound),
@@ -54,14 +60,14 @@ def plot_real_fitness_histograms(
                 label=label,
                 density=True
             )
-            axes[0][j].set_title(damage_paths[j])
+            axes[row][col].set_title(damage_paths[j])
 
             # kde = gaussian_kde(real_fitness)
             # x_vals = np.linspace(lower_bound, upper_bound, 500)
             # axes[0][j].plot(x_vals, kde(x_vals), color=model_colors[i], linewidth=2)
 
-    fig.legend(loc='right')
+    fig.legend(bbox_to_anchor=(0.5, 0.02), loc='lower center', ncol=len(model_desc))
     plt.savefig("evaluations/real_fitness_histogram.png")
     plt.close()
 
-    return fig, ax
+    return fig, axes
