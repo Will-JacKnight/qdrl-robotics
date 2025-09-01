@@ -245,9 +245,8 @@ def run_online_adaptation(
             break
     
     log_metrics(exp_path, "eval_metrics.json", eval_metrics)
-    # plot_diff_qd_score(iter_num + 1, avg_diff_qd_scores, exp_path)
-    
     
     # print(f"tested indices: {tested_indices}")
     # print(f"real fitnesses: {real_fitnesses}")
     # print(f"tested goals: {tested_behaviours}")
+    return eval_metrics

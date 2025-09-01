@@ -12,98 +12,33 @@ from qdax.core.emitters.mutation_operators import isoline_variation
 # from qdax.core.map_elites import MAPElites
 from qdax.core.neuroevolution.buffers.buffer import DCRLTransition
 from qdax.custom_types import EnvState, Params, RNGKey
-from qdax.tasks.brax.v1 import descriptor_extractor
-from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs
-from qdax.utils.metrics import default_qd_metrics, CSVLogger
+from qdax.utils.metrics import  CSVLogger
 from core.containers.mapelites_repertoire import MapElitesRepertoire
 
-from rollout import init_env_and_policy_network
+from rollout import setup_environment
 from setup_containers import setup_container, EXTRACTOR_LIST
 from utils.uncertainty_metrics import reevaluation_function
 
 
 def run_dcrl_map_elites(args: Any, key: RNGKey):
-    
-    env, policy_network, actor_dc_network = init_env_and_policy_network(
+
+    key, subkey = jax.random.split(key)
+    (
+        env, 
+        policy_network, 
+        actor_dc_network,
+        reset_fn,
+        play_step_fn,
+        scoring_fn,
+        metrics_fn,
+        init_params,
+    ) = setup_environment(
         env_name=args.env_name, 
         episode_length=args.episode_length, 
         policy_hidden_layer_sizes=args.policy_hidden_layer_sizes, 
-        dropout_rate=args.dropout_rate
-    )
-
-    reset_fn = jax.jit(env.reset)
-    
-    # Init population of controllers
-    key, subkey = jax.random.split(key)
-    keys = jax.random.split(subkey, num=args.init_batch_size)
-    fake_batch_obs = jnp.zeros(shape=(args.init_batch_size, env.observation_size))
-    init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs)
-
-    def play_step_fn(
-        env_state: EnvState, policy_params: Params, key: RNGKey
-    ) -> Tuple[EnvState, Params, RNGKey, DCRLTransition]:
-        key, subkey = jax.random.split(key)
-        actions = policy_network.apply(policy_params, env_state.obs, train=True, rngs={"dropout": subkey})
-        state_desc = env_state.info["state_descriptor"]
-        next_state = env.step(env_state, actions)
-
-        transition = DCRLTransition(
-            obs=env_state.obs,
-            next_obs=next_state.obs,
-            rewards=next_state.reward,
-            dones=next_state.done,
-            truncations=next_state.info["truncation"],
-            actions=actions,
-            state_desc=state_desc,
-            next_state_desc=next_state.info["state_descriptor"],
-            desc=jnp.zeros(
-                env.descriptor_length,
-            )
-            * jnp.nan,
-            desc_prime=jnp.zeros(
-                env.descriptor_length,
-            )
-            * jnp.nan,
-        )
-
-        return next_state, policy_params, key, transition
-    
-    def multi_eval_play_step_fn(
-        env_state: EnvState, policy_params: Params, key: RNGKey, num_samples: int
-    ) -> Tuple[EnvState, Params, RNGKey, DCRLTransition]:
-        "eval and average the transition"
-        key, subkey = jax.random.split(key)
-        keys = jax.random.split(subkey, num_samples)
-        batched_play_step_fn = jax.vmap(lambda k: play_step_fn(env_state, policy_params, k))
-        next_states, batched_policy_params, _, transitions = batched_play_step_fn(keys)
-
-        # get the first out of the batched results
-        next_state = jax.tree.map(lambda x:x[0], next_states)
-        policy_params = jax.tree.map(lambda x:x[0], batched_policy_params)
-        # average the rewards
-        final_transition = jax.tree.map(lambda x:x[0], transitions)
-        final_transition = final_transition.replace(rewards=jnp.mean(transitions.rewards))
-        return next_state, policy_params, key, final_transition
-    
-    avg_eval_fn = functools.partial(multi_eval_play_step_fn, num_samples=args.num_samples)
-    
-    # Prepare the scoring function
-    descriptor_extraction_fn = descriptor_extractor[args.env_name]
-    scoring_fn = functools.partial(
-        scoring_function_brax_envs,
-        episode_length=args.episode_length,
-        play_reset_fn=reset_fn,
-        play_step_fn=play_step_fn,       # avg_eval_fn
-        descriptor_extractor=descriptor_extraction_fn,
-    )
-
-    # Get minimum reward value to make sure qd_score are positive
-    reward_offset = environments.reward_offset[args.env_name]
-
-    # Define a metrics function
-    metrics_fn = functools.partial(
-        default_qd_metrics,
-        qd_offset=reward_offset * args.episode_length,
+        dropout_rate=args.dropout_rate,
+        init_batch_size=args.init_batch_size,
+        key=subkey,
     )
 
     dcrl_emitter_config = DCRLMEConfig(
@@ -213,10 +148,10 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
 
         # Perform reevaluation and correction
         key, subkey = jax.random.split(key)
-        corrected_repertoire, key = reevaluation_function(
+        corrected_metrics = reevaluation_function(
             repertoire=repertoire,
             random_key=subkey,
-            metric_repertoire=repertoire,
+            # metric_repertoire=repertoire,
             scoring_fn=scoring_fn,
             num_reevals=args.num_reevals,
             scan_size=args.reeval_scan_size,
@@ -226,8 +161,7 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
             descriptor_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_descriptor_reproducibility_extractor],
         )
 
-        # Compute corrected metrics
-        corrected_metrics = metrics_fn(corrected_repertoire)        
+        # Compute corrected metrics    
         return (repertoire, emitter_state, key), corrected_metrics
 
 
@@ -239,9 +173,9 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
             repertoire,
             emitter_state,
             key,
-        ), corrected_metrics = jax.lax.scan(
-            # map_elites.scan_update
-            corrected_scan_update,      
+        ), current_metrics = jax.lax.scan(
+            map_elites.scan_update
+            # corrected_scan_update,      
             (repertoire, emitter_state, key),
             (),
             length=args.log_period,
@@ -249,9 +183,9 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
         timelapse = time.time() - start_time
 
         # Metrics
-        corrected_metrics["iteration"] = jnp.arange(1+args.log_period*i, 1+args.log_period*(i+1), dtype=jnp.int32)
-        corrected_metrics["time"] = jnp.repeat(timelapse, args.log_period)
-        metrics = jax.tree.map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, corrected_metrics)
+        current_metrics["iteration"] = jnp.arange(1+args.log_period*i, 1+args.log_period*(i+1), dtype=jnp.int32)
+        current_metrics["time"] = jnp.repeat(timelapse, args.log_period)
+        metrics = jax.tree.map(lambda metric, current_metric: jnp.concatenate([metric, current_metric], axis=0), metrics, current_metrics)
 
         # Log
         # csv_logger.log(jax.tree.map(lambda x:x[-1], metrics))

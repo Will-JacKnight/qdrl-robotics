@@ -13,27 +13,29 @@ from qdax.core.neuroevolution.buffers.buffer import DCRLTransition
 from qdax.tasks.brax.v1.wrappers.reward_wrappers import OffsetRewardWrapper, ClipRewardWrapper
 from qdax.tasks.brax.v1.wrappers.init_state_wrapper import FixedInitialStateWrapper
 from qdax.custom_types import EnvState, Params, RNGKey
+from qdax.tasks.brax.v1 import descriptor_extractor
+from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs
+from qdax.utils.metrics import default_qd_metrics
 
 from utils.reward_wrapper import ForwardStepRewardWrapper
 from utils.networks import ResMLP, ResMLPDC, DropoutMLP, DropoutMLPDC
 
 
-def init_env_and_policy_network(
+def setup_environment(
     env_name: str, 
     episode_length: int, 
     policy_hidden_layer_sizes: Tuple[int, ...], 
     dropout_rate: float,
+    init_batch_size: int,
+    key: RNGKey,
 ):
-    """
-    init environment and policy network
-    """
     # Init brax environment
     env = environments.create(env_name, episode_length=episode_length)
 
-    env_name = "ant" if env_name == "ant_uni" else env_name
+    wrapper_env_name = "ant" if env_name == "ant_uni" else env_name
     # env = OffsetRewardWrapper(env, offset=environments.reward_offset[env_name])
     # env = ClipRewardWrapper(env, clip_min=0.,)
-    env = ForwardStepRewardWrapper(env, env_name)
+    env = ForwardStepRewardWrapper(env, wrapper_env_name)
     # env = FixedInitialStateWrapper(env, env_name)
 
     # Init policy network
@@ -51,7 +53,59 @@ def init_env_and_policy_network(
         final_activation=jnp.tanh,
         dropout_rate=dropout_rate
     )
-    return env, policy_network, actor_dc_network
+    
+    reset_fn = jax.jit(env.reset)
+
+    key, subkey = jax.random.split(key)
+    keys = jax.random.split(subkey, num=init_batch_size)
+    fake_batch_obs = jnp.zeros(shape=(init_batch_size, env.observation_size))
+    init_params = jax.vmap(policy_network.init)(keys, fake_batch_obs)
+
+    def play_step_fn(
+        env_state: EnvState, policy_params: Params, key: RNGKey
+    ) -> Tuple[EnvState, Params, RNGKey, DCRLTransition]:
+        key, subkey = jax.random.split(key)
+        actions = policy_network.apply(policy_params, env_state.obs, train=True, rngs={"dropout": subkey})
+        state_desc = env_state.info["state_descriptor"]
+        next_state = env.step(env_state, actions)
+
+        transition = DCRLTransition(
+            obs=env_state.obs,
+            next_obs=next_state.obs,
+            rewards=next_state.reward,
+            dones=next_state.done,
+            truncations=next_state.info["truncation"],
+            actions=actions,
+            state_desc=state_desc,
+            next_state_desc=next_state.info["state_descriptor"],
+            desc=jnp.zeros(
+                env.descriptor_length,
+            )
+            * jnp.nan,
+            desc_prime=jnp.zeros(
+                env.descriptor_length,
+            )
+            * jnp.nan,
+        )
+
+        return next_state, policy_params, key, transition
+
+    # reevaluation for corrected metrics
+    descriptor_extraction_fn = descriptor_extractor[env_name]
+    scoring_fn = functools.partial(
+        scoring_function_brax_envs,
+        episode_length=episode_length,
+        play_reset_fn=reset_fn,
+        play_step_fn=play_step_fn,
+        descriptor_extractor=descriptor_extraction_fn,
+    )
+
+    reward_offset = environments.reward_offset[env_name]
+    metrics_fn = functools.partial(
+        default_qd_metrics,
+        qd_offset=reward_offset * episode_length,
+    )
+    return env, policy_network, actor_dc_network, reset_fn, play_step_fn, scoring_fn, metrics_fn, init_params
 
 
 def render_rollout_to_html(states, env, output_path):

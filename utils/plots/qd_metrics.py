@@ -134,3 +134,49 @@ def plot_corrected_qd_score(
 
     return fig, ax
 
+
+def plot_corrected_max_fitness_repeated(
+    model_paths: List[str],
+    model_desc: List[str], 
+    model_colors: List[str],
+    ax: Optional[Axes] = None,
+) -> Tuple[Optional[Figure], Axes]:
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = None
+        
+    ax.set_xlabel("Algorithms")
+    ax.set_ylabel("Corrected Max Fitness")
+
+    positions = []
+    data = []
+    color_indices = []
+    width = 0.25
+    group_spacing = 1.5
+
+    for i, model_path in enumerate(model_paths):
+        rep_metrics = load_json(model_path, "corrected_metrics.json")
+
+        data.append(rep_metrics["best_real_fitness"])
+        positions.append(j * group_spacing + i * width)
+        color_indices.append(i)
+
+    bp = ax.boxplot(data, positions=positions, widths=0.15, patch_artist=True)
+    for i, box in enumerate(bp['boxes']):
+        box.set_facecolor(model_colors[color_indices[i]])
+
+    # center xticks for each damage case
+    num_models = len(model_paths)
+    centers = [j * group_spacing + (num_models - 1) * width / 2 for j in range(num_models)]
+    ax.set_xticks(centers)
+    ax.set_xticklabels(model_paths)
+
+    handles = [plt.Line2D([0], [0], color=model_colors[i], lw=5) for i in range(num_models)]
+    if fig is not None:
+        ax.legend(handles, model_desc, loc="upper left")
+    
+    plt.savefig("evaluations/corrected_qd_score_repeated.png")
+    plt.close()
+    return fig, ax

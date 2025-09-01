@@ -30,7 +30,7 @@ from core.containers.mapelites_repertoire import MapElitesRepertoire
 def reevaluation_function(
     repertoire: MapElitesRepertoire,
     random_key: RNGKey,
-    metric_repertoire: MapElitesRepertoire,
+    # metric_repertoire: MapElitesRepertoire,
     scoring_fn: Callable[
         [Genotype, RNGKey],
         Tuple[Fitness, Descriptor, ExtraScores, RNGKey],
@@ -171,13 +171,13 @@ def reevaluation_function(
     )
 
     # Fill-in reeval repertoire
-    reeval_repertoire = metric_repertoire.empty()
-    reeval_repertoire = reeval_repertoire.add(
-        repertoire.genotypes,
-        descriptors,
-        fitnesses,
-        extra_scores,
-    )
+    # reeval_repertoire = metric_repertoire.empty()
+    # reeval_repertoire = reeval_repertoire.add(
+    #     repertoire.genotypes,
+    #     descriptors,
+    #     fitnesses,
+    #     extra_scores,
+    # )
 
     # # Fill-in fit_reeval repertoire
     # fit_reeval_repertoire = metric_repertoire.empty()
@@ -234,12 +234,15 @@ def reevaluation_function(
     # )
 
     return (
-        reeval_repertoire,
+        # reeval_repertoire,
         # fit_reeval_repertoire,
         # desc_reeval_repertoire,
         # fit_reproducibility_repertoire,
         # reeval_fit_reproducibility_repertoire,
         # desc_reproducibility_repertoire,
         # reeval_desc_reproducibility_repertoire,
-        random_key,
+        # random_key,
+        fitnesses,
+        descriptors,
+        extra_scores,
     )

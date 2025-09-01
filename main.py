@@ -1,5 +1,6 @@
 import argparse
 from functools import reduce
+from tqdm import trange
 
 import jax
 import jax.numpy as jnp
@@ -7,10 +8,15 @@ import jax.numpy as jnp
 from adaptation import run_online_adaptation
 from map_elites import run_map_elites
 from dcrl import run_dcrl_map_elites
-from rollout import run_single_rollout, init_env_and_policy_network, render_rollout_to_html
+from rollout import run_single_rollout, setup_environment, render_rollout_to_html
 from utils.util import load_json,load_repertoire_and_metrics, save_repertoire_and_metrics, save_args
 from utils.new_plot import plot_map_elites_results
 from setup_containers import get_evals_per_offspring, get_batch_size, get_sampling_size
+
+from utils.util import log_metrics
+from setup_containers import EXTRACTOR_LIST
+from utils.uncertainty_metrics import reevaluation_function
+from core.containers.mapelites_repertoire import MapElitesRepertoire
 
 SUPPORTED_CONTAINERS = [
     "MAP-Elites-Sampling",
@@ -103,7 +109,7 @@ parser.add_argument("--zero_sensor_idx", type=int, nargs='+', help="Index of the
 
 # Corrected Metrics Configs
 parser.add_argument("--log-period", default=10, type=int)
-parser.add_argument("--num-reevals", default=32, type=int)
+parser.add_argument("--num-reevals", default=16, type=int)
 parser.add_argument("--reeval-scan-size", default=0, type=int, help="Not used if 0.")
 parser.add_argument("--reeval-fitness-extractor", default="Average", type=str)
 parser.add_argument("--reeval-lighter", action="store_true")
@@ -114,6 +120,9 @@ parser.add_argument("--reeval-descriptor-extractor", default="Average", type=str
 parser.add_argument(
     "--reeval-descriptor-reproducibility-extractor", default="STD", type=str
 )
+
+# repetition runs configs
+parser.add_argument("--num-repetition-runs", default=1, type=int)
 
 args = parser.parse_args()
 
@@ -217,12 +226,51 @@ if args.mode == "training":
 
 
 repertoire, _ = load_repertoire_and_metrics(args.output_path)
-env, policy_network, _ = init_env_and_policy_network(
-    args.env_name, 
-    args.episode_length,
-    args.policy_hidden_layer_sizes, 
-    args.dropout_rate
+
+key, subkey = jax.random.split(key)
+(
+    env, 
+    policy_network, 
+    _,
+    _,
+    _,
+    scoring_fn,
+    metrics_fn,
+    init_params,
+) = setup_environment(
+    env_name=args.env_name, 
+    episode_length=args.episode_length, 
+    policy_hidden_layer_sizes=args.policy_hidden_layer_sizes, 
+    dropout_rate=args.dropout_rate,
+    init_batch_size=args.init_batch_size,
+    key=subkey,
 )
+
+# # repetition runs of final repertoire to get corrected_metrics
+# rep_metrics = {}
+# for rep in trange(args.num_repetition_runs, desc="Repeated Repertoire Evaluation"):
+#     key, subkey = jax.random.split(key)
+#     (
+#         fitnesses, 
+#         _,
+#         _,
+#     ) = reevaluation_function(
+#         repertoire=repertoire,
+#         random_key=subkey,
+#         # metric_repertoire=repertoire,
+#         scoring_fn=scoring_fn,
+#         num_reevals=args.num_reevals,
+#         scan_size=args.reeval_scan_size,
+#         fitness_extractor=EXTRACTOR_LIST[args.reeval_fitness_extractor],
+#         fitness_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_fitness_reproducibility_extractor],
+#         descriptor_extractor=EXTRACTOR_LIST[args.reeval_descriptor_extractor],
+#         descriptor_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_descriptor_reproducibility_extractor],
+#     )
+#     rep_metrics["max_fitness"].append(jnp.max(fitnesses))
+#     rep_metrics["qd_score"].append(jnp.sum(fitnesses))
+
+# log_metrics(args.output_path, "corrected_metrics.json", rep_metrics)
+
 
 best_fitness = jnp.max(repertoire.fitnesses)
 best_idx = jnp.argmax(repertoire.fitnesses)
@@ -246,21 +294,32 @@ else:
                                 args.damage_joint_idx, args.damage_joint_action, args.zero_sensor_idx)
     render_rollout_to_html(rollout['states'], env, args.exp_path + "/pre_adaptation_with_damage.html")
 
-    key, subkey = jax.random.split(key)
-    run_online_adaptation(
-        env_name=args.env_name, 
-        repertoire=repertoire, 
-        env=env, 
-        policy_network=policy_network, 
-        key=subkey, 
-        exp_path=args.exp_path, 
-        min_descriptor=args.min_descriptor, 
-        max_descriptor=args.max_descriptor, 
-        grid_shape=args.grid_shape, 
-        damage_joint_idx=args.damage_joint_idx, 
-        damage_joint_action=args.damage_joint_action, 
-        zero_sensor_idx=args.zero_sensor_idx,
-        episode_length=args.episode_length, 
-        max_iters=args.max_iters, 
-        performance_threshold=args.performance_threshold,
-    )
+    rep_metrics = {}
+    for rep in trange(args.num_repetition_runs, desc="Repeated Adaptation"):
+
+        key, subkey = jax.random.split(key)
+        eval_metrics = run_online_adaptation(
+            env_name=args.env_name, 
+            repertoire=repertoire, 
+            env=env, 
+            policy_network=policy_network, 
+            key=subkey, 
+            exp_path=args.exp_path, 
+            min_descriptor=args.min_descriptor, 
+            max_descriptor=args.max_descriptor, 
+            grid_shape=args.grid_shape, 
+            damage_joint_idx=args.damage_joint_idx, 
+            damage_joint_action=args.damage_joint_action, 
+            zero_sensor_idx=args.zero_sensor_idx,
+            episode_length=args.episode_length, 
+            max_iters=args.max_iters, 
+            performance_threshold=args.performance_threshold,
+        )
+        global_metrics = eval_metrics["global"]
+        if rep == 0:
+            rep_metrics = {k: [v] for k, v in global_metrics.items()}
+        else:
+            for k, v in global_metrics.items():
+                rep_metrics[k].append(v)
+
+    log_metrics(args.exp_path, "rep_metrics.json", rep_metrics)

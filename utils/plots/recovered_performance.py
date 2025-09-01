@@ -42,9 +42,15 @@ def plot_recovered_performance(
     
     for i, model_path in enumerate(model_paths):
         for j, damage_path in enumerate(damage_paths):
-            eval_metrics = load_json(model_path + damage_path, "eval_metrics.json")
+            # 1. step rewards distribution
+            # eval_metrics = load_json(model_path + damage_path, "eval_metrics.json")
+            # data.append(eval_metrics["iterative"]["step_speeds"][-1])
+
+            # 2. fitness distribution via repetition runs 
+            rep_metrics = load_json(model_path + damage_path, "rep_metrics.json")
+            data.append(rep_metrics["best_real_fitness"])
+
             positions.append(j * group_spacing + i * width)
-            data.append(eval_metrics["iterative"]["step_speeds"][-1])
             color_indices.append(i)
 
     bp = ax.boxplot(data, positions=positions, widths=0.15, patch_artist=True)

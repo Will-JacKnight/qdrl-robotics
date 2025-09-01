@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -lwalltime=01:00:00
+#PBS -lwalltime=03:00:00
 #PBS -lselect=1:ncpus=1:mem=16gb:ngpus=1
 
 cd $PBS_O_WORKDIR
@@ -7,7 +7,7 @@ cd $PBS_O_WORKDIR
 source qdax050/bin/activate
 
 # adaptation inspection
-output_path="outputs/hpc/dcrl_20250828_104351"
+output_path="outputs/hpc/dcrl_20250813_213310"
 
 echo "model path=$output_path"
 
@@ -34,7 +34,8 @@ for i in "${!damaged_joint_idx[@]}"; do
     damage_path="${exp_path}/${damage_desc[$i]}"
     mkdir -p "$damage_path"
     python main.py --output_path $output_path --exp_path $damage_path \
-        --damage_joint_idx $idx --damage_joint_action $action --damage_type physical
+        --damage_joint_idx $idx --damage_joint_action $action --damage_type physical \
+        --num-repetition-runs 10 --num-reevals 16 --reeval-scan-size 8
     
 done
 
@@ -57,7 +58,8 @@ for i in "${!zero_sensor_idx[@]}"; do
     damage_path="${exp_path}/${damage_desc[$i]}"
     mkdir -p "$damage_path"
     python main.py --output_path $output_path --exp_path $damage_path \
-        --zero_sensor_idx $idx --damage_type sensory
+        --zero_sensor_idx $idx --damage_type sensory \
+        --num-repetition-runs 10 --num-reevals 16 --reeval-scan-size 8
     
 done
 

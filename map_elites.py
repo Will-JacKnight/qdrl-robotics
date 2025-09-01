@@ -13,7 +13,7 @@ from qdax.core.neuroevolution.networks.networks import MLP
 from qdax.tasks.brax.v1.env_creators import scoring_function_brax_envs as scoring_function
 from qdax.utils.metrics import default_qd_metrics
 from tqdm import trange
-from rollout import init_env_and_policy_network
+from rollout import setup_environment
 
 
 def run_map_elites(
@@ -32,7 +32,7 @@ def run_map_elites(
     dropout_rate,
 ):
 
-    env, policy_network, _ = init_env_and_policy_network(env_name, episode_length, policy_hidden_layer_sizes, dropout_rate)
+    env, policy_network, _ = setup_environment(env_name, episode_length, policy_hidden_layer_sizes, dropout_rate)
     
     reset_fn = jax.jit(env.reset)
 
