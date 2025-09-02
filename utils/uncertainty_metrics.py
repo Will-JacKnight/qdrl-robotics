@@ -98,7 +98,7 @@ def reevaluation_function(
             # repertoire,
             # repertoire,
             # repertoire,
-            random_key,
+            # random_key,
         )
 
     policies_params = repertoire.genotypes
@@ -108,7 +108,7 @@ def reevaluation_function(
         (
             all_fitnesses,
             all_descriptors,
-            all_extra_scores,
+            _,
             random_key,
         ) = multi_sample_scoring_function(
             policies_params=policies_params,
@@ -127,7 +127,7 @@ def reevaluation_function(
             (
                 all_fitnesses,
                 all_descriptors,
-                all_extra_scores,
+                _,
                 random_key,
             ) = multi_sample_scoring_function(
                 policies_params=policies_params,
@@ -138,37 +138,37 @@ def reevaluation_function(
             return (random_key), (
                 all_fitnesses,
                 all_descriptors,
-                all_extra_scores,
+                _,
             )
 
         (random_key), (
             all_fitnesses,
             all_descriptors,
-            all_extra_scores,
+            _,
         ) = jax.lax.scan(_sampling_scan, (random_key), (), length=num_loops)
         all_fitnesses = jnp.hstack(all_fitnesses)
         all_descriptors = jnp.hstack(all_descriptors)
 
     # Extract the final scores
-    extra_scores = extra_scores_extractor(all_extra_scores, num_reevals)
+    # extra_scores = extra_scores_extractor(all_extra_scores, num_reevals)
     fitnesses = fitness_extractor(all_fitnesses)
-    fitnesses = fitnesses.reshape(-1, 1)  # Convert (grid_shape,) to (grid_shape, 1)
+    # fitnesses = fitnesses.reshape(-1, 1)  # Convert (grid_shape,) to (grid_shape, 1)
 
-    fitnesses_reproducibility = fitness_reproducibility_extractor(all_fitnesses)
+    # fitnesses_reproducibility = fitness_reproducibility_extractor(all_fitnesses)
     descriptors = descriptor_extractor(all_descriptors)
-    descriptors_reproducibility = descriptor_reproducibility_extractor(all_descriptors)
+    # descriptors_reproducibility = descriptor_reproducibility_extractor(all_descriptors)
 
     # WARNING: in the case of descriptors_reproducibility, take average over dimensions
-    descriptors_reproducibility = jnp.average(descriptors_reproducibility, axis=-1)
+    # descriptors_reproducibility = jnp.average(descriptors_reproducibility, axis=-1)
 
     # Set -inf fitness for all unexisting indivs
     fitnesses = jnp.where(repertoire.fitnesses == -jnp.inf, -jnp.inf, fitnesses)
-    fitnesses_reproducibility = jnp.where(
-        repertoire.fitnesses == -jnp.inf, -jnp.inf, fitnesses_reproducibility
-    )
-    descriptors_reproducibility = jnp.where(
-        repertoire.fitnesses == -jnp.inf, -jnp.inf, descriptors_reproducibility
-    )
+    # fitnesses_reproducibility = jnp.where(
+    #     repertoire.fitnesses == -jnp.inf, -jnp.inf, fitnesses_reproducibility
+    # )
+    # descriptors_reproducibility = jnp.where(
+    #     repertoire.fitnesses == -jnp.inf, -jnp.inf, descriptors_reproducibility
+    # )
 
     # Fill-in reeval repertoire
     # reeval_repertoire = metric_repertoire.empty()
@@ -178,71 +178,8 @@ def reevaluation_function(
     #     fitnesses,
     #     extra_scores,
     # )
-
-    # # Fill-in fit_reeval repertoire
-    # fit_reeval_repertoire = metric_repertoire.empty()
-    # fit_reeval_repertoire = fit_reeval_repertoire.add(
-    #     repertoire.genotypes,
-    #     repertoire.descriptors,
-    #     fitnesses,
-    #     extra_scores,
-    # )
-
-    # # Fill-in desc_reeval repertoire
-    # desc_reeval_repertoire = metric_repertoire.empty()
-    # desc_reeval_repertoire = desc_reeval_repertoire.add(
-    #     repertoire.genotypes,
-    #     descriptors,
-    #     repertoire.fitnesses,
-    #     extra_scores,
-    # )
-
-    # # Fill-in fit_reproducibility repertoire
-    # fit_reproducibility_repertoire = metric_repertoire.empty()
-    # fit_reproducibility_repertoire = fit_reproducibility_repertoire.add(
-    #     repertoire.genotypes,
-    #     repertoire.descriptors,
-    #     fitnesses_reproducibility,
-    #     extra_scores,
-    # )
-
-    # # Fill-in reeval_fit_reproducibility repertoire
-    # reeval_fit_reproducibility_repertoire = metric_repertoire.empty()
-    # reeval_fit_reproducibility_repertoire = reeval_fit_reproducibility_repertoire.add(
-    #     repertoire.genotypes,
-    #     descriptors,
-    #     fitnesses_reproducibility,
-    #     extra_scores,
-    # )
-
-    # # Fill-in desc_reproducibility repertoire
-    # desc_reproducibility_repertoire = metric_repertoire.empty()
-    # desc_reproducibility_repertoire = desc_reproducibility_repertoire.add(
-    #     repertoire.genotypes,
-    #     repertoire.descriptors,
-    #     descriptors_reproducibility,
-    #     extra_scores,
-    # )
-
-    # # Fill-in reeval_desc_reproducibility repertoire
-    # reeval_desc_reproducibility_repertoire = metric_repertoire.empty()
-    # reeval_desc_reproducibility_repertoire = reeval_desc_reproducibility_repertoire.add(
-    #     repertoire.genotypes,
-    #     descriptors,
-    #     descriptors_reproducibility,
-    #     extra_scores,
-    # )
-
-    return (
-        # reeval_repertoire,
-        # fit_reeval_repertoire,
-        # desc_reeval_repertoire,
-        # fit_reproducibility_repertoire,
-        # reeval_fit_reproducibility_repertoire,
-        # desc_reproducibility_repertoire,
-        # reeval_desc_reproducibility_repertoire,
-        # random_key,
-        fitnesses,
-        descriptors,
-        extra_scores,
+    reeval_repertoire = repertoire.replace(
+        fitnesses=fitnesses,
+        descriptors=descriptors,
     )
+    return reeval_repertoire

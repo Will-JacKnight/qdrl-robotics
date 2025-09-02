@@ -155,6 +155,7 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
             scoring_fn=scoring_fn,
             num_reevals=args.num_reevals,
             scan_size=args.reeval_scan_size,
+            individual_batch_size=args.reeval_individual_batch_size,
             fitness_extractor=EXTRACTOR_LIST[args.reeval_fitness_extractor],
             fitness_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_fitness_reproducibility_extractor],
             descriptor_extractor=EXTRACTOR_LIST[args.reeval_descriptor_extractor],

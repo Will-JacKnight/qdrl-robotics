@@ -111,6 +111,7 @@ parser.add_argument("--zero_sensor_idx", type=int, nargs='+', help="Index of the
 parser.add_argument("--log-period", default=10, type=int)
 parser.add_argument("--num-reevals", default=16, type=int)
 parser.add_argument("--reeval-scan-size", default=0, type=int, help="Not used if 0.")
+parser.add_argument("--reeval-individual-batch-size", default=100, type=int, help="Number of individuals to reevaluate simultaneously to manage memory")
 parser.add_argument("--reeval-fitness-extractor", default="Average", type=str)
 parser.add_argument("--reeval-lighter", action="store_true")
 parser.add_argument(
@@ -246,30 +247,26 @@ key, subkey = jax.random.split(key)
     key=subkey,
 )
 
-# # repetition runs of final repertoire to get corrected_metrics
-# rep_metrics = {}
-# for rep in trange(args.num_repetition_runs, desc="Repeated Repertoire Evaluation"):
-#     key, subkey = jax.random.split(key)
-#     (
-#         fitnesses, 
-#         _,
-#         _,
-#     ) = reevaluation_function(
-#         repertoire=repertoire,
-#         random_key=subkey,
-#         # metric_repertoire=repertoire,
-#         scoring_fn=scoring_fn,
-#         num_reevals=args.num_reevals,
-#         scan_size=args.reeval_scan_size,
-#         fitness_extractor=EXTRACTOR_LIST[args.reeval_fitness_extractor],
-#         fitness_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_fitness_reproducibility_extractor],
-#         descriptor_extractor=EXTRACTOR_LIST[args.reeval_descriptor_extractor],
-#         descriptor_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_descriptor_reproducibility_extractor],
-#     )
-#     rep_metrics["max_fitness"].append(jnp.max(fitnesses))
-#     rep_metrics["qd_score"].append(jnp.sum(fitnesses))
+# repetition runs of final repertoire to get corrected_metrics
 
-# log_metrics(args.output_path, "corrected_metrics.json", rep_metrics)
+# for rep in trange(args.num_repetition_runs, desc="Repeated Repertoire Evaluation"):
+key, subkey = jax.random.split(key)
+reeval_repertoire = reevaluation_function(
+    repertoire=repertoire,
+    random_key=subkey,
+    # metric_repertoire=repertoire,
+    scoring_fn=scoring_fn,
+    num_reevals=args.num_reevals,
+    scan_size=args.reeval_scan_size,
+    fitness_extractor=EXTRACTOR_LIST[args.reeval_fitness_extractor],
+    fitness_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_fitness_reproducibility_extractor],
+    descriptor_extractor=EXTRACTOR_LIST[args.reeval_descriptor_extractor],
+    descriptor_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_descriptor_reproducibility_extractor],
+)
+
+qd_metrics = metrics_fn(reeval_repertoire)
+log_metrics(args.output_path, "qd_metrics.json", qd_metrics)
+
 
 
 best_fitness = jnp.max(repertoire.fitnesses)
@@ -294,32 +291,30 @@ else:
                                 args.damage_joint_idx, args.damage_joint_action, args.zero_sensor_idx)
     render_rollout_to_html(rollout['states'], env, args.exp_path + "/pre_adaptation_with_damage.html")
 
-    rep_metrics = {}
-    for rep in trange(args.num_repetition_runs, desc="Repeated Adaptation"):
+    # rep_metrics = {}
+    key, subkey = jax.random.split(key)
+    eval_metrics = run_online_adaptation(
+        env_name=args.env_name, 
+        repertoire=repertoire, 
+        env=env, 
+        policy_network=policy_network, 
+        key=subkey, 
+        exp_path=args.exp_path, 
+        min_descriptor=args.min_descriptor, 
+        max_descriptor=args.max_descriptor, 
+        grid_shape=args.grid_shape, 
+        damage_joint_idx=args.damage_joint_idx, 
+        damage_joint_action=args.damage_joint_action, 
+        zero_sensor_idx=args.zero_sensor_idx,
+        episode_length=args.episode_length, 
+        max_iters=args.max_iters, 
+        performance_threshold=args.performance_threshold,
+    )
+    # global_metrics = eval_metrics["global"]
+    # if rep == 0:
+    #     rep_metrics = {k: [v] for k, v in global_metrics.items()}
+    # else:
+    #     for k, v in global_metrics.items():
+    #         rep_metrics[k].append(v)
 
-        key, subkey = jax.random.split(key)
-        eval_metrics = run_online_adaptation(
-            env_name=args.env_name, 
-            repertoire=repertoire, 
-            env=env, 
-            policy_network=policy_network, 
-            key=subkey, 
-            exp_path=args.exp_path, 
-            min_descriptor=args.min_descriptor, 
-            max_descriptor=args.max_descriptor, 
-            grid_shape=args.grid_shape, 
-            damage_joint_idx=args.damage_joint_idx, 
-            damage_joint_action=args.damage_joint_action, 
-            zero_sensor_idx=args.zero_sensor_idx,
-            episode_length=args.episode_length, 
-            max_iters=args.max_iters, 
-            performance_threshold=args.performance_threshold,
-        )
-        global_metrics = eval_metrics["global"]
-        if rep == 0:
-            rep_metrics = {k: [v] for k, v in global_metrics.items()}
-        else:
-            for k, v in global_metrics.items():
-                rep_metrics[k].append(v)
-
-    log_metrics(args.exp_path, "rep_metrics.json", rep_metrics)
+    # log_metrics(args.exp_path, "rep_metrics.json", rep_metrics)
