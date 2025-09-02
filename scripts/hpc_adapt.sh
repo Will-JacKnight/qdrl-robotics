@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -lwalltime=03:00:00
+#PBS -lwalltime=05:00:00
 #PBS -lselect=1:ncpus=1:mem=16gb:ngpus=1
 
 cd $PBS_O_WORKDIR
@@ -7,7 +7,7 @@ cd $PBS_O_WORKDIR
 source qdax050/bin/activate
 
 # adaptation inspection
-output_path="outputs/hpc/dcrl_20250813_213310"
+output_path="outputs/hpc/dcrl_20250723_160932"
 
 echo "model path=$output_path"
 
@@ -41,26 +41,26 @@ done
 
 ###############
 
-exp_path="${output_path}/sensory_damage"
-rm -rf "$exp_path"
-mkdir -p "$exp_path"
+# exp_path="${output_path}/sensory_damage"
+# rm -rf "$exp_path"
+# mkdir -p "$exp_path"
 
-zero_sensor_idx=("5 6 19 20" "9 10 23 24" "8 12 19 25" "3 11 17 20")
-damage_desc=("FL" "BL" "Rand1" "Rand2")
+# zero_sensor_idx=("5 6 19 20" "9 10 23 24" "8 12 19 25" "3 11 17 20")
+# damage_desc=("FL" "BL" "Rand1" "Rand2")
 
-for i in "${!zero_sensor_idx[@]}"; do
-    echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-    echo "Experiment ${damage_desc[$i]}:"
+# for i in "${!zero_sensor_idx[@]}"; do
+#     echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+#     echo "Experiment ${damage_desc[$i]}:"
 
-    idx="${zero_sensor_idx[$i]}"
-    echo "Damage_joint_idx=$idx"
+#     idx="${zero_sensor_idx[$i]}"
+#     echo "Damage_joint_idx=$idx"
 
-    damage_path="${exp_path}/${damage_desc[$i]}"
-    mkdir -p "$damage_path"
-    python main.py --output_path $output_path --exp_path $damage_path \
-        --zero_sensor_idx $idx --damage_type sensory \
-        --num-repetition-runs 10 --num-reevals 16 --reeval-scan-size 8
+#     damage_path="${exp_path}/${damage_desc[$i]}"
+#     mkdir -p "$damage_path"
+#     python main.py --output_path $output_path --exp_path $damage_path \
+#         --zero_sensor_idx $idx --damage_type sensory \
+#         --num-repetition-runs 10 --num-reevals 16 --reeval-scan-size 8
     
-done
+# done
 
 echo "%%%%%%%%%%%%%%%Running Complete%%%%%%%%%%%%%%%"

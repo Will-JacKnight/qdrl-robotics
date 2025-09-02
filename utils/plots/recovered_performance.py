@@ -31,8 +31,8 @@ def plot_recovered_performance(
         fig = None
 
     ax.set_xlabel("Damage cases")
-    ax.set_ylabel("Performance (m/s)")
-    ax.set_title("Best behavioural performance after ITE adaptation")    
+    ax.set_ylabel("Fitness")
+    # ax.set_title("Best behavioural performance after ITE adaptation")    
     
     positions = []
     data = []
@@ -66,7 +66,7 @@ def plot_recovered_performance(
 
     # ax.set_xticks()
     handles = [plt.Line2D([0], [0], color=model_colors[i], lw=5) for i in range(len(model_desc))]
-    ax.legend(handles, model_desc, loc="upper left")
+    ax.legend(handles, model_desc) # , loc="upper left"
     plt.savefig("evaluations/final_performances.png")
     plt.close()
 

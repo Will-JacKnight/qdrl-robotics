@@ -48,12 +48,11 @@ Correct implementation and ones trained on forward reward:
 - hpc/dcrl_20250813_212529 (10 parallel evals and averaging on step reward, dropouts on every layer)
 - hpc/dcrl_20250814_111147 (1/10 env_steps, 10 parallel evals and averagging on step reward, dropouts on every layer)
 - hpc/dcrl_20250825_173012 (dropout + AS, 2000 iterations)
+- hpc/dcrl_20250816_154412 (dropouts + mapelites-sampling, num_samples=10, avg fitness and BD desc, same addition_steps)
+- hpc/dcrl_20250822_154718 (dropout + AS)
 
 ### in-use
 - hpc/dcrl_20250723_160932 (no dropouts)
 - hpc/dcrl_20250813_213310 (dropouts, single eval)
 - hpc/dcrl_20250816_104912 (dropputs + mapelites-sampling, num_samples=10, avg fitness and BD desc, same eval_steps)
-- hpc/dcrl_20250816_154412 (dropouts + mapelites-sampling, num_samples=10, avg fitness and BD desc, same addition_steps)
 - hpc/dcrl_20250825_173441 (dropouts + EME, same eval_steps)
-
-- hpc/dcrl_20250822_154718 (dropout + AS)

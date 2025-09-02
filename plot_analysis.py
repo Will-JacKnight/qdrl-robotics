@@ -93,41 +93,36 @@ if __name__ == "__main__":
         #     model_desc_abbr="variant 3",
         #     color="#f05d4d"
         # ),
-        # ModelInfo(
-        #     model_path="outputs/hpc/dcrl_20250825_173441/", 
-        #     model_desc="variant 4: dropouts + extract-map-elites",
-        #     model_desc_abbr="variant 4", 
-        #     color="#fec126"
-        # ),
         ModelInfo(
+            # model_path="outputs/hpc/dcrl_20250825_173441/", 
             model_path="outputs/hpc/dcrl_20250827_170158/", 
             model_desc="variant 4: dropouts + extract-map-elites",
-            model_desc_abbr="variant 4", 
-            color="#f05d4d"
+            model_desc_abbr="variant 3", 
+            color="#ffcc00"
         ),
         
     ]
 
     damage_paths = [
         "physical_damage/FL_loose",
-        # "physical_damage/BL_loose",
-        "physical_damage/BL_BR_loose",
-        # "physical_damage/FL_BR_loose",
+        "physical_damage/BL_loose",
+        # "physical_damage/BL_BR_loose",
+        "physical_damage/FL_BR_loose",
         "sensory_damage/BL",
         # "sensory_damage/FL",
-        # "sensory_damage/Rand1",
+        "sensory_damage/Rand1",
         "sensory_damage/Rand2",
     ]
     
     model_paths, model_desc, model_desc_abbr, model_colors = extract_model_attributes(models)
 
-    plot_corrected_coverage(model_paths, model_desc, model_colors)
-    plot_corrected_max_fitness(model_paths, model_desc, model_colors)
-    plot_corrected_qd_score(model_paths, model_desc, model_colors)
-    plot_adaptation_metrics(model_paths, model_desc_abbr, model_colors, damage_paths[0])
+    # plot_corrected_coverage(model_paths, model_desc, model_colors)
+    # plot_corrected_max_fitness(model_paths, model_desc, model_colors)
+    # plot_corrected_qd_score(model_paths, model_desc, model_colors)
+    # plot_adaptation_metrics(model_paths, model_desc_abbr, model_colors, damage_paths[0])
 
-    plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)
+    # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)
     # eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])  
     
-    # plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
+    plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
     # plot_adaptation_step_speed_distribution(model_paths[2] + damage_paths[0], model_desc[2], model_colors[2])
