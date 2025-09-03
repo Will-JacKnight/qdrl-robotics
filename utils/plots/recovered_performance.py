@@ -47,8 +47,12 @@ def plot_recovered_performance(
             # data.append(eval_metrics["iterative"]["step_speeds"][-1])
 
             # 2. fitness distribution via repetition runs 
-            rep_metrics = load_json(model_path + damage_path, "rep_metrics.json")
-            data.append(rep_metrics["best_real_fitness"])
+            # rep_metrics = load_json(model_path + damage_path, "rep_metrics.json")
+            # data.append(rep_metrics["best_real_fitness"])
+
+            # 3. final folder structure
+            rep_metrics = load_json(model_path + damage_path, "eval_metrics.json")
+            data.append([rep_metrics["global"]["best_real_fitness"]])      
 
             positions.append(j * group_spacing + i * width)
             color_indices.append(i)

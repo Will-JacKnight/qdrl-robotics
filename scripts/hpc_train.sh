@@ -1,6 +1,6 @@
 #!/bin/bash
-#PBS -lwalltime=10:00:00
-#PBS -lselect=1:ncpus=1:mem=32gb:ngpus=1:gpu_type=L40S
+#PBS -lwalltime=08:00:00
+#PBS -lselect=1:ncpus=1:mem=64gb:ngpus=1:gpu_type=L40S
 
 # PBS_O_WORKDIR is where the job's submitted
 cd $PBS_O_WORKDIR
@@ -8,28 +8,31 @@ cd $PBS_O_WORKDIR
 source qdax050/bin/activate
 
 timestamp=$(date +"%Y%m%d_%H%M%S")
-output_path="outputs/hpc/dcrl_$timestamp"
+output_path="outputs/final/dcrl_$timestamp"
 echo "Output model to path: $output_path"
 
+seed=$((RANDOM % 101))
+
 ## vanilla dcrl-ME 
-python main.py --algo_type dcrl --output_path $output_path --mode training \
-    --container MAP-Elites-Sampling --dropout-rate 0
+# python main.py --algo_type dcrl --output_path $output_path --mode training \
+#     --container MAP-Elites-Sampling --dropout-rate 0 \
+#     --seed $seed
 
 ## dropout dcrl-ME
 # python main.py --algo_type dcrl --output_path $output_path --mode training \
-#     --container MAP-Elites-Sampling
+#     --container MAP-Elites-Sampling \
+#     --seed $seed
 
 ## mapelite-sampling 
 # python main.py --algo_type dcrl --output_path $output_path --mode training \
-#     --container MAP-Elites-Sampling --num-samples 10
+#     --container MAP-Elites-Sampling --num-samples 10 \
+#     --seed $seed
 
-## archive-sampling 
-# python main.py --algo_type dcrl --output_path $output_path --mode training \
-#     --container Archive-Sampling --num-samples 2 --depth 2
 
 ## extract-mapelites
-# python main.py --algo_type dcrl --output_path $output_path --mode training \
-#     --container Extract-MAP-Elites --num-samples 2 --depth 8
+python main.py --algo_type dcrl --output_path $output_path --mode training \
+    --container Extract-MAP-Elites --num-samples 2 --depth 8 \
+    --seed $seed
 
 
 # Check if the training failed and exit if so

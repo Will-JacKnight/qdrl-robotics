@@ -15,14 +15,18 @@ import jax.numpy as jnp
 from utils.util import load_json
 from utils.plots.recovered_performance import plot_recovered_performance
 from utils.plots.real_fitness_histograms import plot_real_fitness_histograms
-from utils.plots.qd_metrics import plot_corrected_coverage, plot_corrected_max_fitness, plot_corrected_qd_score
+from utils.plots.qd_metrics import (
+    plot_final_corrected_qd_metrics,
+    plot_illusory_coverage, 
+    plot_illusory_max_fitness, 
+    plot_illusory_qd_score,
+)
 from utils.plots.adaptation_metrics import plot_adaptation_metrics, plot_adaptation_step_speed_distribution
 from utils.plots.config import baseline_colors, main_colors, apply_plot_style, adjust_color
 
 # Apply shared plotting style
 apply_plot_style()
-
-
+    
 
 def eval_multi_model_metrics(
     model_paths: List[str],
@@ -41,9 +45,9 @@ def eval_multi_model_metrics(
     fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(20, 20))
     axes = axes.flatten()
 
-    _, axes[0] = plot_corrected_coverage(model_paths, model_desc, model_colors, ax=axes[0])
-    _, axes[1] = plot_corrected_max_fitness(model_paths, model_desc, model_colors, ax=axes[1])
-    _, axes[2] = plot_corrected_qd_score(model_paths, model_desc, model_colors, ax=axes[2])
+    _, axes[0] = plot_illusory_coverage(model_paths, model_desc, model_colors, ax=axes[0])
+    _, axes[1] = plot_illusory_max_fitness(model_paths, model_desc, model_colors, ax=axes[1])
+    _, axes[2] = plot_illusory_qd_score(model_paths, model_desc, model_colors, ax=axes[2])
     _, axes[3], ax4_secondary = plot_adaptation_metrics(model_paths, model_desc_abbr, model_colors, damage_path, ax=axes[3])
 
     fig.legend() # loc='lower center', ncol=len(model_desc)
@@ -60,6 +64,7 @@ if __name__ == "__main__":
         model_desc: str
         model_desc_abbr: str
         color: str
+        rep_paths: List[str]
 
     def extract_model_attributes(models: List[ModelInfo]):
         model_paths  = [m.model_path for m in models]
@@ -70,23 +75,36 @@ if __name__ == "__main__":
 
     models = [
         ModelInfo(
-            model_path="outputs/hpc/dcrl_20250723_160932/", 
-            model_desc="original ITE: no dropouts", 
+            # model_path="outputs/hpc/dcrl_20250723_160932/", 
+            model_path="outputs/final/dcrl_20250902_213836/",
+            model_desc="original DCRL archive without dropouts", 
             model_desc_abbr="original ITE", 
-            color="#9b59b6"
+            color="#9b59b6",
+            rep_paths=[
+                "outputs/final/dcrl_20250902_213836/",
+                "outputs/final/dcrl_20250903_153618/",
+            ],
         ),
         ModelInfo(
-            model_path="outputs/hpc/dcrl_20250813_213310/", 
-            model_desc="variant 1: dropouts", 
+            # model_path="outputs/hpc/dcrl_20250813_213310/", 
+            model_path="outputs/final/dcrl_20250902_213845/",
+            model_desc="variant 1: original + dropouts", 
             model_desc_abbr="variant 1", 
-            color="#2171b5"
+            color="#2171b5",
+            rep_paths=[
+                "outputs/final/dcrl_20250902_213845/",
+            ],
         ),
-        # ModelInfo(
-        #     model_path="outputs/hpc/dcrl_20250816_104912/", 
-        #     model_desc="variant 2: dropouts + mapelites-sampling", # (same evaluation steps)
-        #     model_desc_abbr="variant 2", 
-        #     color="#f05d4d"
-        # ),
+        ModelInfo(
+            # model_path="outputs/hpc/dcrl_20250816_104912/", 
+            model_path="outputs/final/dcrl_20250902_214441/",
+            model_desc="variant 2: variant 1 + mapelites-sampling", # (same evaluation steps)
+            model_desc_abbr="variant 2", 
+            color="#f05d4d",
+            rep_paths=[
+                "outputs/final/dcrl_20250902_214441/",
+            ],
+        ),
         # ModelInfo(
         #     model_path="outputs/hpc/dcrl_20250816_154412/", 
         #     model_desc="variant 3: dropouts + mapelites-sampling", #  (same addition steps)
@@ -95,10 +113,14 @@ if __name__ == "__main__":
         # ),
         ModelInfo(
             # model_path="outputs/hpc/dcrl_20250825_173441/", 
-            model_path="outputs/hpc/dcrl_20250827_170158/", 
-            model_desc="variant 4: dropouts + extract-map-elites",
+            # model_path="outputs/hpc/dcrl_20250827_170158/", 
+            model_path="outputs/final/dcrl_20250902_214613/",
+            model_desc="variant 3: variant 1 + extract-map-elites",
             model_desc_abbr="variant 3", 
-            color="#ffcc00"
+            color="#ffcc00",
+            rep_paths=[
+                "outputs/final/dcrl_20250902_214613/",
+            ],
         ),
         
     ]
@@ -116,13 +138,19 @@ if __name__ == "__main__":
     
     model_paths, model_desc, model_desc_abbr, model_colors = extract_model_attributes(models)
 
-    # plot_corrected_coverage(model_paths, model_desc, model_colors)
-    # plot_corrected_max_fitness(model_paths, model_desc, model_colors)
-    # plot_corrected_qd_score(model_paths, model_desc, model_colors)
-    # plot_adaptation_metrics(model_paths, model_desc_abbr, model_colors, damage_paths[0])
-
-    # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)
-    # eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])  
+    # eval constructed qd archive
+    # plot_illusory_coverage(model_paths, model_desc, model_colors)
+    # plot_illusory_max_fitness(model_paths, model_desc, model_colors)
+    # plot_illusory_qd_score(model_paths, model_desc, model_colors)
+    # eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])    
     
+    # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)
+    plot_final_corrected_qd_metrics(models, "max_fitness")
+    plot_final_corrected_qd_metrics(models, "qd_score")
+    plot_final_corrected_qd_metrics(models, "coverage")
+
+    # evaluate adaptation
+    # plot_adaptation_metrics(model_paths, model_desc_abbr, model_colors, damage_paths[0])
     plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
+
     # plot_adaptation_step_speed_distribution(model_paths[2] + damage_paths[0], model_desc[2], model_colors[2])

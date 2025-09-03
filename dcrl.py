@@ -175,7 +175,7 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
             emitter_state,
             key,
         ), current_metrics = jax.lax.scan(
-            map_elites.scan_update
+            map_elites.scan_update,
             # corrected_scan_update,      
             (repertoire, emitter_state, key),
             (),

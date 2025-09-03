@@ -60,7 +60,8 @@ else:
 
 parser.set_defaults(**config_args)
 
-# directory configs
+# general configs
+parser.add_argument("--seed", type=int, help="random seed for JAX key generation")
 parser.add_argument("--exp_path", type=str, help="relative path to specific damage runs")
 parser.add_argument("--algo_type", type=str, default="dcrl", help=f"supported algo: {SUPPORTED_EMITTERS}")
 
@@ -111,7 +112,6 @@ parser.add_argument("--zero_sensor_idx", type=int, nargs='+', help="Index of the
 parser.add_argument("--log-period", default=10, type=int)
 parser.add_argument("--num-reevals", default=16, type=int)
 parser.add_argument("--reeval-scan-size", default=0, type=int, help="Not used if 0.")
-parser.add_argument("--reeval-individual-batch-size", default=100, type=int, help="Number of individuals to reevaluate simultaneously to manage memory")
 parser.add_argument("--reeval-fitness-extractor", default="Average", type=str)
 parser.add_argument("--reeval-lighter", action="store_true")
 parser.add_argument(
