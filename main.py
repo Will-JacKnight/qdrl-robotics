@@ -5,6 +5,8 @@ from tqdm import trange
 import jax
 import jax.numpy as jnp
 
+from qdax.core.containers.mapelites_repertoire import compute_euclidean_centroids
+
 from adaptation import run_online_adaptation
 from map_elites import run_map_elites
 from dcrl import run_dcrl_map_elites
@@ -248,13 +250,26 @@ key, subkey = jax.random.split(key)
 )
 
 # repetition runs of final repertoire to get corrected_metrics
+centroids = compute_euclidean_centroids(
+    grid_shape=args.grid_shape,
+    minval=args.min_descriptor,
+    maxval=args.max_descriptor,
+)
+
+metrics_repertoire = MapElitesRepertoire.init(
+    genotypes=init_params,
+    fitnesses=jnp.zeros([args.init_batch_size, 1]),
+    descriptors=jnp.zeros((args.init_batch_size, centroids.shape[-1])),
+    extra_scores={},
+    centroids=centroids,
+)
 
 # for rep in trange(args.num_repetition_runs, desc="Repeated Repertoire Evaluation"):
 key, subkey = jax.random.split(key)
 reeval_repertoire = reevaluation_function(
     repertoire=repertoire,
     random_key=subkey,
-    # metric_repertoire=repertoire,
+    metric_repertoire=metrics_repertoire,
     scoring_fn=scoring_fn,
     num_reevals=args.num_reevals,
     scan_size=args.reeval_scan_size,
@@ -266,7 +281,7 @@ reeval_repertoire = reevaluation_function(
 
 qd_metrics = metrics_fn(reeval_repertoire)
 log_metrics(args.output_path, "qd_metrics.json", qd_metrics)
-
+exit()
 
 
 best_fitness = jnp.max(repertoire.fitnesses)

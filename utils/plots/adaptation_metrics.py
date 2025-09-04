@@ -18,6 +18,7 @@ apply_plot_style()
 
 def plot_adaptation_metrics(
     model_paths: List[str],
+    model_desc: List[str],
     model_desc_abbr: List[str], 
     model_colors: List[str],
     damage_path: str,
@@ -47,7 +48,7 @@ def plot_adaptation_metrics(
     ax_secondary = ax.twinx()
     ax.set_ylabel("Number of trials")
     ax_secondary.set_ylabel("Adaptation time (s)")
-    # ax.set_title("Number of ITE trials / Adaptation time (s)")
+    ax.set_title(damage_path)
     
     width = 0.25
     

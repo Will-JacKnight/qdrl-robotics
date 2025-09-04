@@ -171,7 +171,7 @@ def plot_final_corrected_qd_metrics(
 
     handles = [plt.Line2D([0], [0], color=models[i].color, lw=5) for i in range(len(models))]
     if fig is not None:
-        ax.legend(handles, [model.model_desc for model in models], loc="lower left")
+        ax.legend(handles, [model.model_desc for model in models], loc="lower right")
     
     plt.savefig(f"evaluations/final_corrected_{metrics}.png")
     return fig, ax

@@ -58,12 +58,12 @@ def eval_multi_model_metrics(
     secondary_axes = []
 
     for i in range(len(damage_paths)):
-        _, axes[i], ax_secondary = plot_adaptation_metrics(model_paths, model_desc_abbr, model_colors, damage_paths[i], ax=axes[i])
+        _, axes[i], ax_secondary = plot_adaptation_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[i], ax=axes[i])
         secondary_axes.append(ax_secondary)
 
     # Create a single legend for the entire figure using handles from the first subplot
-    handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc='lower center', ncol=len(model_desc))
+    handles = [plt.Line2D([0], [0], color=model_colors[i], lw=5) for i in range(len(model_desc))]
+    fig.legend(handles, model_desc, ncol=len(model_desc), loc="lower center") # , loc="upper left"
     
     plt.savefig("evaluations/eval_multi_model_metrics.png")
     plt.close()
@@ -151,23 +151,23 @@ if __name__ == "__main__":
     ###################
     # eval constructed qd archive
     ###################
-    # plot_illusory_coverage(model_paths, model_desc, model_colors)
-    # plot_illusory_max_fitness(model_paths, model_desc, model_colors)
-    # plot_illusory_qd_score(model_paths, model_desc, model_colors)
+    plot_illusory_coverage(model_paths, model_desc, model_colors)
+    plot_illusory_max_fitness(model_paths, model_desc, model_colors)
+    plot_illusory_qd_score(model_paths, model_desc, model_colors)
 
     plot_final_corrected_qd_metrics(models, "max_fitness")
     plot_final_corrected_qd_metrics(models, "qd_score")
     plot_final_corrected_qd_metrics(models, "coverage")
 
-    eval_multi_model_metrics(models, damage_paths)
+    # eval_multi_model_metrics(models, damage_paths)
     
-    plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)
+    # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)
 
     ###################
     # evaluate adaptation
     ###################
-    plot_recovered_performance(models, model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
+    # plot_recovered_performance(models, model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
 
     
-    # plot_adaptation_metrics(model_paths, model_desc_abbr, model_colors, damage_paths[0])
+    # plot_adaptation_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
     # plot_adaptation_step_speed_distribution(model_paths[2] + damage_paths[0], model_desc[2], model_colors[2])

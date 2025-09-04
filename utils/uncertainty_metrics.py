@@ -30,7 +30,7 @@ from core.containers.mapelites_repertoire import MapElitesRepertoire
 def reevaluation_function(
     repertoire: MapElitesRepertoire,
     random_key: RNGKey,
-    # metric_repertoire: MapElitesRepertoire,
+    metric_repertoire: MapElitesRepertoire,
     scoring_fn: Callable[
         [Genotype, RNGKey],
         Tuple[Fitness, Descriptor, ExtraScores, RNGKey],
@@ -52,7 +52,7 @@ def reevaluation_function(
     # MapElitesRepertoire,
     # MapElitesRepertoire,
     # MapElitesRepertoire,
-    RNGKey,
+    # RNGKey,
 ]:
     """
     Perform reevaluation of a repertoire in stochastic applications.
@@ -108,7 +108,7 @@ def reevaluation_function(
         (
             all_fitnesses,
             all_descriptors,
-            _,
+            all_extra_scores,
             random_key,
         ) = multi_sample_scoring_function(
             policies_params=policies_params,
@@ -127,7 +127,7 @@ def reevaluation_function(
             (
                 all_fitnesses,
                 all_descriptors,
-                _,
+                all_extra_scores,
                 random_key,
             ) = multi_sample_scoring_function(
                 policies_params=policies_params,
@@ -138,19 +138,19 @@ def reevaluation_function(
             return (random_key), (
                 all_fitnesses,
                 all_descriptors,
-                _,
+                all_extra_scores,
             )
 
         (random_key), (
             all_fitnesses,
             all_descriptors,
-            _,
+            all_extra_scores,
         ) = jax.lax.scan(_sampling_scan, (random_key), (), length=num_loops)
         all_fitnesses = jnp.hstack(all_fitnesses)
         all_descriptors = jnp.hstack(all_descriptors)
 
     # Extract the final scores
-    # extra_scores = extra_scores_extractor(all_extra_scores, num_reevals)
+    extra_scores = extra_scores_extractor(all_extra_scores, num_reevals)
     fitnesses = fitness_extractor(all_fitnesses)
     # fitnesses = fitnesses.reshape(-1, 1)  # Convert (grid_shape,) to (grid_shape, 1)
 
@@ -162,7 +162,9 @@ def reevaluation_function(
     # descriptors_reproducibility = jnp.average(descriptors_reproducibility, axis=-1)
 
     # Set -inf fitness for all unexisting indivs
-    fitnesses = jnp.where(repertoire.fitnesses == -jnp.inf, -jnp.inf, fitnesses)
+    fitnesses = fitnesses.reshape(-1, 1)
+    original_fitnesses = repertoire.fitnesses.reshape(-1, 1)
+    fitnesses = jnp.where(original_fitnesses == -jnp.inf, -jnp.inf, fitnesses)
     # fitnesses_reproducibility = jnp.where(
     #     repertoire.fitnesses == -jnp.inf, -jnp.inf, fitnesses_reproducibility
     # )
@@ -171,15 +173,11 @@ def reevaluation_function(
     # )
 
     # Fill-in reeval repertoire
-    # reeval_repertoire = metric_repertoire.empty()
-    # reeval_repertoire = reeval_repertoire.add(
-    #     repertoire.genotypes,
-    #     descriptors,
-    #     fitnesses,
-    #     extra_scores,
-    # )
-    reeval_repertoire = repertoire.replace(
-        fitnesses=fitnesses,
-        descriptors=descriptors,
+    reeval_repertoire = metric_repertoire.empty()
+    reeval_repertoire = reeval_repertoire.add(
+        repertoire.genotypes,
+        descriptors,
+        fitnesses,
+        extra_scores,
     )
     return reeval_repertoire
