@@ -83,7 +83,8 @@ if __name__ == "__main__":
             color="#9b59b6",
             rep_paths=[
                 "outputs/final/dcrl_20250902_213836/",
-                # "outputs/final/dcrl_20250903_153618/",
+                "outputs/final/dcrl_20250903_153618/",
+                "outputs/final/dcrl_20250903_235427/",
             ],
         ),
         ModelInfo(
@@ -94,6 +95,9 @@ if __name__ == "__main__":
             color="#2171b5",
             rep_paths=[
                 "outputs/final/dcrl_20250902_213845/",
+                "outputs/final/dcrl_20250903_195459/",
+                "outputs/final/dcrl_20250903_235430/",
+
             ],
         ),
         ModelInfo(
@@ -104,6 +108,9 @@ if __name__ == "__main__":
             color="#f05d4d",
             rep_paths=[
                 "outputs/final/dcrl_20250902_214441/",
+                "outputs/final/dcrl_20250903_232733/",
+                "outputs/final/dcrl_20250903_235433/",
+
             ],
         ),
         # ModelInfo(
@@ -121,6 +128,8 @@ if __name__ == "__main__":
             color="#ffcc00",
             rep_paths=[
                 "outputs/final/dcrl_20250902_214613/",
+                "outputs/final/dcrl_20250903_235425/",
+                "outputs/final/dcrl_20250903_235437/",
             ],
         ),
         
@@ -146,18 +155,18 @@ if __name__ == "__main__":
     # plot_illusory_max_fitness(model_paths, model_desc, model_colors)
     # plot_illusory_qd_score(model_paths, model_desc, model_colors)
 
-    # plot_final_corrected_qd_metrics(models, "max_fitness")
-    # plot_final_corrected_qd_metrics(models, "qd_score")
-    # plot_final_corrected_qd_metrics(models, "coverage")
+    plot_final_corrected_qd_metrics(models, "max_fitness")
+    plot_final_corrected_qd_metrics(models, "qd_score")
+    plot_final_corrected_qd_metrics(models, "coverage")
 
-    # eval_multi_model_metrics(models, damage_paths)
+    eval_multi_model_metrics(models, damage_paths)
     
-    # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)
+    plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)
 
     ###################
     # evaluate adaptation
     ###################
-    plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
+    plot_recovered_performance(models, model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
 
     
     # plot_adaptation_metrics(model_paths, model_desc_abbr, model_colors, damage_paths[0])

@@ -157,7 +157,7 @@ def plot_final_corrected_qd_metrics(
     color_indices = []
 
     for i, model in enumerate(models):
-        rep_metrics = collect_metrics(model)
+        rep_metrics = collect_metrics(model, "qd_metrics.json")
         data.append(rep_metrics[metrics])
         color_indices.append(i)
 
@@ -171,7 +171,7 @@ def plot_final_corrected_qd_metrics(
 
     handles = [plt.Line2D([0], [0], color=models[i].color, lw=5) for i in range(len(models))]
     if fig is not None:
-        ax.legend(handles, [model.model_desc for model in models], loc="upper left")
+        ax.legend(handles, [model.model_desc for model in models], loc="lower left")
     
     plt.savefig(f"evaluations/final_corrected_{metrics}.png")
     return fig, ax
