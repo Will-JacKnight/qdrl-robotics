@@ -10,9 +10,8 @@ import numpy as np
 import jax.numpy as jnp
 
 from utils.util import load_json
-from utils.plots.config import apply_plot_style
+from utils.plots.config import apply_plot_style, ModelInfo
 from utils.plots.metrics_collector import collect_metrics
-from plot_analysis import ModelInfo
 
 # Apply shared plotting style
 apply_plot_style()
@@ -149,29 +148,30 @@ def plot_final_corrected_qd_metrics(
         fig = None
         
     ax.set_xlabel("Algorithms")
-    ax.set_ylabel("Corrected Max Fitness")
+    if metrics == "max_fitness":
+        ax.set_ylabel("Corrected Max Fitness")
+    if metrics == "qd_score":
+        ax.set_ylabel("Corrected QD Score")
 
     data = []
     color_indices = []
 
-    for model in models:
+    for i, model in enumerate(models):
         rep_metrics = collect_metrics(model)
-    
         data.append(rep_metrics[metrics])
         color_indices.append(i)
 
     bp = ax.boxplot(data, patch_artist=True)
     for i, box in enumerate(bp['boxes']):
-        box.set_facecolor(model_colors[color_indices[i]])
+        box.set_facecolor(models[color_indices[i]].color)
 
-    # center xticks for each damage case
-    num_models = len(model_paths)
-    ax.set_xticklabels(model_desc_abbr)
+    # center xticks for each model
+    ax.set_xticks(range(1, len(models) + 1))
+    ax.set_xticklabels([model.model_desc_abbr for model in models])
 
-    handles = [plt.Line2D([0], [0], color=model_colors[i], lw=5) for i in range(num_models)]
+    handles = [plt.Line2D([0], [0], color=models[i].color, lw=5) for i in range(len(models))]
     if fig is not None:
-        ax.legend(handles, model_desc, loc="upper left")
+        ax.legend(handles, [model.model_desc for model in models], loc="upper left")
     
     plt.savefig(f"evaluations/final_corrected_{metrics}.png")
-    plt.close()
     return fig, ax

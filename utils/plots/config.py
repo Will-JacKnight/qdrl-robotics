@@ -1,10 +1,9 @@
-"""
-Shared plotting configuration and utilities for consistent styling across all plot modules.
-"""
+from typing import Any, Dict, List
+from dataclasses import dataclass
 
 import matplotlib as mpl
 import matplotlib.colors as mcolors
-from typing import Any, Dict
+
 
 # Color palettes
 baseline_colors = [
@@ -50,3 +49,18 @@ def adjust_color(color, amount=1.1):
     """
     c = mcolors.to_rgb(color)
     return tuple(min(1, max(0, channel * amount)) for channel in c)
+
+@dataclass
+class ModelInfo:
+    model_path: str
+    model_desc: str
+    model_desc_abbr: str
+    color: str
+    rep_paths: List[str]
+
+def extract_model_attributes(models: List[ModelInfo]):
+    model_paths  = [m.model_path for m in models]
+    model_desc   = [m.model_desc for m in models]
+    model_abbr   = [m.model_desc_abbr for m in models]
+    model_colors = [m.color for m in models]
+    return model_paths, model_desc, model_abbr, model_colors

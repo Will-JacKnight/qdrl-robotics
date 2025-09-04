@@ -47,7 +47,7 @@ def plot_adaptation_metrics(
     ax_secondary = ax.twinx()
     ax.set_ylabel("Number of trials")
     ax_secondary.set_ylabel("Adaptation time (s)")
-    ax.set_title("Number of ITE trials / Adaptation time (s)")
+    # ax.set_title("Number of ITE trials / Adaptation time (s)")
     
     width = 0.25
     

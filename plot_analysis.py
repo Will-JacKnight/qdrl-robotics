@@ -1,7 +1,6 @@
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Literal
 import os
 from scipy.stats import gaussian_kde
-from dataclasses import dataclass
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -22,18 +21,15 @@ from utils.plots.qd_metrics import (
     plot_illusory_qd_score,
 )
 from utils.plots.adaptation_metrics import plot_adaptation_metrics, plot_adaptation_step_speed_distribution
-from utils.plots.config import baseline_colors, main_colors, apply_plot_style, adjust_color
+from utils.plots.config import baseline_colors, main_colors, apply_plot_style, adjust_color, ModelInfo, extract_model_attributes
 
 # Apply shared plotting style
 apply_plot_style()
     
 
 def eval_multi_model_metrics(
-    model_paths: List[str],
-    model_desc: List[str],
-    model_desc_abbr: List[str],
-    model_colors: List[str],
-    damage_path: str,
+    models: List[ModelInfo],
+    damage_paths: List[str],
     ) -> None:
     """
     args: 
@@ -41,16 +37,34 @@ def eval_multi_model_metrics(
         - model_desc: model descriptions in list format
         - model_colors: model colors in list format
     """
+    model_paths, model_desc, model_desc_abbr, model_colors = extract_model_attributes(models)
 
-    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(20, 20))
+    # fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
+    # axes = axes.flatten()
+
+    # _, axes[0] = plot_illusory_coverage(model_paths, model_desc, model_colors, ax=axes[0])
+
+
+    # _, axes[0] = plot_illusory_max_fitness(model_paths, model_desc, model_colors, ax=axes[0])
+    # _, axes[1] = plot_illusory_qd_score(model_paths, model_desc, model_colors, ax=axes[1])
+
+
+    # _, axes[0] = plot_final_corrected_qd_metrics(models, "max_fitness", ax=axes[0])
+    # _, axes[1] = plot_final_corrected_qd_metrics(models, "qd_score", ax=axes[1])
+
+
+    fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(40, 20))
     axes = axes.flatten()
+    secondary_axes = []
 
-    _, axes[0] = plot_illusory_coverage(model_paths, model_desc, model_colors, ax=axes[0])
-    _, axes[1] = plot_illusory_max_fitness(model_paths, model_desc, model_colors, ax=axes[1])
-    _, axes[2] = plot_illusory_qd_score(model_paths, model_desc, model_colors, ax=axes[2])
-    _, axes[3], ax4_secondary = plot_adaptation_metrics(model_paths, model_desc_abbr, model_colors, damage_path, ax=axes[3])
+    for i in range(len(damage_paths)):
+        _, axes[i], ax_secondary = plot_adaptation_metrics(model_paths, model_desc_abbr, model_colors, damage_paths[i], ax=axes[i])
+        secondary_axes.append(ax_secondary)
 
-    fig.legend() # loc='lower center', ncol=len(model_desc)
+    # Create a single legend for the entire figure using handles from the first subplot
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', ncol=len(model_desc))
+    
     plt.savefig("evaluations/eval_multi_model_metrics.png")
     plt.close()
 
@@ -58,20 +72,7 @@ def eval_multi_model_metrics(
 
 if __name__ == "__main__":
 
-    @dataclass
-    class ModelInfo:
-        model_path: str
-        model_desc: str
-        model_desc_abbr: str
-        color: str
-        rep_paths: List[str]
-
-    def extract_model_attributes(models: List[ModelInfo]):
-        model_paths  = [m.model_path for m in models]
-        model_desc   = [m.model_desc for m in models]
-        model_abbr   = [m.model_desc_abbr for m in models]
-        model_colors = [m.color for m in models]
-        return model_paths, model_desc, model_abbr, model_colors
+    
 
     models = [
         ModelInfo(
@@ -82,7 +83,7 @@ if __name__ == "__main__":
             color="#9b59b6",
             rep_paths=[
                 "outputs/final/dcrl_20250902_213836/",
-                "outputs/final/dcrl_20250903_153618/",
+                # "outputs/final/dcrl_20250903_153618/",
             ],
         ),
         ModelInfo(
@@ -128,29 +129,36 @@ if __name__ == "__main__":
     damage_paths = [
         "physical_damage/FL_loose",
         "physical_damage/BL_loose",
-        # "physical_damage/BL_BR_loose",
+        "physical_damage/BL_BR_loose",
         "physical_damage/FL_BR_loose",
         "sensory_damage/BL",
-        # "sensory_damage/FL",
+        "sensory_damage/FL",
         "sensory_damage/Rand1",
         "sensory_damage/Rand2",
     ]
     
     model_paths, model_desc, model_desc_abbr, model_colors = extract_model_attributes(models)
 
+    ###################
     # eval constructed qd archive
+    ###################
     # plot_illusory_coverage(model_paths, model_desc, model_colors)
     # plot_illusory_max_fitness(model_paths, model_desc, model_colors)
     # plot_illusory_qd_score(model_paths, model_desc, model_colors)
-    # eval_multi_model_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])    
+
+    # plot_final_corrected_qd_metrics(models, "max_fitness")
+    # plot_final_corrected_qd_metrics(models, "qd_score")
+    # plot_final_corrected_qd_metrics(models, "coverage")
+
+    # eval_multi_model_metrics(models, damage_paths)
     
     # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)
-    plot_final_corrected_qd_metrics(models, "max_fitness")
-    plot_final_corrected_qd_metrics(models, "qd_score")
-    plot_final_corrected_qd_metrics(models, "coverage")
 
+    ###################
     # evaluate adaptation
-    # plot_adaptation_metrics(model_paths, model_desc_abbr, model_colors, damage_paths[0])
+    ###################
     plot_recovered_performance(model_paths, damage_paths, model_desc, model_desc_abbr, model_colors)
 
+    
+    # plot_adaptation_metrics(model_paths, model_desc_abbr, model_colors, damage_paths[0])
     # plot_adaptation_step_speed_distribution(model_paths[2] + damage_paths[0], model_desc[2], model_colors[2])
