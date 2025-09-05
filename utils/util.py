@@ -82,6 +82,20 @@ def load_json(
     with open(path, "r") as f:
         return json.load(f)
 
+def get_top_k_indices(
+    top_k: int,
+    fitnesses: jnp.ndarray,
+    sorted=True,
+):
+    '''
+    returns:
+        - indices in descending fitness order by default
+    '''
+    fitnesses = fitnesses.reshape(-1)
+    indices = jnp.argpartition(fitnesses, -top_k)[-top_k:]     # get indices of top 10 fitness behaviours
+    sorted_top_indices = indices[jnp.argsort(-fitnesses[indices])] # behaviour indices in descending fitnesses
+    return sorted_top_indices if sorted else indices
+
 
 if __name__ == "__main__":
     base_path = "outputs/hpc"

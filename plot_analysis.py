@@ -78,38 +78,40 @@ if __name__ == "__main__":
         ModelInfo(
             # model_path="outputs/hpc/dcrl_20250723_160932/", 
             model_path="outputs/final/dcrl_20250902_213836/",
-            model_desc="original DCRL archive without dropouts", 
-            model_desc_abbr="original ITE", 
+            model_desc="Original DCRL Archive without Dropouts", 
+            model_desc_abbr="Original DCRL Archive", 
             color="#9b59b6",
             rep_paths=[
                 "outputs/final/dcrl_20250902_213836/",
                 "outputs/final/dcrl_20250903_153618/",
                 "outputs/final/dcrl_20250903_235427/",
+                "outputs/final/dcrl_20250904_232254/",
             ],
         ),
         ModelInfo(
             # model_path="outputs/hpc/dcrl_20250813_213310/", 
             model_path="outputs/final/dcrl_20250902_213845/",
-            model_desc="variant 1: original + dropouts", 
-            model_desc_abbr="variant 1", 
+            model_desc="variant 1: Original + Dropouts", 
+            model_desc_abbr="Variant 1", 
             color="#2171b5",
             rep_paths=[
                 "outputs/final/dcrl_20250902_213845/",
                 "outputs/final/dcrl_20250903_195459/",
                 "outputs/final/dcrl_20250903_235430/",
-
+                "outputs/final/dcrl_20250904_232353/",
             ],
         ),
         ModelInfo(
             # model_path="outputs/hpc/dcrl_20250816_104912/", 
             model_path="outputs/final/dcrl_20250902_214441/",
-            model_desc="variant 2: variant 1 + mapelites-sampling", # (same evaluation steps)
-            model_desc_abbr="variant 2", 
+            model_desc="Variant 2: MAP-Elites-Sampling + Dropouts", # (same evaluation steps)
+            model_desc_abbr="Variant 2", 
             color="#f05d4d",
             rep_paths=[
                 "outputs/final/dcrl_20250902_214441/",
                 "outputs/final/dcrl_20250903_232733/",
                 "outputs/final/dcrl_20250903_235433/",
+                "outputs/final/dcrl_20250904_232631/",
 
             ],
         ),
@@ -123,13 +125,14 @@ if __name__ == "__main__":
             # model_path="outputs/hpc/dcrl_20250825_173441/", 
             # model_path="outputs/hpc/dcrl_20250827_170158/", 
             model_path="outputs/final/dcrl_20250902_214613/",
-            model_desc="variant 3: variant 1 + extract-map-elites",
-            model_desc_abbr="variant 3", 
+            model_desc="Ours: ReX-MAP-Elites",
+            model_desc_abbr="ReX-MAP-Elites", 
             color="#ffcc00",
             rep_paths=[
                 "outputs/final/dcrl_20250902_214613/",
                 "outputs/final/dcrl_20250903_235425/",
                 "outputs/final/dcrl_20250903_235437/",
+                "outputs/final/dcrl_20250904_234028/",
             ],
         ),
         

@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -lwalltime=05:00:00
+#PBS -lwalltime=02:00:00
 #PBS -lselect=1:ncpus=1:mem=16gb:ngpus=1:gpu_type=L40S
 
 cd $PBS_O_WORKDIR
@@ -7,7 +7,7 @@ cd $PBS_O_WORKDIR
 source qdax050/bin/activate
 
 # adaptation inspection
-output_path="outputs/hpc/dcrl_20250827_170158"
+output_path="outputs/final/dcrl_20250904_232254"
 
 echo "model path=$output_path"
 
@@ -35,10 +35,10 @@ for i in "${!damaged_joint_idx[@]}"; do
     mkdir -p "$damage_path"
     python main.py --output_path $output_path --exp_path $damage_path \
         --damage_joint_idx $idx --damage_joint_action $action --damage_type physical \
-        --num-reevals 16 --reeval-scan-size 0 \
+        --num-reevals 16 --reeval-scan-size 8 \
 
     if [ $? -ne 0 ]; then
-    echo "Training failed with an internal error. Exiting script."
+    echo "Physical damage adaptation failed with an internal error. Exiting script."
     exit 1
 fi
 done
@@ -65,7 +65,7 @@ for i in "${!zero_sensor_idx[@]}"; do
         --zero_sensor_idx $idx --damage_type sensory \
         --num-reevals 16 --reeval-scan-size 8
     if [ $? -ne 0 ]; then
-        echo "Training failed with an internal error. Exiting script."
+        echo "Sensory damage adaptation failed with an internal error. Exiting script."
         exit 1
     fi
     

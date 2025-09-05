@@ -12,6 +12,7 @@ from qdax.custom_types import RNGKey
 
 from rollout import play_damage_step_fn
 
+# obsolete
 def eval_real_fitness(
     env_name: str,
     env,

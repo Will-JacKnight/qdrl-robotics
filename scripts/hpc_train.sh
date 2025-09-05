@@ -11,7 +11,7 @@ timestamp=$(date +"%Y%m%d_%H%M%S")
 output_path="outputs/final/dcrl_$timestamp"
 echo "Output model to path: $output_path"
 
-seed=$((RANDOM % 101))
+seed=$((RANDOM % 1001))
 
 ## vanilla dcrl-ME 
 # python main.py --algo_type dcrl --output_path $output_path --mode training \
@@ -64,7 +64,12 @@ for i in "${!damaged_joint_idx[@]}"; do
     damage_path="${exp_path}/${damage_desc[$i]}"
     mkdir -p "$damage_path"
     python main.py --output_path $output_path --exp_path $damage_path \
-        --damage_joint_idx $idx --damage_joint_action $action --damage_type physical
+        --damage_joint_idx $idx --damage_joint_action $action --damage_type physical \
+        --num-reevals 16 --reeval-scan-size 8
+    
+    if [ $? -ne 0 ]; then
+    echo "Physical damage adaptation failed with an internal error. Exiting script."
+    exit 1
     
 done
 
@@ -85,8 +90,13 @@ for i in "${!zero_sensor_idx[@]}"; do
     damage_path="${exp_path}/${damage_desc[$i]}"
     mkdir -p "$damage_path"
     python main.py --output_path $output_path --exp_path $damage_path \
-        --zero_sensor_idx $idx --damage_type sensory
-    
+        --zero_sensor_idx $idx --damage_type sensory \
+        --num-reevals 16 --reeval-scan-size 8 
+        
+    if [ $? -ne 0 ]; then
+        echo "Sensory damage adaptation failed with an internal error. Exiting script."
+        exit 1
+    fi
 done
 
 echo "%%%%%%%%%%%%%%%Adaptation Complete%%%%%%%%%%%%%%%"

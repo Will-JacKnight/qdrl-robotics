@@ -14,7 +14,6 @@ from qdax.utils.metrics import CSVLogger
 import utils.gp_jax as gpx
 from utils.new_plot import plot_diff_qd_score, plot_grid_results
 from utils.util import log_metrics
-from utils.ground_truth import eval_real_fitness
 
 from rollout import run_single_rollout, render_rollout_to_html, jit_rollout_fn
 
@@ -25,18 +24,6 @@ def upper_confidence_bound(
 ):
     return jnp.argmax(mean + kappa * std)
 
-def get_top_k_indices(
-    top_k: int,
-    fitnesses,
-    sorted=True,
-):
-    '''
-    returns:
-        - indices in descending fitness order by default
-    '''
-    indices = jnp.argpartition(fitnesses, -top_k)[-top_k:]     # get indices of top 10 fitness behaviours
-    sorted_top_indices = indices[jnp.argsort(-fitnesses[indices])] # behaviour indices in descending fitnesses
-    return sorted_top_indices if sorted else indices
 
 def run_online_adaptation(
     env_name,
@@ -52,6 +39,9 @@ def run_online_adaptation(
     damage_joint_action, 
     zero_sensor_idx, 
     episode_length, 
+    vmin,
+    vmax,
+    eval_metrics: Dict,
     max_iters=20, 
     performance_threshold=0.9, 
     lengthscale=0.4, 
@@ -71,15 +61,10 @@ def run_online_adaptation(
 
     # select the most promising behavior from MAP
     fitnesses = repertoire.fitnesses
-    if fitnesses.ndim == 1:
-        fitnesses = jnp.expand_dims(fitnesses, axis=1)
+    fitnesses = fitnesses.reshape(-1, 1)
         
     next_idx = jnp.argmax(fitnesses)
     print("next_idx: ", next_idx)
-    
-    filled_mask = jnp.isfinite(fitnesses)
-    vmin = jnp.min(fitnesses[filled_mask])
-    vmax = jnp.max(fitnesses[filled_mask])
 
     D = gpx.Dataset()
     means_adjusted = jnp.squeeze(fitnesses, axis=1)    # mu_0 = P(x)
@@ -92,58 +77,19 @@ def run_online_adaptation(
 
 
     # plot real fitness grid
-    avg_diff_qd_scores = []
+    # grid_size = math.prod(grid_shape)
+    # fitness_rollout_fn = jit_rollout_fn(env, policy_network, episode_length)
 
-    grid_size = math.prod(grid_shape)
-    fitness_rollout_fn = jit_rollout_fn(env, policy_network, episode_length)
+    # single_eval = functools.partial(fitness_rollout_fn, 
+    #                                damage_joint_idx=damage_joint_idx, 
+    #                                damage_joint_action=damage_joint_action,
+    #                                zero_sensor_idx=zero_sensor_idx)
 
-    single_eval = functools.partial(fitness_rollout_fn, 
-                                   damage_joint_idx=damage_joint_idx, 
-                                   damage_joint_action=damage_joint_action,
-                                   zero_sensor_idx=zero_sensor_idx)
-
-    key, subkey = jax.random.split(key)
-    keys = jax.random.split(subkey, grid_size)
-    batched_rewards = jax.vmap(single_eval)(repertoire.genotypes, keys)    
-    real_repertoire = repertoire.replace(fitnesses=batched_rewards.reshape((-1, 1)))
     # key, subkey = jax.random.split(key)
-    # real_repertoire = eval_real_fitness(env_name, env, policy_network, episode_length, repertoire, grid_shape, 
-    #                                     subkey, damage_joint_idx, damage_joint_action, zero_sensor_idx)
-    plot_grid_results("real", real_repertoire, min_descriptor, max_descriptor, grid_shape, exp_path, vmin=vmin, vmax=vmax)
-
-    top_k = 10
-    sorted_top_indices = get_top_k_indices(top_k, batched_rewards)
-    
-    best_real_idx = jnp.argmax(batched_rewards)
-    print(
-        f"best index after damage: {best_real_idx}\n", 
-        f"best real behaviour after damage: {real_repertoire.descriptors[best_real_idx]}\n",
-        f"best real fitness after damage:{jnp.max(batched_rewards):.2f}\n",
-        f"top {top_k} real fitness indices: {sorted_top_indices}\n",
-    )
-
-    best_params = jax.tree.map(lambda x: x[best_real_idx], real_repertoire.genotypes)
-    key, subkey = jax.random.split(key)
-    rollout = run_single_rollout(env, policy_network, best_params, subkey, 
-                                 damage_joint_idx, damage_joint_action, zero_sensor_idx)
-    render_rollout_to_html(rollout['states'], env, exp_path + "/best_real_fitness.html")
-
-    # init eval_metrics
-    eval_metrics = {
-        "iterative": {key: [] for key in ["tested_indices", "tested_fitnesses", "tested_behaviours", "step_speeds"]},
-        "global": {
-            "adaptation_time": 0.0,
-            "adaptation_steps": 0,
-            "best_real_index": best_real_idx,
-            "best_real_behaviour": real_repertoire.descriptors[best_real_idx],
-            "real_fitness": batched_rewards,
-            "best_real_fitness": jnp.max(batched_rewards),
-            "top_k_real_fitness_index": sorted_top_indices,
-            "best_tested_index": 0,
-            "best_tested_fitness": 0.0,
-            "best_recovered_behaviour": None
-        }
-    }
+    # keys = jax.random.split(subkey, grid_size)
+    # batched_rewards = jax.vmap(single_eval)(repertoire.genotypes, keys)    
+    # real_repertoire = repertoire.replace(fitnesses=batched_rewards.reshape((-1, 1)))
+    # plot_grid_results("real", real_repertoire, min_descriptor, max_descriptor, grid_shape, exp_path, vmin=vmin, vmax=vmax)
 
     # eval adaptation time
     start_time = time.time()
@@ -209,15 +155,6 @@ def run_online_adaptation(
         repertoire = repertoire.replace(fitnesses=jnp.expand_dims(means_adjusted, axis=1))
         plot_grid_results("predicted", repertoire, min_descriptor, max_descriptor, grid_shape, exp_path, iter_num, vmin=vmin, vmax=vmax)
 
-        # calulate diff qd score
-        # diff_score = np.zeros(grid_size)
-        # filled_mask = jnp.isfinite(means_adjusted) & jnp.isfinite(batched_rewards)
-        # diff_score[filled_mask] = (batched_rewards[filled_mask] - means_adjusted[filled_mask])
-        # avg_diff_qd_score = jnp.abs(diff_score.sum()) / jnp.sum(filled_mask)
-
-        # # print(f"diff QD score: {avg_diff_qd_score:.3f}\n")
-        # avg_diff_qd_scores.append(avg_diff_qd_score)
-
         if (max_tested_fitness >= stop_cond or iter_num == max_iters - 1):
 
             eval_metrics["global"]["adaptation_time"] = time.time() - start_time
@@ -243,8 +180,6 @@ def run_online_adaptation(
 
             print("********adaptation completes********")
             break
-    
-    log_metrics(exp_path, "eval_metrics.json", eval_metrics)
     
     # print(f"tested indices: {tested_indices}")
     # print(f"real fitnesses: {real_fitnesses}")

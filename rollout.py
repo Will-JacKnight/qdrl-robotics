@@ -27,6 +27,9 @@ def setup_environment(
     policy_hidden_layer_sizes: Tuple[int, ...], 
     dropout_rate: float,
     init_batch_size: int,
+    damage_joint_idx: jnp.ndarray, 
+    damage_joint_action: jnp.ndarray,
+    zero_sensor_idx: jnp.ndarray,
     key: RNGKey,
 ):
     # Init brax environment
@@ -90,6 +93,44 @@ def setup_environment(
 
         return next_state, policy_params, key, transition
 
+    def play_damage_step_fn(
+        env_state: EnvState, 
+        policy_params: Params, 
+        key: RNGKey,
+        damage_joint_idx: jnp.ndarray, 
+        damage_joint_action: jnp.ndarray,
+        zero_sensor_idx: jnp.ndarray,
+    ) -> Tuple[EnvState, Params, RNGKey, DCRLTransition]:
+
+        damaged_obs = env_state.obs.at[zero_sensor_idx].set(0.0)
+        env_state = env_state.replace(obs=damaged_obs)
+
+        actions = policy_network.apply(policy_params, env_state.obs)
+        actions = actions.at[damage_joint_idx].set(damage_joint_action)
+
+        state_desc = env_state.info["state_descriptor"]
+        next_state = env.step(env_state, actions)
+
+        transition = DCRLTransition(
+            obs=env_state.obs,
+            next_obs=next_state.obs,
+            rewards=next_state.reward,
+            dones=next_state.done,
+            truncations=next_state.info["truncation"],
+            actions=actions,
+            state_desc=state_desc,
+            next_state_desc=next_state.info["state_descriptor"],
+            desc=jnp.zeros(
+                env.descriptor_length,
+            )
+            * jnp.nan,
+            desc_prime=jnp.zeros(
+                env.descriptor_length,
+            )
+            * jnp.nan,
+        )
+        return next_state, policy_params, key, transition
+
     # reevaluation for corrected metrics
     descriptor_extraction_fn = descriptor_extractor[env_name]
     scoring_fn = functools.partial(
@@ -105,7 +146,33 @@ def setup_environment(
         default_qd_metrics,
         qd_offset=reward_offset * episode_length,
     )
-    return env, policy_network, actor_dc_network, reset_fn, play_step_fn, scoring_fn, metrics_fn, init_params
+
+    damage_step_fn = functools.partial(
+        play_damage_step_fn,
+        damage_joint_idx=damage_joint_idx,
+        damage_joint_action=damage_joint_action,
+        zero_sensor_idx=zero_sensor_idx,
+    )
+
+    damage_scoring_fn = functools.partial(
+        scoring_function_brax_envs,
+        episode_length=episode_length,
+        play_reset_fn=reset_fn,
+        play_step_fn=damage_step_fn,
+        descriptor_extractor=descriptor_extraction_fn,
+    )
+
+    return (
+        env, 
+        policy_network, 
+        actor_dc_network, 
+        reset_fn, 
+        play_step_fn, 
+        scoring_fn, 
+        metrics_fn, 
+        init_params,
+        damage_scoring_fn,
+    )
 
 
 def render_rollout_to_html(states, env, output_path):
@@ -222,45 +289,3 @@ def jit_rollout_fn(
         return total_rewards
 
     return _jit_fitness_rollout
-
-
-def play_damage_step_fn(
-    env_state: EnvState, 
-    policy_params: Params, 
-    key: RNGKey,
-    env,
-    policy_network,
-    damage_joint_idx: jnp.ndarray, 
-    damage_joint_action: jnp.ndarray,
-    zero_sensor_idx: jnp.ndarray,
-) -> Tuple[EnvState, Params, RNGKey, DCRLTransition]:
-
-    damaged_obs = env_state.obs.at[zero_sensor_idx].set(0.0)
-    env_state = env_state.replace(obs=damaged_obs)
-
-    actions = policy_network.apply(policy_params, env_state.obs)
-    actions = actions.at[damage_joint_idx].set(damage_joint_action)
-
-    state_desc = env_state.info["state_descriptor"]
-    next_state = env.step(env_state, actions)
-
-    transition = DCRLTransition(
-        obs=env_state.obs,
-        next_obs=next_state.obs,
-        rewards=next_state.reward,
-        dones=next_state.done,
-        truncations=next_state.info["truncation"],
-        actions=actions,
-        state_desc=state_desc,
-        next_state_desc=next_state.info["state_descriptor"],
-        desc=jnp.zeros(
-            env.descriptor_length,
-        )
-        * jnp.nan,
-        desc_prime=jnp.zeros(
-            env.descriptor_length,
-        )
-        * jnp.nan,
-    )
-
-    return next_state, policy_params, key, transition

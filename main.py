@@ -11,8 +11,8 @@ from adaptation import run_online_adaptation
 from map_elites import run_map_elites
 from dcrl import run_dcrl_map_elites
 from rollout import run_single_rollout, setup_environment, render_rollout_to_html
-from utils.util import load_json,load_repertoire_and_metrics, save_repertoire_and_metrics, save_args
-from utils.new_plot import plot_map_elites_results
+from utils.util import load_json,load_repertoire_and_metrics, save_repertoire_and_metrics, save_args, get_top_k_indices
+from utils.new_plot import plot_map_elites_results, plot_grid_results
 from setup_containers import get_evals_per_offspring, get_batch_size, get_sampling_size
 
 from utils.util import log_metrics
@@ -127,6 +127,9 @@ parser.add_argument(
 # repetition runs configs
 parser.add_argument("--num-repetition-runs", default=1, type=int)
 
+# log configs
+parser.add_argument("--num-top-bests", default=10, type=int)
+
 args = parser.parse_args()
 
 args.grid_shape = tuple(args.grid_shape)
@@ -240,12 +243,16 @@ key, subkey = jax.random.split(key)
     scoring_fn,
     metrics_fn,
     init_params,
+    damage_scoring_fn,
 ) = setup_environment(
     env_name=args.env_name, 
     episode_length=args.episode_length, 
     policy_hidden_layer_sizes=args.policy_hidden_layer_sizes, 
     dropout_rate=args.dropout_rate,
     init_batch_size=args.init_batch_size,
+    damage_joint_idx=args.damage_joint_idx,
+    damage_joint_action=args.damage_joint_action,
+    zero_sensor_idx=args.zero_sensor_idx,
     key=subkey,
 )
 
@@ -281,11 +288,11 @@ reeval_repertoire = reevaluation_function(
 
 qd_metrics = metrics_fn(reeval_repertoire)
 log_metrics(args.output_path, "qd_metrics.json", qd_metrics)
-exit()
 
 
-best_fitness = jnp.max(repertoire.fitnesses)
-best_idx = jnp.argmax(repertoire.fitnesses)
+fitnesses = repertoire.fitnesses
+best_fitness = jnp.max(fitnesses)
+best_idx = jnp.argmax(fitnesses)
 best_descriptor = repertoire.descriptors[best_idx]
 params = jax.tree.map(lambda x: x[best_idx], repertoire.genotypes)
 
@@ -306,7 +313,70 @@ else:
                                 args.damage_joint_idx, args.damage_joint_action, args.zero_sensor_idx)
     render_rollout_to_html(rollout['states'], env, args.exp_path + "/pre_adaptation_with_damage.html")
 
-    # rep_metrics = {}
+
+    filled_mask = jnp.isfinite(fitnesses)
+    vmin = jnp.min(fitnesses[filled_mask])
+    vmax = jnp.max(fitnesses[filled_mask])
+
+    # reevaluate real fitness of damaged grid
+    key, subkey = jax.random.split(key)
+    reeval_damaged_repertoire = reevaluation_function(
+        repertoire=repertoire,
+        random_key=subkey,
+        metric_repertoire=metrics_repertoire,
+        scoring_fn=damage_scoring_fn,
+        num_reevals=args.num_reevals,
+        scan_size=args.reeval_scan_size,
+        fitness_extractor=EXTRACTOR_LIST[args.reeval_fitness_extractor],
+        fitness_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_fitness_reproducibility_extractor],
+        descriptor_extractor=EXTRACTOR_LIST[args.reeval_descriptor_extractor],
+        descriptor_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_descriptor_reproducibility_extractor],
+    )
+    plot_grid_results(
+        mode="real",
+        repertoire=reeval_damaged_repertoire,
+        min_descriptor=args.min_descriptor,
+        max_descriptor=args.max_descriptor,
+        grid_shape=args.grid_shape,
+        output_path=args.exp_path,
+        vmin=vmin,
+        vmax=vmax,
+    )
+
+    damaged_fitnesses = reeval_damaged_repertoire.fitnesses
+    sorted_top_indices = get_top_k_indices(args.num_top_bests, damaged_fitnesses)
+    
+    best_real_idx = jnp.argmax(damaged_fitnesses)
+    print(
+        f"best index after damage: {best_real_idx}\n", 
+        f"best real behaviour after damage: {reeval_damaged_repertoire.descriptors[best_real_idx]}\n",
+        f"best real fitness after damage:{jnp.max(damaged_fitnesses):.2f}\n",
+        f"top {args.num_top_bests} real fitness indices: {sorted_top_indices}\n",
+    )
+
+    best_params = jax.tree.map(lambda x: x[best_real_idx], reeval_damaged_repertoire.genotypes)
+    key, subkey = jax.random.split(key)
+    rollout = run_single_rollout(env, policy_network, best_params, subkey, 
+                                 args.damage_joint_idx, args.damage_joint_action, args.zero_sensor_idx)
+    render_rollout_to_html(rollout['states'], env, args.exp_path + "/best_real_fitness.html")
+
+    # init eval_metrics
+    eval_metrics = {
+        "iterative": {key: [] for key in ["tested_indices", "tested_fitnesses", "tested_behaviours", "step_speeds"]},
+        "global": {
+            "adaptation_time": 0.0,
+            "adaptation_steps": 0,
+            "best_real_index": best_real_idx,
+            "best_real_behaviour": reeval_damaged_repertoire.descriptors[best_real_idx],
+            "real_fitness": damaged_fitnesses,
+            "best_real_fitness": jnp.max(damaged_fitnesses),
+            "top_k_real_fitness_index": sorted_top_indices,
+            "best_tested_index": 0,
+            "best_tested_fitness": 0.0,
+            "best_recovered_behaviour": None
+        }
+    }
+
     key, subkey = jax.random.split(key)
     eval_metrics = run_online_adaptation(
         env_name=args.env_name, 
@@ -322,14 +392,11 @@ else:
         damage_joint_action=args.damage_joint_action, 
         zero_sensor_idx=args.zero_sensor_idx,
         episode_length=args.episode_length, 
+        vmin=vmin,
+        vmax=vmax,
+        eval_metrics=eval_metrics,
         max_iters=args.max_iters, 
         performance_threshold=args.performance_threshold,
     )
-    # global_metrics = eval_metrics["global"]
-    # if rep == 0:
-    #     rep_metrics = {k: [v] for k, v in global_metrics.items()}
-    # else:
-    #     for k, v in global_metrics.items():
-    #         rep_metrics[k].append(v)
 
-    # log_metrics(args.exp_path, "rep_metrics.json", rep_metrics)
+    log_metrics(args.exp_path, "eval_metrics.json", eval_metrics)
