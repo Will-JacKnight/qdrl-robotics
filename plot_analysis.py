@@ -77,7 +77,7 @@ if __name__ == "__main__":
     models = [
         ModelInfo(
             # model_path="outputs/hpc/dcrl_20250723_160932/", 
-            model_path="outputs/final/dcrl_20250902_213836/",
+            model_path="outputs/final/dcrl_20250904_232254/",
             model_desc="Original DCRL Archive without Dropouts", 
             model_desc_abbr="Original DCRL Archive", 
             color="#9b59b6",
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         ),
         ModelInfo(
             # model_path="outputs/hpc/dcrl_20250813_213310/", 
-            model_path="outputs/final/dcrl_20250902_213845/",
+            model_path="outputs/final/dcrl_20250904_232353/",
             model_desc="variant 1: Original + Dropouts", 
             model_desc_abbr="Variant 1", 
             color="#2171b5",
@@ -103,7 +103,7 @@ if __name__ == "__main__":
         ),
         ModelInfo(
             # model_path="outputs/hpc/dcrl_20250816_104912/", 
-            model_path="outputs/final/dcrl_20250902_214441/",
+            model_path="outputs/final/dcrl_20250904_232631/",
             model_desc="Variant 2: MAP-Elites-Sampling + Dropouts", # (same evaluation steps)
             model_desc_abbr="Variant 2", 
             color="#f05d4d",
@@ -112,7 +112,6 @@ if __name__ == "__main__":
                 "outputs/final/dcrl_20250903_232733/",
                 "outputs/final/dcrl_20250903_235433/",
                 "outputs/final/dcrl_20250904_232631/",
-
             ],
         ),
         # ModelInfo(
@@ -124,7 +123,7 @@ if __name__ == "__main__":
         ModelInfo(
             # model_path="outputs/hpc/dcrl_20250825_173441/", 
             # model_path="outputs/hpc/dcrl_20250827_170158/", 
-            model_path="outputs/final/dcrl_20250902_214613/",
+            model_path="outputs/final/dcrl_20250904_234028/",
             model_desc="Ours: ReX-MAP-Elites",
             model_desc_abbr="ReX-MAP-Elites", 
             color="#ffcc00",
@@ -141,12 +140,12 @@ if __name__ == "__main__":
     damage_paths = [
         "physical_damage/FL_loose",
         "physical_damage/BL_loose",
-        "physical_damage/BL_BR_loose",
-        "physical_damage/FL_BR_loose",
+        # "physical_damage/BL_BR_loose",
+        # "physical_damage/FL_BR_loose",
         "sensory_damage/BL",
-        "sensory_damage/FL",
+        # "sensory_damage/FL",
         "sensory_damage/Rand1",
-        "sensory_damage/Rand2",
+        # "sensory_damage/Rand2",
     ]
     
     model_paths, model_desc, model_desc_abbr, model_colors = extract_model_attributes(models)
@@ -154,17 +153,20 @@ if __name__ == "__main__":
     ###################
     # eval constructed qd archive
     ###################
-    plot_illusory_coverage(model_paths, model_desc, model_colors)
-    plot_illusory_max_fitness(model_paths, model_desc, model_colors)
-    plot_illusory_qd_score(model_paths, model_desc, model_colors)
+    # plot_illusory_coverage(model_paths, model_desc, model_colors)
+    # plot_illusory_max_fitness(model_paths, model_desc, model_colors)
+    # plot_illusory_qd_score(model_paths, model_desc, model_colors)
 
-    plot_final_corrected_qd_metrics(models, "max_fitness")
-    plot_final_corrected_qd_metrics(models, "qd_score")
-    plot_final_corrected_qd_metrics(models, "coverage")
+    # plot_final_corrected_qd_metrics(models, "max_fitness")
+    # plot_final_corrected_qd_metrics(models, "qd_score")
+    # plot_final_corrected_qd_metrics(models, "coverage")
 
     # eval_multi_model_metrics(models, damage_paths)
     
-    # plot_real_fitness_histograms(model_paths, damage_paths, model_desc, model_colors, num_bins=110, lower_bound=100, upper_bound=2300)
+    plot_real_fitness_histograms(
+        model_paths, damage_paths, model_desc, model_colors, 
+        num_bins=230, lower_bound=000, upper_bound=2300
+    )
 
     ###################
     # evaluate adaptation

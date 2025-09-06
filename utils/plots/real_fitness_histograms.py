@@ -29,8 +29,8 @@ def plot_real_fitness_histograms(
     fig, axes = plt.subplots(nrows=2, ncols=num_damages // 2, figsize=(10 * (num_damages // 2), 10))
     axes = np.atleast_2d(axes)
 
-    fig.supxlabel("Real Fitness (m/s)")
-    fig.supylabel("Frequency Density")
+    fig.supxlabel("Corrected Fitness")
+    fig.supylabel("Frequency")
     # fig.suptitle("Real Fitness Distribution")
 
     def filter_top_k_list(data: List, top_k: float = 0.5) -> List:
