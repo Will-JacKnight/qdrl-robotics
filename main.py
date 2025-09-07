@@ -233,6 +233,23 @@ if args.mode == "training":
 
 repertoire, _ = load_repertoire_and_metrics(args.output_path)
 
+fitnesses = repertoire.fitnesses
+best_fitness = jnp.max(fitnesses)
+best_idx = jnp.argmax(fitnesses)
+best_descriptor = repertoire.descriptors[best_idx]
+params = jax.tree.map(lambda x: x[best_idx], repertoire.genotypes)
+
+print(
+    "Intact training without damage: \n",
+    f"Best fitness: {best_fitness:.2f}\n",
+    f"Best descriptor: {best_descriptor}\n",
+    f"Index of best fitness niche: {best_idx}\n"
+)
+
+filled_mask = jnp.isfinite(fitnesses)
+vmin = jnp.min(fitnesses[filled_mask])
+vmax = jnp.max(fitnesses[filled_mask])
+
 key, subkey = jax.random.split(key)
 (
     env, 
@@ -286,22 +303,31 @@ reeval_repertoire = reevaluation_function(
     descriptor_reproducibility_extractor=EXTRACTOR_LIST[args.reeval_descriptor_reproducibility_extractor],
 )
 
+plot_grid_results(
+    mode="illusory",
+    repertoire=repertoire,
+    min_descriptor=args.min_descriptor,
+    max_descriptor=args.max_descriptor,
+    grid_shape=args.grid_shape,
+    output_path=args.output_path,
+    vmin=vmin,
+    vmax=vmax,
+)
+
+plot_grid_results(
+    mode="corrected",
+    repertoire=reeval_repertoire,
+    min_descriptor=args.min_descriptor,
+    max_descriptor=args.max_descriptor,
+    grid_shape=args.grid_shape,
+    output_path=args.output_path,
+    vmin=vmin,
+    vmax=vmax,
+)
+
 qd_metrics = metrics_fn(reeval_repertoire)
 log_metrics(args.output_path, "qd_metrics.json", qd_metrics)
 
-
-fitnesses = repertoire.fitnesses
-best_fitness = jnp.max(fitnesses)
-best_idx = jnp.argmax(fitnesses)
-best_descriptor = repertoire.descriptors[best_idx]
-params = jax.tree.map(lambda x: x[best_idx], repertoire.genotypes)
-
-print(
-    "Intact training without damage: \n",
-    f"Best fitness: {best_fitness:.2f}\n",
-    f"Best descriptor: {best_descriptor}\n",
-    f"Index of best fitness niche: {best_idx}\n"
-)
 
 if args.mode == "training":
     key, subkey = jax.random.split(key)
@@ -312,11 +338,6 @@ else:
     rollout = run_single_rollout(env, policy_network, params, subkey,
                                 args.damage_joint_idx, args.damage_joint_action, args.zero_sensor_idx)
     render_rollout_to_html(rollout['states'], env, args.exp_path + "/pre_adaptation_with_damage.html")
-
-
-    filled_mask = jnp.isfinite(fitnesses)
-    vmin = jnp.min(fitnesses[filled_mask])
-    vmax = jnp.max(fitnesses[filled_mask])
 
     # reevaluate real fitness of damaged grid
     key, subkey = jax.random.split(key)

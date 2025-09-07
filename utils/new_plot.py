@@ -302,7 +302,7 @@ def plot_map_elites_results(
     # return fig, axes
 
 def plot_grid_results(
-    mode: Literal["predicted", "real"],
+    mode: str,
     repertoire: MapElitesRepertoire,
     min_descriptor: jnp.ndarray,
     max_descriptor: jnp.ndarray,
@@ -325,9 +325,16 @@ def plot_grid_results(
         os.makedirs(output_path + f"/{mode}_grid", exist_ok=True) 
         plt.savefig(output_path + f"/{mode}_grid/{iter_num + 1}.png")
 
-    else:
+    if mode == "real":
         ax.set_title("real fitness")
         plt.savefig(output_path + f"/real_fitness_grid.png")
+
+    if mode == "corrected":
+        plt.savefig(output_path + f"/corrected_grid.png")
+    if mode == "illusory":
+        plt.savefig(output_path + f"/illusory_grid.png")
+
+
     plt.close()
 
 

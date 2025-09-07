@@ -143,7 +143,7 @@ def plot_final_corrected_qd_metrics(
 ) -> Tuple[Optional[Figure], Axes]:
 
     if ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(7, 10))
     else:
         fig = None
         
@@ -152,6 +152,8 @@ def plot_final_corrected_qd_metrics(
         ax.set_ylabel("Corrected Max Fitness")
     if metrics == "qd_score":
         ax.set_ylabel("Corrected QD Score")
+    if metrics == "coverage":
+        ax.set_ylabel("Corrected Coverage (%)")
 
     data = []
     color_indices = []
@@ -169,9 +171,9 @@ def plot_final_corrected_qd_metrics(
     ax.set_xticks(range(1, len(models) + 1))
     ax.set_xticklabels([model.model_desc_abbr for model in models])
 
-    handles = [plt.Line2D([0], [0], color=models[i].color, lw=5) for i in range(len(models))]
-    if fig is not None:
-        ax.legend(handles, [model.model_desc for model in models], loc="lower right")
+    # handles = [plt.Line2D([0], [0], color=models[i].color, lw=5) for i in range(len(models))]
+    # if fig is not None:
+    #     ax.legend(handles, [model.model_desc for model in models], loc="lower right")
     
     plt.savefig(f"evaluations/final_corrected_{metrics}.png")
     return fig, ax

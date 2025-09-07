@@ -79,13 +79,14 @@ if __name__ == "__main__":
             # model_path="outputs/hpc/dcrl_20250723_160932/", 
             model_path="outputs/final/dcrl_20250904_232254/",
             model_desc="Original DCRL Archive without Dropouts", 
-            model_desc_abbr="Original DCRL Archive", 
+            model_desc_abbr="Original", 
             color="#9b59b6",
             rep_paths=[
                 "outputs/final/dcrl_20250902_213836/",
                 "outputs/final/dcrl_20250903_153618/",
                 "outputs/final/dcrl_20250903_235427/",
                 "outputs/final/dcrl_20250904_232254/",
+                "outputs/final/dcrl_20250906_161917/",
             ],
         ),
         ModelInfo(
@@ -99,6 +100,7 @@ if __name__ == "__main__":
                 "outputs/final/dcrl_20250903_195459/",
                 "outputs/final/dcrl_20250903_235430/",
                 "outputs/final/dcrl_20250904_232353/",
+                "outputs/final/dcrl_20250906_162017/",
             ],
         ),
         ModelInfo(
@@ -112,6 +114,7 @@ if __name__ == "__main__":
                 "outputs/final/dcrl_20250903_232733/",
                 "outputs/final/dcrl_20250903_235433/",
                 "outputs/final/dcrl_20250904_232631/",
+                "outputs/final/dcrl_20250906_165550/",
             ],
         ),
         # ModelInfo(
@@ -125,13 +128,14 @@ if __name__ == "__main__":
             # model_path="outputs/hpc/dcrl_20250827_170158/", 
             model_path="outputs/final/dcrl_20250904_234028/",
             model_desc="Ours: ReX-MAP-Elites",
-            model_desc_abbr="ReX-MAP-Elites", 
+            model_desc_abbr="Ours: ReX-ME", 
             color="#ffcc00",
             rep_paths=[
                 "outputs/final/dcrl_20250902_214613/",
                 "outputs/final/dcrl_20250903_235425/",
                 "outputs/final/dcrl_20250903_235437/",
                 "outputs/final/dcrl_20250904_234028/",
+                "outputs/final/dcrl_20250906_170338/",
             ],
         ),
         
@@ -157,16 +161,16 @@ if __name__ == "__main__":
     # plot_illusory_max_fitness(model_paths, model_desc, model_colors)
     # plot_illusory_qd_score(model_paths, model_desc, model_colors)
 
-    # plot_final_corrected_qd_metrics(models, "max_fitness")
-    # plot_final_corrected_qd_metrics(models, "qd_score")
-    # plot_final_corrected_qd_metrics(models, "coverage")
+    plot_final_corrected_qd_metrics(models, "max_fitness")
+    plot_final_corrected_qd_metrics(models, "qd_score")
+    plot_final_corrected_qd_metrics(models, "coverage")
 
     # eval_multi_model_metrics(models, damage_paths)
     
-    plot_real_fitness_histograms(
-        model_paths, damage_paths, model_desc, model_colors, 
-        num_bins=230, lower_bound=000, upper_bound=2300
-    )
+    # plot_real_fitness_histograms(
+    #     model_paths, damage_paths, model_desc, model_colors, 
+    #     num_bins=230, lower_bound=000, upper_bound=2300
+    # )
 
     ###################
     # evaluate adaptation

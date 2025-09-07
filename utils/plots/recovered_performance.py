@@ -32,8 +32,8 @@ def plot_recovered_performance(
     else:
         fig = None
 
-    ax.set_xlabel("Damage cases")
-    ax.set_ylabel("Fitness")
+    # ax.set_xlabel("Damage cases")
+    # ax.set_ylabel("Fitness")
     # ax.set_title("Best behavioural performance after ITE adaptation")    
     
     positions = []

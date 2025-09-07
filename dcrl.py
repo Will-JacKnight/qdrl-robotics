@@ -32,12 +32,16 @@ def run_dcrl_map_elites(args: Any, key: RNGKey):
         scoring_fn,
         metrics_fn,
         init_params,
+        _,
     ) = setup_environment(
         env_name=args.env_name, 
         episode_length=args.episode_length, 
         policy_hidden_layer_sizes=args.policy_hidden_layer_sizes, 
         dropout_rate=args.dropout_rate,
         init_batch_size=args.init_batch_size,
+        damage_joint_idx=args.damage_joint_idx,
+        damage_joint_action=args.damage_joint_action,
+        zero_sensor_idx=args.zero_sensor_idx,
         key=subkey,
     )
 

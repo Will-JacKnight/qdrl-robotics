@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -lwalltime=08:00:00
+#PBS -lwalltime=07:00:00
 #PBS -lselect=1:ncpus=1:mem=64gb:ngpus=1:gpu_type=L40S
 
 # PBS_O_WORKDIR is where the job's submitted
@@ -70,6 +70,7 @@ for i in "${!damaged_joint_idx[@]}"; do
     if [ $? -ne 0 ]; then
     echo "Physical damage adaptation failed with an internal error. Exiting script."
     exit 1
+    fi
     
 done
 

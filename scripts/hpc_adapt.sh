@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -lwalltime=00:40:00
+#PBS -lwalltime=02:00:00
 #PBS -lselect=1:ncpus=1:mem=16gb:ngpus=1:gpu_type=L40S
 
 cd $PBS_O_WORKDIR
@@ -7,7 +7,7 @@ cd $PBS_O_WORKDIR
 source qdax050/bin/activate
 
 # adaptation inspection
-output_path="outputs/final/dcrl_20250904_232631"
+output_path="outputs/final/dcrl_20250906_170338"
 
 echo "model path=$output_path"
 
@@ -38,9 +38,9 @@ for i in "${!damaged_joint_idx[@]}"; do
         --num-reevals 16 --reeval-scan-size 8 \
 
     if [ $? -ne 0 ]; then
-    echo "Physical damage adaptation failed with an internal error. Exiting script."
-    exit 1
-fi
+        echo "Physical damage adaptation failed with an internal error. Exiting script."
+        exit 1
+    fi
 done
 
 ##############
