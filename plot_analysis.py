@@ -142,14 +142,14 @@ if __name__ == "__main__":
     ]
 
     damage_paths = [
-        "physical_damage/FL_loose",
-        "physical_damage/BL_loose",
-        # "physical_damage/BL_BR_loose",
-        # "physical_damage/FL_BR_loose",
-        "sensory_damage/BL",
-        # "sensory_damage/FL",
-        "sensory_damage/Rand1",
-        # "sensory_damage/Rand2",
+        # "physical_damage/FL_loose",
+        # "physical_damage/BL_loose",
+        "physical_damage/BL_BR_loose",
+        "physical_damage/FL_BR_loose",
+        # "sensory_damage/BL",
+        "sensory_damage/FL",
+        # "sensory_damage/Rand1",
+        "sensory_damage/Rand2",
     ]
     
     model_paths, model_desc, model_desc_abbr, model_colors = extract_model_attributes(models)
@@ -161,16 +161,16 @@ if __name__ == "__main__":
     # plot_illusory_max_fitness(model_paths, model_desc, model_colors)
     # plot_illusory_qd_score(model_paths, model_desc, model_colors)
 
-    plot_final_corrected_qd_metrics(models, "max_fitness")
-    plot_final_corrected_qd_metrics(models, "qd_score")
-    plot_final_corrected_qd_metrics(models, "coverage")
+    # plot_final_corrected_qd_metrics(models, "max_fitness")
+    # plot_final_corrected_qd_metrics(models, "qd_score")
+    # plot_final_corrected_qd_metrics(models, "coverage")
 
     # eval_multi_model_metrics(models, damage_paths)
     
-    # plot_real_fitness_histograms(
-    #     model_paths, damage_paths, model_desc, model_colors, 
-    #     num_bins=230, lower_bound=000, upper_bound=2300
-    # )
+    plot_real_fitness_histograms(
+        model_paths, damage_paths, model_desc, model_colors, 
+        num_bins=230, lower_bound=000, upper_bound=2300
+    )
 
     ###################
     # evaluate adaptation
@@ -179,4 +179,4 @@ if __name__ == "__main__":
 
     
     # plot_adaptation_metrics(model_paths, model_desc, model_desc_abbr, model_colors, damage_paths[0])
-    # plot_adaptation_step_speed_distribution(model_paths[2] + damage_paths[0], model_desc[2], model_colors[2])
+    # plot_adaptation_step_speed_distribution(models[0])

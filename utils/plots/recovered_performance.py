@@ -28,7 +28,7 @@ def plot_recovered_performance(
     ) -> Tuple[Optional[Figure], Axes]:
 
     if ax is None:
-        fig, ax = plt.subplots(figsize=(20, 10))
+        fig, ax = plt.subplots(figsize=(5, 10))
     else:
         fig = None
 
@@ -80,7 +80,7 @@ def plot_recovered_performance(
 
     # ax.set_xticks()
     handles = [plt.Line2D([0], [0], color=model_colors[i], lw=5) for i in range(len(model_desc))]
-    fig.legend(handles, model_desc, ncol=len(model_desc), loc="lower center") # , loc="upper left"
+    # fig.legend(handles, model_desc, ncol=len(model_desc), loc="lower center") # , loc="upper left"
     plt.savefig("evaluations/final_performances.png")
     plt.close()
 

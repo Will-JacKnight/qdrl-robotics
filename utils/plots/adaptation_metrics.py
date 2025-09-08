@@ -10,7 +10,7 @@ import numpy as np
 import jax.numpy as jnp
 
 from utils.util import load_json
-from utils.plots.config import apply_plot_style, adjust_color
+from utils.plots.config import apply_plot_style, adjust_color, ModelInfo
 
 # Apply shared plotting style
 apply_plot_style()
@@ -64,41 +64,32 @@ def plot_adaptation_metrics(
 
 
 def plot_adaptation_step_speed_distribution(
-    damage_path: str,
-    model_desc: str,
-    model_color: str,
+    model: ModelInfo,
+    damage_paths: str,
     ax: Optional[Axes] = None,
     ) -> Tuple[Optional[Figure], Axes]:
     """
     Plot performance distribution during ITE adaptation steps.
-    
-    Args: 
-        damage_path: Full path to damage directory with eval_metrics.json
-        model_desc: Model description
-        model_color: Color for the boxplots
-        ax: Optional existing axis to plot on
-        
-    Returns:
-        Tuple of (figure, axis) where figure is None if ax was provided
     """
     if ax is None:
         fig, ax = plt.subplots()
     else:
         fig = None
     
-    ax.set_xlabel("Adaptation steps")
-    ax.set_ylabel("Performance (m/s)")
-    ax.set_title(f"Performance distribution during ITE adaptation ({damage_path})")
+    ax.set_xlabel("Number of Adaptation Steps")
+    ax.set_ylabel("Forward Velocity (m/s)")
+    # ax.set_title(f"Performance distribution during ITE adaptation ({damage_path})")
 
     # speeds boxplot for every adaptation step
-    eval_metrics = load_json(damage_path, "eval_metrics.json")
+    for damage_path in damage_paths:
+        eval_metrics = load_json(damage_path, "eval_metrics.json")
 
-    bp = ax.boxplot(eval_metrics["iterative"]["step_speeds"], patch_artist=True)
-    num_steps = len(eval_metrics["iterative"]["step_speeds"])
-    ax.set_xticks(np.arange(1, num_steps + 1))
-    ax.set_xticklabels(np.arange(0, num_steps))
-    for box in bp['boxes']:
-        box.set_facecolor(model_color)
+        bp = ax.boxplot(eval_metrics["iterative"]["step_speeds"], patch_artist=True)
+        num_steps = len(eval_metrics["iterative"]["step_speeds"])
+        ax.set_xticks(np.arange(1, num_steps + 1))
+        ax.set_xticklabels(np.arange(0, num_steps))
+        for box in bp['boxes']:
+            box.set_facecolor(model.color)
 
-    plt.savefig("evaluations/adaptation_step_speed_distribution.png")
+    plt.savefig(f"evaluations/appendix/{model.model_desc_abbr}.png")
     return fig, ax
